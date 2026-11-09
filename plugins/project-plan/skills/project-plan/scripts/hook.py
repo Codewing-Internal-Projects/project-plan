@@ -33,7 +33,7 @@ try:
 except (OSError, ValueError):
     IS_PLUGIN, APP_VERSION = False, ""
 REPO, MARKET = "Codewing-Internal-Projects/project-plan", "codewing"  # where updates come from
-VERSION = 8  # bump when the server changes, so running boards restart with the new code
+VERSION = 9  # bump when the server changes, so running boards restart with the new code
 
 # $ per million tokens: (model id fragment, input, output, cache read). Cache writes cost 1.25x input (5 min) or 2x (1 h).
 # ponytail: prices as of 2026-10-06 (claude-api skill); an unknown model counts as $0, add it here when prices change
@@ -389,9 +389,10 @@ def ensure_hub():
 
 def ensure_server():
     """Keep the page in step with the skill's copy, and our server (current version) on the port."""
-    src, dst = os.path.join(SKILL, "index.html"), os.path.join(DIR, "index.html")
-    if not os.path.exists(dst) or open(src, "rb").read() != open(dst, "rb").read():
-        shutil.copyfile(src, dst)
+    for page in ("index.html", "map.html"):
+        src, dst = os.path.join(SKILL, page), os.path.join(DIR, page)
+        if os.path.exists(src) and (not os.path.exists(dst) or open(src, "rb").read() != open(dst, "rb").read()):
+            shutil.copyfile(src, dst)
     try:
         write_launcher()
         register()
@@ -569,37 +570,47 @@ MAP_LOCK = threading.Lock()
 
 
 def api_map(path, body):
-    """The Map view: rescan, dismiss a health issue, or ask a question about the code."""
-    import codemap
+    """The Map view: rescan, dismiss a health issue, notes, Ask, flows on request, and blueprint undo."""
+    import codemap, mapapp
     codemap.setup(ROOT, DIR)
     if path == "/api/map/rescan":
         with MAP_LOCK:
-            codemap.build(quiet=True)
+            mapapp.planned(quiet=True) if mapapp.blueprint_mode() else codemap.build(quiet=True)
         return 200, {"ok": True}
     if path == "/api/map/dismiss":
         f = os.path.join(DIR, "map", "dismissed.json")
         with MAP_LOCK:
             d = read_json(f, {})
             if body.get("on", True):
-                d[clip(body.get("id"), 200)] = now()
+                d[clip(body.get("id"), 200)] = {"at": now(), "reason": clip(body.get("reason"), 500)}
             else:
                 d.pop(str(body.get("id")), None)
             write_json(f, d)
-            codemap.build(quiet=True)
+            mapapp.planned(quiet=True) if mapapp.blueprint_mode() else codemap.build(quiet=True)
+        return 200, {"ok": True}
+    if path == "/api/map/note":
+        p = clip(body.get("path"), 500)
+        if not p:
+            raise ValueError("Which file?")
+        with MAP_LOCK:
+            mapapp.note(p, clip(body.get("text"), 4000))
+        return 200, {"ok": True}
+    if path == "/api/map/undo":
+        with MAP_LOCK:
+            mapapp.undo()
         return 200, {"ok": True}
     q = clip(body.get("q"), 2000)
     if not q:
         raise ValueError("Write a question first.")
     if not ASK_LOCK.acquire(blocking=False):
-        return 409, {"error": "Another question is being answered; try again when it's done."}
+        return 409, {"error": "Claude is still answering the last question; try again when it's done."}
     try:
-        f = os.path.join(DIR, "map", "asks.json")
-        r = codemap.ask(q, read_json(f, [])[-3:] if body.get("followup") else [])
-        if r.get("error"):
-            return 502, {"error": r["error"]}
-        with MAP_LOCK:
-            write_json(f, (read_json(f, []) + [{"q": q, "a": r["answer"], "parts": r["parts"], "cost": r["cost"], "at": r["at"]}])[-20:])
-        return 200, r
+        if path == "/api/map/flow":
+            r = mapapp.flow(q)
+        else:
+            ctx = [clip(x, 400) for x in body.get("context") or [] if isinstance(x, str)][:10]
+            r = mapapp.ask(q, mapapp.asks()[-3:] if body.get("followup") else [], ctx, "change" if body.get("mode") == "change" else "ask")
+        return (502, {"error": r["error"]}) if r.get("error") else (200, r)
     finally:
         ASK_LOCK.release()
 
@@ -710,6 +721,22 @@ def serve():
                         sweep(d, b, now())
                 except Exception:
                     pass
+            if url.path == "/api/map/export":
+                import codemap, mapapp
+                codemap.setup(ROOT, DIR)
+                o = parse_qs(url.query)
+                on = lambda k, d: o.get(k, [d])[0] == "1"
+                hist = open(HIST).read() if on("recent", "0") and os.path.exists(HIST) else ""
+                try:
+                    data = mapapp.export(on("flows", "1"), on("notes", "1"), on("recent", "0"), on("health", "0"), hist).encode()
+                except (OSError, ValueError) as e:
+                    return self.send(400, {"error": str(e)})
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Disposition", f'attachment; filename="{os.path.basename(ROOT)}-map.html"')
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                return self.wfile.write(data)
             if url.path == "/api/diff":
                 return self.send(*api_diff(parse_qs(url.query).get("path", [""])[0]))
             if url.path == "/progress.json" and "seen" in url.query:  # a visible board tab: permission requests wait for it
@@ -733,7 +760,8 @@ def serve():
             route = {"/api/respond": api_respond, "/api/request": api_request, "/api/permit": api_permit,
                      "/api/settings": api_settings, "/api/note": api_note,
                      "/api/rename": api_rename, "/api/pushtest": api_pushtest,
-                     **{p: functools.partial(api_map, p) for p in ("/api/map/rescan", "/api/map/dismiss", "/api/map/ask")}}.get(self.path)
+                     **{p: functools.partial(api_map, p) for p in ("/api/map/rescan", "/api/map/dismiss", "/api/map/ask", "/api/map/note",
+                                                                    "/api/map/flow", "/api/map/undo")}}.get(self.path)
             if not route:
                 return self.send(404, {"error": "Not found"})
             try:
@@ -1213,7 +1241,7 @@ def load_spec(args):
         "title": str(spec.get("title", "")).strip(), "kind": str(spec.get("kind") or "feature"),
         "summary": str(spec.get("summary", "")), "body": str(spec.get("body", "")), "questions": questions,
         "tasks": [dict(zip(("title", "summary"), split_title(str(x)))) for x in spec.get("tasks") or []], "preview": preview,
-        "map": __import__("codemap").blueprint(spec.get("map")),
+        "map": __import__("mapapp").blueprint(spec.get("map")),
     }
 
 
@@ -1389,7 +1417,18 @@ def project_summary(path, meta):
         "shipped": sum(t.get("status") == "done" and local_day(t.get("finished")) == day for s in ss for t in s.get("tasks", [])),
         "spend": round(sum((s.get("usage") or {}).get("days", {}).get(day, 0) for s in ss), 4),
         "failing": [s["check"].get("name") for s in live if isinstance(s.get("check"), dict) and not s["check"].get("ok")],
+        "map": map_summary(path),
     }
+
+
+def map_summary(path):
+    """The project map's headline numbers for the hub (None when the project has no map yet)."""
+    g = read_json(os.path.join(path, ".progress", "map", "graph.json"), None)
+    if not isinstance(g, dict) or not isinstance(g.get("parts"), list):
+        return None
+    h = g.get("health") or {}
+    return {"parts": len(g["parts"]), "auto": bool(g.get("auto")), "blueprint": bool(g.get("blueprint")), "stale": len(g.get("stale") or []),
+            "high": h.get("high", 0), "medium": h.get("medium", 0), "scanned": g.get("scanned", "")}
 
 
 def hub():
@@ -1514,9 +1553,9 @@ def cli(args):
             send_push(st, args[1], args[2])
         return
     if cmd == "map":
-        import codemap
+        import codemap, mapapp
         codemap.setup(ROOT, DIR)
-        return codemap.cli(args[1:])
+        return mapapp.cli(args[1:]) or codemap.cli(args[1:])
     if cmd == "snapshot":
         return snapshot(os.path.abspath(args[1]) if len(args) > 1 else os.path.join(DIR, "snapshot.html"))
     sid = os.environ.get("CLAUDE_CODE_SESSION_ID")
@@ -1580,6 +1619,9 @@ def main():
     name, sid = ev.get("hook_event_name"), ev.get("session_id", "unknown")
     if name == "SessionStart":
         ensure_server()
+        if not os.path.exists(os.path.join(DIR, "map", "graph.json")):  # every project gets a map (folders only) for free
+            subprocess.Popen([sys.executable, os.path.abspath(__file__), "map", "update", "--quiet"], cwd=ROOT,
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
     with locked() as (d, b):
         had_needs = bool(d["sessions"].get(sid, {}).get("needs"))
         s = apply(d, ev)

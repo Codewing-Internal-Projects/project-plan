@@ -11,7 +11,7 @@ Everything lives in this skill folder (the base directory shown when the skill l
 - `scripts/setup.py` installs into or removes the board from a project.
 - `scripts/hook.py` is the hook, the CLI Claude uses (plans, proposals, listener, phone, snapshot) and the server.
 - `scripts/hub.html` is the all-projects hub (`hook.py hub`, port 4320).
-- `scripts/codemap.py` is the project map: the scanner, health check, lookups and Ask (`hook.py map …`).
+- `scripts/codemap.py` is the project map's scanner, health check and lookups; `scripts/mapapp.py` its AI and sharing side (Ask, flows, blueprints, export, notes); `scripts/map.html` the map page (`hook.py map …`).
 - `scripts/index.html` is the page. Each project gets a copy that refreshes on session start, so editing it here updates every project.
 
 ## Install (default)
@@ -107,18 +107,16 @@ Cost is an estimate at Claude API list prices (from the transcript's token usage
 
 ## The project map
 
-The **Map** view draws the project as parts (screens, server, data, outside services, tools) with their files, endpoints and the connections between them. It is built in two layers:
-- **Scan (free, no tokens):** `$H map update` lists files with git and extracts imports, PHP class references, endpoints (WordPress `register_rest_route` and `wp_ajax_*`, Express/Fastify-style routers, Next.js route files, Flask/FastAPI, Django `urls.py`, Laravel, Go), requests (`fetch`, `apiFetch`, axios, `wp_remote_*`, `requests`/`httpx`, plus path strings and shared path constants) and a fingerprint per file, then matches requests to endpoints. It runs by itself, detached, whenever a session stops (at most once a minute), once the project has a map.
-- **Description (Claude, on request):** when the user asks to make or update the map, run `$H map worksheet` and follow it. It prints the rules and schema for `.progress/map/architecture.json` (parts with globs, links the scan can't see, one line per file and endpoint, developer style by default) plus a digest of what's new or changed. Write the file, then `$H map described`, which validates it, remembers what was described and rebuilds. `map worksheet PART` covers one part; `--all` everything.
-- Without `architecture.json`, the map shows one part per folder.
+The board's **Map** tab shows `map.html` (also full-window at `/map.html`): the project as parts (screens, server, data, outside services, tools) with files, endpoints, screens and connections, drawn from `.progress/map/graph.json`. Format and server API: `docs/map-format.md` in the plugin repo.
 
-Lookups for any session: `$H map overview`, `$H map find WORDS`, `$H map show PART|FILE|ENDPOINT`. Use them before searching the code from scratch.
-
-On the board: click a part for its summary, recent work (requests and running sessions that touched its files today or in 7 days), health issues, uses / used by, endpoints (public ones tagged, callers counted) and files (click one for its definitions, imports and callers). Parts changed by today's requests are green. Search finds parts, files, classes and endpoints. **Rescan** is free. Live and History cards show which parts a request touched.
-
-- **Health:** pattern checks for secrets in code, committed `.env` files, REST routes without `permission_callback`, public endpoints that change data (with or without a nonce check), SQL built from variables (table-name interpolation excepted), echoed or unserialized request input, `eval`, unescaped HTML, Stripe webhooks without signature checks, open CORS, files over 1,200 lines and hard-coded localhost URLs. **Ask Claude to fix** sends a board request with the locations; **Dismiss** hides an issue (kept in `.progress/map/dismissed.json`). A check, not an audit.
-- **Ask:** a question typed on the board runs `claude -p` in the project with Read, Grep and Glob only, the map overview in the prompt, and returns an answer with `path:line` citations and the parts involved, which light up. It costs tokens (the cost is shown); answers are kept in `.progress/map/asks.json`. The helper run sets `PROJECT_PLAN_OFF=1`, so it doesn't appear as a session.
-- **Blueprints:** a proposal can carry `"map": {"parts": [{id, name, kind, summary, status: new|changed|existing|removed, files}], "links": [{from, to, label}]}`; the proposal card draws it, with new parts dashed blue and changed ones dashed amber. Reuse map part ids for existing parts.
+- **Scan (free, no tokens):** `$H map update`. It reads every file git knows about (several repos in one folder too) and extracts imports, PHP class references, endpoints with who may call them, requests matched to endpoints, screens, unused files and the health check. It runs at the first session of every project (folders-only map) and, detached, whenever a session stops.
+- **Describe (Claude, only on request):** when the user asks to make or update the map, run `$H map worksheet` (or `map worksheet PART`, `--all`) and follow it: write `.progress/map/architecture.json` (parts with globs, links the scan can't see with a kind, one line per file and endpoint, 2–4 `flows`, a short `tour`), then `$H map described`. Developer style by default.
+- **Lookups for any session:** `$H map overview`, `$H map find WORDS`, `$H map show PART|FILE|ENDPOINT|SCREEN`, `$H map path A B`. Use them before searching the code from scratch.
+- **Ask / flows:** the board runs `claude -p` (Read, Grep, Glob only; Codex `exec --sandbox read-only` if Claude Code isn't installed) for answers and for flows requested in plain words. From the terminal: `$H map ask "…"`, `$H map flow "…"`. They cost tokens; the board shows the cost. The helper run sets `PROJECT_PLAN_OFF=1` so it isn't a session.
+- **Blueprints:** to plan an app from a PRD or spec, run `$H map blueprint <PRD>` and follow it (writes `.progress/map/plan.json`), then `$H map planned`. The map shows dashed parts, a design review, **Build this with Claude**, and **Change** (reshape the plan from the board, with Undo). Once code exists, `$H map update --from-code`.
+- **Export:** `$H map export [file]` or **Export** on the map: one HTML file, no code and no folder paths; flows and notes in, health and recent work only if chosen.
+- **Board requests from the map:** **Fix with Claude**, **Build this with Claude** and **Update the map** arrive through the listener like any board request: do the work as asked.
+- **Proposals:** a proposal can carry `"map": {"parts": [...], "links": [...]}` (status new/changed/existing/removed) and the board draws it as a small blueprint.
 
 ## All projects: the hub
 

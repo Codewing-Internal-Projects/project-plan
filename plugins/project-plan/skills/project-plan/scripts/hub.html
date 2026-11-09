@@ -117,6 +117,7 @@ function card(p) {
       ${p.spend ? `<span class="tag">${money(p.spend)} today</span>` : ""}
       <span class="tag">updated ${ago(p.updated)}</span>
     </div>
+    ${p.map ? `<div class="chips"><span class="n">Map</span>${p.map.high ? `<span class="tag bad">${p.map.high} high</span>` : ""}${p.map.medium ? `<span class="tag warn">${p.map.medium} medium</span>` : ""}${!p.map.high && !p.map.medium ? `<span class="tag ok">health ok</span>` : ""}<span class="tag">${p.map.blueprint ? "blueprint · " : ""}${p.map.auto ? "folders only" : p.map.parts + " parts"}</span>${p.map.stale ? `<span class="tag warn">${p.map.stale} to update</span>` : ""}${p.up ? `<a href="${esc(board(p, "#map"))}" target="_blank" rel="noopener">Open map ↗</a>` : ""}</div>` : ""}
     ${p.sessions.length ? `<ul class="sess">${p.sessions.map(s => `<li><i class="dot ${esc(s.status)}"></i><span><a class="t" href="${esc(board(p, "#" + encodeURIComponent(s.id)))}" target="_blank" rel="noopener">${esc(s.title)}</a><span class="now">${esc(s.now)}</span></span><span class="n">${s.total ? `${s.done}/${s.total}` : ""}</span></li>`).join("")}</ul>` : ""}
   </article>`;
 }

@@ -4,7 +4,7 @@
 
 ### See what Claude Code is doing, answer it from your browser, and keep a record of everything it did.
 
-![Version 1.1.0](https://img.shields.io/badge/version-1.1.0-2f6fed) ![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-1c1c1a) ![Runs locally](https://img.shields.io/badge/runs-locally-1b8a4b) ![No dependencies](https://img.shields.io/badge/dependencies-none-7151d0)
+![Version 1.2.0](https://img.shields.io/badge/version-1.2.0-2f6fed) ![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-1c1c1a) ![Runs locally](https://img.shields.io/badge/runs-locally-1b8a4b) ![No dependencies](https://img.shields.io/badge/dependencies-none-7151d0)
 
 <img src="docs/images/live.png" alt="The project board: sessions on the left, the selected session's plan, progress and activity on the right" width="100%">
 
@@ -39,7 +39,7 @@ When you ask Claude Code to do something, it works in your terminal. You can't e
 | 📊 | **Standups and reports for free** | **Copy as standup** (Today) and **Copy as Markdown** (Week) produce a summary you can paste. |
 | 🧪 | **Catch "done" that isn't** | The board warns when tests passed *before* the last edit, and flags tests that pass and fail at random (*flaky*). |
 | 💸 | **Know the cost** | Estimated spend per session and per day, with an optional daily budget. |
-| 🗺️ | **A map of your code** | See the project as parts (screens, server, data, outside services), what each request changed, a health check for common mistakes, and answers to questions about the code. |
+| 🗺️ | **A live map of your code** | Every project gets an interactive map: parts, screens, endpoints and how they connect, what each request changed, what's being edited right now, a health check, answers to questions, guided flows and blueprints for apps you haven't built yet. |
 | 🗂️ | **All projects in one tab** | A hub page lists every project with a board, and you can answer all of them from there. |
 | 🔒 | **Private by default** | It runs on your computer. Nothing is uploaded, and there's nothing to install from npm or pip. |
 
@@ -227,24 +227,52 @@ Every request you gave Claude, grouped by day, with the tasks done, files change
 
 ### 8. Map: how the project fits together
 
-<img src="docs/images/map.png" alt="The Map view: parts of the app in columns with connections, the selected part's details on the right" width="100%">
+<img src="docs/images/map.png" alt="The Map tab: the app's parts in columns (screens, server, data, outside services) with their connections, and the selected part's details on the right" width="100%">
 
-The **Map** tab shows your project as a handful of **parts**, such as screens, server code, data and outside services like Stripe, with lines for how they connect. Click a part to see its files, endpoints, what it uses and what uses it, and **which requests changed it**. Parts changed today are green, and Live and History cards show which parts each request touched.
+The **Map** tab shows your project as a handful of **parts** (screens, server code, data and outside services like Stripe) with lines for how they connect. Every project gets a map automatically: a free scan draws one from your folders the first time Claude starts there. Say *"make the project map"* and Claude names and describes the real parts once. After that the map **rescans by itself** whenever a session stops, and tells you when parts have changed enough to need a fresh description.
 
-**How to get one:** say *"make the project map"* to Claude (or press the button on the Map tab). A free scan reads the code; Claude then names and describes the parts once. After that the map **rescans by itself** whenever a session stops. When parts have new or changed files, a note offers to have Claude update the descriptions; that's the only step that costs tokens.
+**Getting around:** drag to pan, scroll or pinch to zoom, **F** to fit. **Double-click** a part to go inside it, then into a folder, then a file. Each level shows **Used by** on the left, what's **inside** in the middle and what it **uses** on the right. **Backspace** goes back up. Right-click anything for more (ask about it, copy its path, open it in your editor), and press **?** for all the shortcuts.
 
 <table>
 <tr>
-<td width="50%"><img src="docs/images/map-ask.png" alt="An answer to a question about the code, with the parts involved highlighted"></td>
-<td width="50%"><img src="docs/images/map-health.png" alt="The health check"></td>
+<td width="50%"><img src="docs/images/map-part.png" alt="Inside a part: what uses it, its files, and what it relies on"></td>
+<td width="50%"><img src="docs/images/map-screen.png" alt="A screen and everything behind it"></td>
 </tr>
 <tr>
-<td><b>Ask about the code:</b> type a question like <i>"what happens after a customer pays?"</i>. Claude reads the code (read-only) and answers with file and line references, and the parts involved light up. Each answer shows what it cost.</td>
-<td><b>Health check:</b> flags common mistakes, such as passwords or keys in the code, endpoints anyone can call, database queries built from raw input, or payment webhooks that aren't verified. <b>Ask Claude to fix</b> sends it the details; <b>Dismiss</b> hides a false alarm.</td>
+<td><b>Inside a part:</b> its files (and their endpoints), what calls in, what it relies on. The panel lists the requests that changed it, health issues, and <b>Impact</b>: everything that could break if you change it.</td>
+<td><b>Screens:</b> pick any page of your app and see everything behind it: its components, the endpoints it calls, the server code that answers, and the data and services they touch. WordPress admin pages, shortcodes and blocks count as screens too.</td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/images/map-ask.png" alt="An answer board: the pieces involved, numbered in order, with the written answer"></td>
+<td width="50%"><img src="docs/images/map-flow.png" alt="A flow playing step by step"></td>
+</tr>
+<tr>
+<td><b>Ask about the code:</b> type a question like <i>"what happens after a customer pays?"</i>. Claude reads the code (it can't change anything) and answers with an <b>answer board</b>: just the pieces involved, numbered in order, each with a note, plus file-and-line references and follow-up questions. Each answer shows what it cost.</td>
+<td><b>Flows and the tour:</b> step-by-step walkthroughs of the main jobs, like buying something. Press <b>Request a new flow</b> and describe one in plain words; Claude traces it through the code and saves it. <b>Start here</b> replays a short tour of the app.</td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/images/map-health.png" alt="The health check"></td>
+<td width="50%"><img src="docs/images/map-blueprint.png" alt="A blueprint with its design review"></td>
+</tr>
+<tr>
+<td><b>Health check:</b> flags common mistakes, such as keys in the code or sent to the browser, database tables without access rules, endpoints anyone can call, unverified payment webhooks, SQL built from raw input and unused files. <b>Show on map</b> highlights them; <b>Fix with Claude</b> hands the details to a Claude session; <b>Not a problem</b> hides a false alarm (with a reason, if you like).</td>
+<td><b>Blueprints:</b> plan an app before it exists. Give Claude a PRD or spec (<i>"make a blueprint from docs/prd.md"</i>) and it draws the parts, files, endpoints and screens it would need. A <b>design review</b> lists open questions and risky decisions; <b>Change</b> reshapes the plan ("also plan out refunds") with <b>Undo</b>; every part has <b>Build this with Claude</b>.</td>
 </tr>
 </table>
 
-When Claude proposes something that adds parts to the app, the proposal can include a **blueprint**: a small map where new parts are dashed blue and changed ones dashed amber.
+**Live, while you work:** parts changed by today's requests are **green** (follow the green down to the exact files), parts a running session is editing right now show an **editing now** marker, and Live and History cards list the parts each request touched. Click one to jump to it on the map.
+
+**Share it:** **Export** saves the map as one HTML file anyone can open, with nothing to install. You choose whether flows, notes, recent work and health go in; it never includes your code or your folder paths. You can also pin **notes** to files, and the hub shows each project's map health.
+
+<details>
+<summary>What the scanner understands</summary>
+
+- **Languages:** JavaScript/TypeScript (incl. Vue, Svelte, Astro), PHP, Python, Go, Rust, Java/Kotlin, Ruby and more for basic structure.
+- **Endpoints:** WordPress (`register_rest_route`, `wp_ajax_*`, `admin_post_*`), Express/Fastify/Koa/Hono (with router prefixes), Next.js, SvelteKit, Remix, Nuxt, Astro, NestJS, Firebase Functions, Flask, FastAPI, Django, Laravel, Spring, Actix, Axum, Go routers, and route tables.
+- **Screens:** Next.js, React Router, Vue Router, SvelteKit, Remix, Nuxt, Astro, Expo Router, Angular, TanStack Router, and WordPress admin pages, shortcodes and blocks.
+- **Connections:** imports, PHP class references, and each front-end request matched to the endpoint that answers it, even across several repos in one folder.
+- It's pattern matching, not a compiler: it finds most connections, not all. Ask Claude to add a missing one to the map.
+</details>
 
 ### 9. All your projects in one tab
 
@@ -314,6 +342,8 @@ Handy things to say to Claude:
 | **Check** | A test, lint or build command, such as `npm test`. |
 | **Flaky** | A check that failed and then passed with no code change in between, so it can't be trusted. |
 | **Map / part** | The Map tab's picture of your code. A part is one area of the app, like "Checkout" or "Stripe". |
+| **Flow** | A step-by-step walkthrough of one job through the code, like "buying something". |
+| **Blueprint** | A map of an app that isn't built yet, planned from a PRD or spec. |
 | **Health check** | Automatic checks on the map for common security and quality mistakes. |
 | **Context %** | How full Claude's working memory is. When it's full, older details get summarised. |
 
@@ -427,8 +457,11 @@ plugins/project-plan/
     setup.py                             set up or remove a board in a project; the rules text
     index.html                           the board page (copied into each project's .progress/)
     hub.html                             the all-projects hub page
-    codemap.py                           the project map: scanner, build, health check, lookups, Ask
-tests/test_codemap.py                    self-check for the map scanner (python3 tests/test_codemap.py)
+    codemap.py                           the project map: scanner, build, health check, lookups
+    mapapp.py                            the map's AI and sharing side: Ask, flows, blueprints, export, notes
+    map.html                             the interactive map page (shown in the board's Map tab)
+tests/test_codemap.py, test_mapapp.py   self-checks for the map (python3 tests/test_codemap.py && python3 tests/test_mapapp.py)
+docs/map-format.md                       the map's data format and server API
 docs/images/                             README screenshots
 ```
 
@@ -436,7 +469,7 @@ docs/images/                             README screenshots
 
 ```bash
 claude plugin validate .
-python3 tests/test_codemap.py                    # the map scanner and health rules
+python3 tests/test_codemap.py && python3 tests/test_mapapp.py   # the map
 claude --plugin-dir ./plugins/project-plan       # loads your working copy for this session only
 ```
 

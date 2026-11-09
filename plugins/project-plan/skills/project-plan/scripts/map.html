@@ -1,0 +1,1676 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Project map</title>
+<link rel="icon" href="data:,">
+<script>
+try { const t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}
+if (new URLSearchParams(location.search).has("embed")) document.documentElement.classList.add("embed");
+</script>
+<style>
+  /* Same tokens as the board (index.html): light-dark() follows color-scheme, which the theme switcher sets. */
+  :root { color-scheme:light dark;
+    --bg:light-dark(#f5f5f2, #111110); --card:light-dark(#fff, #1b1b19); --sunk:light-dark(#f0f0eb, #242421); --fg:light-dark(#1c1c1a, #ededea); --muted:light-dark(#66665f, #9d9d96); --line:light-dark(#e3e3dd, #2d2d2a);
+    --accent:light-dark(#2f6fed, #7aa5ff); --on-accent:light-dark(#fff, #0d1a33); --accent-bg:light-dark(#eaf0fe, #1c2640);
+    --done:light-dark(#1b8a4b, #3ec27a); --done-bg:light-dark(#e6f5ec, #15281d); --warn:light-dark(#a86a06, #e0a33a); --warn-bg:light-dark(#fdf3e1, #2d2311);
+    --bad:light-dark(#d03f3f, #ef6b6b); --bad-bg:light-dark(#fdecec, #331a1a); --agent:light-dark(#7151d0, #a98bff); --agent-bg:light-dark(#efeafc, #241c3c);
+    --on-bad:light-dark(#fff, #2a0d0d); --shadow:0 1px 2px light-dark(rgb(20 20 10 / .06), transparent); --head:light-dark(rgb(245 245 242 / .85), rgb(17 17 16 / .85));
+    --edge:light-dark(#b9b9b0, #4a4a45); --edge-hot:var(--accent); --dot:light-dark(#dcdcd5, #262623);
+    --float:0 6px 24px light-dark(rgb(20 20 10 / .12), rgb(0 0 0 / .5)), 0 1px 3px light-dark(rgb(20 20 10 / .08), rgb(0 0 0 / .4));
+    --pw:380px; }
+  :root[data-theme="light"] { color-scheme:light; }
+  :root[data-theme="dark"] { color-scheme:dark; }
+  * { box-sizing:border-box; }
+  html, body { height:100%; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 system-ui, -apple-system, sans-serif; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; overflow:hidden; }
+  button, input, textarea, select { font:inherit; color:inherit; }
+  [hidden] { display:none !important; }
+  .mono { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px; }
+  .n { color:var(--muted); font-size:13px; }
+  svg.i { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+
+  /* header */
+  header { flex:none; padding:10px 16px; background:var(--head); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:1px solid var(--line); display:grid; gap:8px; z-index:20; }
+  .brandrow { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+  .embed .brandrow { display:none; }
+  .brand { display:flex; gap:10px; align-items:center; min-width:0; }
+  .logo { width:30px; height:30px; border-radius:9px; background:var(--fg); color:var(--bg); display:grid; place-items:center; font-weight:700; font-size:15px; flex:none; }
+  h1 { font-size:17px; margin:0; letter-spacing:-.01em; line-height:1.2; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .toolbar { display:flex; align-items:center; gap:8px 12px; flex-wrap:wrap; min-width:0; }
+  .crumbs { display:flex; align-items:center; gap:2px; min-width:0; flex:1 1 220px; overflow:hidden; }
+  .crumbs button { border:0; background:none; padding:4px 6px; border-radius:7px; cursor:pointer; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:220px; font-size:13px; }
+  .crumbs button:hover { background:var(--sunk); color:var(--fg); }
+  .crumbs button[aria-current="page"] { color:var(--fg); font-weight:600; }
+  .crumbs .sep { color:var(--line); flex:none; }
+  .crumbs .back { flex:none; display:grid; place-items:center; width:30px; height:30px; padding:0; border:1px solid var(--line); background:var(--card); color:var(--fg); margin-right:6px; }
+  .tools { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .btn { border:1px solid var(--line); background:var(--card); border-radius:10px; padding:6px 11px; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; transition:background .15s, border-color .15s; text-decoration:none; color:inherit; }
+  .btn:disabled { opacity:.6; cursor:default; }
+  .btn:not(:disabled):hover { border-color:var(--muted); }
+  .btn[aria-pressed="true"], .btn[aria-expanded="true"] { border-color:var(--fg); }
+  .btn.primary { background:var(--accent); border-color:var(--accent); color:var(--on-accent); font-weight:600; }
+  .btn.primary:not(:disabled):hover { filter:brightness(1.08); border-color:var(--accent); }
+  .btn.ghost { border-color:transparent; background:none; color:var(--muted); }
+  .btn.ghost:hover { color:var(--fg); }
+  .btn.sm { padding:3px 9px; font-size:12px; border-radius:8px; }
+  .btn.danger { color:var(--bad); }
+  .btn .tag { margin-left:2px; }
+  .seg { display:inline-flex; border:1px solid var(--line); border-radius:10px; overflow:hidden; background:var(--card); max-width:100%; }
+  .seg button { border:0; background:none; color:var(--muted); font-size:13px; padding:5px 12px; cursor:pointer; white-space:nowrap; }
+  .seg button[aria-pressed="true"] { background:var(--fg); color:var(--bg); }
+  .theme button { padding:6px 9px; font-size:14px; line-height:1; }
+  .tag { font-size:11px; border-radius:6px; padding:0 6px; white-space:nowrap; line-height:18px; display:inline-block; background:var(--sunk); color:var(--muted); }
+  .tag.ok { color:var(--done); background:var(--done-bg); }
+  .tag.bad { color:var(--bad); background:var(--bad-bg); }
+  .tag.warn { color:var(--warn); background:var(--warn-bg); }
+  .tag.info { color:var(--accent); background:var(--accent-bg); }
+  .tag.agent { color:var(--agent); background:var(--agent-bg); }
+  .pill { display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:1px 9px; border-radius:99px; border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+  .pill.bp { color:var(--accent); border-color:var(--accent); border-style:dashed; }
+  @media (max-width:900px) { .btn .lbl { display:none; } .btn { padding:6px 8px; } .crumbs button { max-width:130px; } }
+
+  /* canvas */
+  main { flex:1; display:flex; min-height:0; position:relative; }
+  #vp { flex:1; position:relative; overflow:hidden; touch-action:none; cursor:grab; outline:none; user-select:none; -webkit-user-select:none;
+    background-color:var(--bg); background-image:radial-gradient(var(--dot) 1px, transparent 1.2px); background-size:22px 22px; }
+  #vp.panning { cursor:grabbing; }
+  #world { position:absolute; left:0; top:0; transform-origin:0 0; will-change:transform; transition:opacity .18s ease; }
+  #world.fade { opacity:0; }
+  #edges { position:absolute; left:0; top:0; width:1px; height:1px; overflow:visible; pointer-events:none; }
+  #edges .e { pointer-events:auto; cursor:pointer; }
+  #edges .hit { stroke:transparent; stroke-width:14; fill:none; }
+  #edges .ln { stroke:var(--edge); fill:none; transition:stroke .15s, opacity .15s; }
+  #edges .e.k-request .ln { stroke:light-dark(#9db6ec, #3d5590); }
+  #edges .e.async .ln { stroke-dasharray:6 5; }
+  #edges .e.ext .ln { stroke:light-dark(#c3b5ee, #4f4278); }
+  #edges .e:hover .ln, #edges .e.hot .ln { stroke:var(--edge-hot); opacity:1; }
+  .focus #edges .e:not(.hot) .ln { opacity:.25; }
+  marker path { fill:var(--edge); } marker.hot path { fill:var(--edge-hot); }
+  .colhead { position:absolute; font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); font-weight:600; white-space:nowrap; pointer-events:none; }
+  .colhead small { display:block; text-transform:none; letter-spacing:0; font-weight:400; font-size:12px; }
+  .far .colhead { font-size:22px; }
+  .frame { position:absolute; border:1px solid var(--line); border-radius:20px; background:light-dark(rgb(255 255 255 / .45), rgb(255 255 255 / .02)); pointer-events:none; }
+  .frame .empty { position:absolute; inset:0; display:grid; place-items:center; text-align:center; padding:20px; color:var(--muted); font-size:13px; }
+
+  .card { position:absolute; background:var(--card); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow); padding:10px 13px; display:flex; flex-direction:column; gap:2px; cursor:pointer; overflow:hidden; outline:none; transition:box-shadow .15s, border-color .15s, opacity .2s; }
+  .card:hover { border-color:var(--muted); }
+  .card:focus-visible { box-shadow:0 0 0 3px var(--accent); }
+  .card .kd { font-size:10.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); display:flex; align-items:center; gap:6px; white-space:nowrap; overflow:hidden; font-weight:600; }
+  .card .kd i { width:8px; height:8px; border-radius:3px; background:var(--kc, var(--muted)); flex:none; }
+  .card .tt { font-weight:600; font-size:14.5px; line-height:1.3; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; letter-spacing:-.005em; }
+  .card .ds { color:var(--muted); font-size:12.5px; line-height:1.38; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow-wrap:anywhere; }
+  .card .ft { margin-top:auto; display:flex; gap:5px; align-items:center; font-size:11.5px; color:var(--muted); white-space:nowrap; overflow:hidden; padding-top:4px; }
+  .card .ft .cnt { overflow:hidden; text-overflow:ellipsis; flex:0 1 auto; min-width:0; }
+  .card .ft .tag { flex:none; }
+  .card .defs { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:11px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .card .em { display:flex; gap:6px; align-items:baseline; min-width:0; }
+  .card .em { margin-bottom:2px; }
+  .far .card .em .p { font-size:20px; -webkit-line-clamp:2; }
+  .card .em .p { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:13px; flex:1; min-width:0; }
+  .meth { font:700 10.5px/18px ui-monospace, SFMono-Regular, Menlo, monospace; padding:0 5px; border-radius:5px; flex:none; background:var(--sunk); color:var(--muted); }
+  .meth.GET { color:var(--done); background:var(--done-bg); } .meth.POST { color:var(--accent); background:var(--accent-bg); }
+  .meth.PUT, .meth.PATCH { color:var(--warn); background:var(--warn-bg); } .meth.DELETE { color:var(--bad); background:var(--bad-bg); }
+  .card .note { margin-top:6px; background:var(--warn-bg); border-radius:8px; padding:5px 8px; font-size:12px; line-height:1.35; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow-wrap:anywhere; }
+  .card .asked { font-size:12.5px; line-height:1.35; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow-wrap:anywhere; margin-top:4px; }
+  .card .asked b { color:var(--done); font-weight:600; }
+  .card .tasks { font-size:11.5px; color:var(--muted); overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .card.k-screen { --kc:var(--accent); } .card.k-server, .card.k-other { --kc:var(--muted); } .card.k-data { --kc:var(--warn); } .card.k-service { --kc:var(--agent); } .card.k-tool { --kc:var(--line); }
+  .card.t-part, .card.t-group { box-shadow:inset 4px 0 0 var(--kc, var(--line)), var(--shadow); padding-left:16px; }
+  .card.ext { background:var(--sunk); border-radius:22px; }
+  .card.bp { border-style:dashed; border-width:1.5px; border-color:light-dark(#9aa9c9, #4b5a7c); background:light-dark(#fbfcff, #181b22); }
+  .card.chg { box-shadow:0 0 0 2px var(--done), var(--shadow); }
+  .card.t-part.chg, .card.t-group.chg { box-shadow:inset 4px 0 0 var(--kc, var(--line)), 0 0 0 2px var(--done), var(--shadow); }
+  .card.mk { border-color:var(--warn); box-shadow:0 0 0 2px var(--warn), var(--shadow); }
+  .card.sel, .card.t-part.sel, .card.t-group.sel { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-bg), 0 0 0 1px var(--accent), var(--float); }
+  .card.dim { opacity:.35; }
+  .card.beat { animation:beat 1.2s ease-in-out 2; }
+  @keyframes beat { 50% { box-shadow:0 0 0 8px var(--accent-bg), 0 0 0 2px var(--accent); } }
+  .card.pl { flex-direction:row; align-items:center; gap:8px; border-radius:99px; padding:6px 14px; }
+  .card.pl .tt { font-size:13px; font-weight:500; flex:1; min-width:0; }
+  .card.pl .kd { flex:none; } .card.pl .kd span { display:none; }
+  .card.pl .ft { margin:0; padding:0; flex:none; }
+  .card.pl.more { cursor:default; background:none; border-style:dashed; color:var(--muted); }
+  .card .live { position:absolute; top:9px; right:10px; width:9px; height:9px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 0 var(--accent); animation:live 1.6s ease-out infinite; }
+  @keyframes live { 0% { box-shadow:0 0 0 0 color-mix(in srgb, var(--accent) 60%, transparent); } 100% { box-shadow:0 0 0 9px transparent; } }
+  .card.pl .live { position:static; flex:none; }
+  .card .ndot { width:8px; height:8px; border-radius:50%; background:var(--warn); flex:none; }
+  .card .step { position:absolute; top:8px; right:10px; min-width:22px; height:22px; padding:0 6px; border-radius:99px; background:var(--accent); color:var(--on-accent); font-size:12px; font-weight:700; display:grid; place-items:center; }
+  .card.has-live .tt, .card.has-step .tt { padding-right:22px; }
+  .far .card .ds, .far .card .ft .cnt, .far .card .defs, .far .card .kd span, .far .card .tasks { display:none; }
+  .far .card .tt { font-size:24px; line-height:1.18; white-space:normal; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow-wrap:anywhere; }
+  .far .card .kd { height:10px; }
+  .far .card.pl .tt { font-size:20px; -webkit-line-clamp:1; }
+  .vfar .card .tt { font-size:32px; }
+  .vfar .card .note, .vfar .card .asked { display:none; }
+
+  .zoombar { position:absolute; left:14px; bottom:14px; display:flex; flex-direction:column; background:var(--card); border:1px solid var(--line); border-radius:12px; box-shadow:var(--float); overflow:hidden; z-index:4; }
+  .zoombar button { border:0; background:none; width:36px; height:34px; display:grid; place-items:center; cursor:pointer; color:var(--fg); }
+  .zoombar button + button { border-top:1px solid var(--line); }
+  .zoombar button:hover { background:var(--sunk); }
+  .banner { position:absolute; left:50%; top:12px; transform:translateX(-50%); z-index:4; background:var(--warn-bg); border:1px solid var(--warn); border-radius:12px; padding:6px 8px 6px 14px; font-size:13px; display:flex; gap:10px; align-items:center; max-width:calc(100% - 32px); box-shadow:var(--float); }
+  .banner .btn { padding:3px 9px; }
+
+  /* ask bar + flow bar */
+  .dock { position:absolute; left:50%; bottom:14px; transform:translateX(-50%); width:min(720px, calc(100% - 120px)); z-index:5; }
+  @media (max-width:700px) { .dock { width:calc(100% - 24px); left:12px; transform:none; bottom:10px; } .zoombar { bottom:auto; top:12px; left:auto; right:12px; flex-direction:row; } .zoombar button + button { border-top:0; border-left:1px solid var(--line); } }
+  #askbar { background:var(--card); border:1px solid var(--line); border-radius:16px; box-shadow:var(--float); padding:6px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  #askbar:focus-within { border-color:var(--accent); }
+  #askbar input { flex:1 1 200px; min-width:0; border:0; background:none; outline:none; padding:6px 8px; font-size:14px; }
+  #askbar .seg button { padding:4px 10px; font-size:12px; }
+  #askbar .send { width:34px; height:34px; padding:0; justify-content:center; border-radius:11px; }
+  .chips { display:flex; flex-wrap:wrap; gap:4px; flex-basis:100%; padding:0 2px; }
+  .chips:empty { display:none; }
+  .chip { display:inline-flex; align-items:center; gap:4px; font-size:12px; border-radius:99px; background:var(--accent-bg); color:var(--accent); padding:1px 4px 1px 10px; border:0; max-width:240px; }
+  .chip span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .chip button { border:0; background:none; color:inherit; cursor:pointer; width:18px; height:18px; display:grid; place-items:center; border-radius:50%; padding:0; }
+  .chip button:hover { background:var(--card); }
+  .busy { flex-basis:100%; display:flex; gap:10px; align-items:center; padding:4px 8px; font-size:13px; }
+  .spin { width:14px; height:14px; border-radius:50%; border:2px solid var(--line); border-top-color:var(--accent); animation:spin .8s linear infinite; flex:none; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .err { color:var(--bad); font-size:13px; flex-basis:100%; padding:2px 8px; }
+  .past { position:absolute; left:0; right:0; bottom:calc(100% + 6px); background:var(--card); border:1px solid var(--line); border-radius:14px; box-shadow:var(--float); padding:6px; max-height:260px; overflow:auto; }
+  .past h4 { margin:4px 8px 4px; font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); font-weight:600; }
+  .past button { display:flex; width:100%; gap:10px; text-align:left; border:0; background:none; padding:6px 8px; border-radius:8px; cursor:pointer; }
+  .past button:hover, .past button:focus-visible { background:var(--sunk); outline:none; }
+  .past button span { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #flowbar { background:var(--card); border:1px solid var(--accent); border-radius:16px; box-shadow:var(--float); padding:10px 12px; display:grid; grid-template-columns:1fr auto; gap:4px 10px; align-items:center; }
+  #flowbar .fn { font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--accent); font-weight:600; }
+  #flowbar p { margin:0; grid-column:1 / -1; overflow-wrap:anywhere; max-height:30vh; overflow:auto; }
+  #flowbar .ctl { display:flex; gap:4px; align-items:center; grid-row:1; grid-column:2; }
+  .dots { display:flex; gap:4px; grid-column:1 / -1; }
+  .dots i { flex:1; height:3px; border-radius:2px; background:var(--line); }
+  .dots i.on { background:var(--accent); }
+
+  /* side panel */
+  #panel { width:var(--pw); flex:none; background:var(--card); border-left:1px solid var(--line); position:relative; display:flex; flex-direction:column; min-width:0; }
+  #panel.closed { display:none; }
+  #grip { position:absolute; left:-4px; top:0; bottom:0; width:8px; cursor:col-resize; z-index:3; }
+  #grip:hover, #grip.on { background:linear-gradient(90deg, transparent 3px, var(--accent) 3px, var(--accent) 5px, transparent 5px); }
+  #pbody { overflow:auto; padding:16px 18px 40px; flex:1; overscroll-behavior:contain; }
+  .sheetbar { display:none; }
+  @media (max-width:700px) {
+    #panel { position:absolute; left:0; right:0; bottom:0; width:auto; max-height:62%; border-left:0; border-top:1px solid var(--line); border-radius:18px 18px 0 0; box-shadow:var(--float); z-index:8; }
+    #grip { display:none; }
+    .sheetbar { display:block; height:18px; flex:none; position:relative; }
+    .sheetbar::after { content:""; position:absolute; left:50%; top:7px; width:40px; height:4px; border-radius:2px; background:var(--line); transform:translateX(-50%); }
+    .crumbs { flex-basis:100%; order:2; } .tools { order:1; flex-wrap:nowrap; overflow-x:auto; max-width:100%; scrollbar-width:none; }
+    header { padding:8px 12px; gap:6px; } .tools .btn { padding:5px 7px; } h1 { font-size:15px; } .logo { width:26px; height:26px; }
+  }
+  .ph { display:flex; gap:8px; align-items:flex-start; }
+  .ph h2 { font-size:18px; margin:0; flex:1; min-width:0; overflow-wrap:anywhere; letter-spacing:-.01em; line-height:1.3; }
+  .ph .x { flex:none; width:30px; height:30px; padding:0; justify-content:center; }
+  .sub { color:var(--muted); font-size:12.5px; overflow-wrap:anywhere; margin-top:2px; }
+  .lead { margin:10px 0 0; overflow-wrap:anywhere; }
+  .acts { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
+  .acts .msg { font-size:12.5px; color:var(--done); align-self:center; }
+  h3 { font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin:20px 0 6px; font-weight:600; display:flex; gap:6px; align-items:center; }
+  h3 .c { font-weight:400; letter-spacing:0; }
+  ul.ls { list-style:none; margin:0; padding:0; display:grid; gap:2px; }
+  ul.ls li { min-width:0; }
+  .lk { border:0; background:none; padding:3px 6px; margin:0 -6px; border-radius:7px; cursor:pointer; text-align:left; display:flex; gap:8px; align-items:baseline; width:calc(100% + 12px); min-width:0; }
+  .lk:hover { background:var(--sunk); }
+  .lk .t { flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .lk .r { color:var(--muted); font-size:12px; flex:none; }
+  .mdesc { color:var(--muted); font-size:12.5px; overflow-wrap:anywhere; }
+  .kv { display:grid; grid-template-columns:auto 1fr; gap:3px 12px; font-size:13px; margin-top:10px; }
+  .kv dt { color:var(--muted); } .kv dd { margin:0; overflow-wrap:anywhere; }
+  .box { background:var(--sunk); border-radius:12px; padding:10px 12px; margin-top:8px; }
+  .box.warn { background:var(--warn-bg); } .box.ok { background:var(--done-bg); } .box.info { background:var(--accent-bg); }
+  .issue { border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-top:8px; }
+  .issue.high { border-left:3px solid var(--bad); } .issue.medium { border-left:3px solid var(--warn); }
+  .issue.off { opacity:.7; }
+  .issue b { font-weight:600; }
+  .issue p { margin:4px 0; font-size:13px; color:var(--muted); }
+  .issue .locs { font-size:12px; margin:4px 0; display:grid; gap:1px; }
+  .issue .locs button { border:0; background:none; padding:1px 0; cursor:pointer; text-align:left; color:inherit; }
+  .issue .locs button:hover .mono { text-decoration:underline; }
+  .issue .why { display:flex; gap:6px; margin-top:6px; }
+  .issue .why input { flex:1; min-width:0; border:1px solid var(--line); border-radius:8px; padding:4px 8px; background:var(--bg); font-size:13px; }
+  .md { overflow-wrap:anywhere; }
+  .md h4 { font-size:14px; margin:14px 0 4px; }
+  .md p { margin:8px 0; }
+  .md ul, .md ol { margin:6px 0; padding-left:20px; }
+  .md code { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px; background:var(--sunk); border-radius:5px; padding:1px 4px; }
+  .md pre { background:var(--sunk); border-radius:10px; padding:10px 12px; overflow:auto; }
+  .md pre code { background:none; padding:0; }
+  .fups { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .fups button { border:1px solid var(--accent); color:var(--accent); background:var(--accent-bg); border-radius:99px; padding:3px 11px; font-size:12.5px; cursor:pointer; text-align:left; }
+  .bar2 { display:flex; height:6px; border-radius:99px; overflow:hidden; background:var(--line); margin-top:6px; }
+  .stats { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-top:14px; }
+  .stat { background:var(--sunk); border-radius:12px; padding:8px 10px; }
+  .stat b { display:block; font-size:19px; font-variant-numeric:tabular-nums; letter-spacing:-.02em; }
+  .stat span { color:var(--muted); font-size:12px; }
+
+  /* popovers, menus, dialogs, tooltip */
+  .pop { position:fixed; z-index:30; background:var(--card); border:1px solid var(--line); border-radius:14px; box-shadow:var(--float); padding:12px; width:min(340px, calc(100vw - 24px)); max-height:min(70vh, 560px); overflow:auto; }
+  .pop h4 { margin:10px 0 4px; font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); font-weight:600; }
+  .pop h4:first-child { margin-top:0; }
+  .pop .row { display:flex; width:100%; gap:10px; align-items:center; border:0; background:none; text-align:left; padding:6px 8px; margin:0 -8px; width:calc(100% + 16px); border-radius:9px; cursor:pointer; }
+  .pop .row:hover { background:var(--sunk); }
+  .pop .row .t { flex:1; min-width:0; } .pop .row .t b { display:block; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .pop .row .t small { display:block; color:var(--muted); font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pop label.ck { display:flex; gap:8px; align-items:center; padding:4px 0; cursor:pointer; font-size:13.5px; }
+  .pop label.ck small { color:var(--muted); margin-left:auto; font-size:12px; }
+  .pop textarea, dialog textarea { width:100%; border:1px solid var(--line); border-radius:10px; padding:8px 10px; background:var(--bg); resize:vertical; min-height:64px; outline:none; }
+  .pop textarea:focus, dialog textarea:focus { border-color:var(--accent); }
+  .swatch { width:22px; height:0; border-top:2px solid var(--edge); flex:none; }
+  .swatch.request { border-color:light-dark(#9db6ec, #3d5590); } .swatch.async { border-top-style:dashed; } .swatch.ext { border-color:light-dark(#c3b5ee, #4f4278); }
+  .menu { position:fixed; z-index:40; background:var(--card); border:1px solid var(--line); border-radius:12px; box-shadow:var(--float); padding:5px; min-width:200px; }
+  .menu button { display:flex; width:100%; justify-content:space-between; gap:16px; border:0; background:none; text-align:left; padding:6px 10px; border-radius:8px; cursor:pointer; font-size:13.5px; }
+  .menu button:hover, .menu button:focus-visible { background:var(--sunk); outline:none; }
+  .menu button kbd { color:var(--muted); font:12px system-ui; }
+  .menu hr { border:0; border-top:1px solid var(--line); margin:4px 2px; }
+  #tip { position:fixed; z-index:50; pointer-events:none; background:var(--fg); color:var(--bg); font-size:12px; line-height:1.4; border-radius:8px; padding:6px 9px; max-width:320px; box-shadow:var(--float); }
+  #tip b { font-weight:600; } #tip .m { opacity:.7; }
+  #toast { position:fixed; left:50%; bottom:90px; transform:translate(-50%, 10px); background:var(--fg); color:var(--bg); padding:7px 14px; border-radius:10px; font-size:13px; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; z-index:60; max-width:calc(100% - 32px); }
+  #toast.on { opacity:1; transform:translate(-50%, 0); }
+  dialog { border:1px solid var(--line); border-radius:16px; background:var(--card); color:var(--fg); padding:0; box-shadow:var(--float); width:min(560px, calc(100vw - 24px)); max-height:min(80vh, 720px); }
+  dialog::backdrop { background:rgb(10 10 8 / .35); }
+  dialog .dh { display:flex; align-items:center; gap:8px; padding:14px 16px 0; }
+  dialog .dh h2 { font-size:16px; margin:0; flex:1; }
+  dialog .db { padding:12px 16px 16px; overflow:auto; }
+  dialog .df { display:flex; gap:8px; justify-content:flex-end; padding:0 16px 16px; flex-wrap:wrap; }
+  .sbox { display:flex; align-items:center; gap:8px; padding:12px 14px; border-bottom:1px solid var(--line); }
+  .sbox input { flex:1; border:0; outline:none; background:none; font-size:16px; min-width:0; }
+  .sres { max-height:min(56vh, 480px); overflow:auto; padding:6px; }
+  .sres button { display:flex; gap:10px; align-items:baseline; width:100%; border:0; background:none; text-align:left; padding:7px 10px; border-radius:9px; cursor:pointer; }
+  .sres button[aria-selected="true"] { background:var(--accent-bg); }
+  .sres .t { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .sres .s { color:var(--muted); font-size:12px; }
+  .sres .tag { flex:none; min-width:62px; text-align:center; }
+  .keys { display:grid; grid-template-columns:auto 1fr; gap:6px 14px; font-size:13.5px; }
+  kbd { font:12px ui-monospace, SFMono-Regular, Menlo, monospace; border:1px solid var(--line); border-bottom-width:2px; border-radius:6px; padding:1px 6px; background:var(--sunk); white-space:nowrap; }
+  .emptyst { position:absolute; inset:0; display:grid; place-items:center; padding:24px; text-align:center; }
+  .emptyst > div { max-width:460px; }
+  .ro .rw { display:none !important; }
+  .ro-only { display:none !important; } .ro .ro-only { display:inline-flex !important; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="brandrow">
+    <div class="brand"><div class="logo" id="logo">M</div><h1 id="title">Project map</h1><span id="modetag"></span></div>
+    <div class="seg theme" role="group" aria-label="Theme"><button type="button" data-theme-set="system" title="Match the system" aria-label="System theme">◐</button><button type="button" data-theme-set="light" title="Light" aria-label="Light theme">☀</button><button type="button" data-theme-set="dark" title="Dark" aria-label="Dark theme">☾</button></div>
+  </div>
+  <div class="toolbar">
+    <nav class="crumbs" id="crumbs" aria-label="Where you are"></nav>
+    <div class="tools" id="tools"></div>
+  </div>
+</header>
+<main>
+  <div id="vp" aria-label="Project map. Drag to move, scroll to zoom." role="application">
+    <div id="world"></div>
+    <div id="banner"></div>
+    <div class="zoombar" aria-label="Zoom">
+      <button type="button" data-act="zin" title="Zoom in (+)" aria-label="Zoom in"></button>
+      <button type="button" data-act="zout" title="Zoom out (−)" aria-label="Zoom out"></button>
+      <button type="button" data-act="fit" title="Fit to screen (F)" aria-label="Fit to screen"></button>
+    </div>
+    <div class="dock" id="dock">
+      <div id="flowbar" hidden></div>
+      <form id="askbar" class="rw" autocomplete="off"></form>
+    </div>
+  </div>
+  <aside id="panel" aria-label="Details"><div class="sheetbar"></div><div id="grip" title="Drag to resize"></div><div id="pbody"></div></aside>
+</main>
+<div id="pop" class="pop" hidden></div>
+<div id="menu" class="menu" hidden role="menu"></div>
+<div id="tip" hidden></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<dialog id="dlg"></dialog>
+
+<script>
+"use strict";
+// ---------------------------------------------------------------- basics
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const EMBED = new URLSearchParams(location.search).has("embed");
+const X = window.MAPDATA || null;          // set in an exported file
+let RO = !!X;                               // read-only: no Ask, Fix, Build, Update, Rescan, Export, editor links
+const store = { get(k) { try { return localStorage.getItem("map." + k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem("map." + k, v); } catch (e) {} } };
+const RM = matchMedia("(prefers-reduced-motion: reduce)");
+const phone = () => innerWidth <= 700;
+const ROOT = "root", FRAME = "frame";
+const KINDS = [["imports", "Imports"], ["request", "Web requests"], ["job", "Jobs"], ["webhook", "Webhooks"], ["queue", "Queues"], ["event", "Events"], ["data", "Data"], ["uses", "Uses"]];
+const ASYNC = new Set(["job", "webhook", "queue", "event"]);
+const BAND = { screen: 0, tool: 0, server: 1, other: 1, data: 2, service: 3 };
+const BANDNAME = ["Screens", "Server", "Data", "Outside services"];
+const KINDNAME = { screen: "Screen", server: "Server", other: "Server", data: "Data", service: "Outside service", tool: "Tools & tests" };
+const ICONS = {
+  search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>', pulse: '<path d="M3 12h4l3-7 4 14 3-7h4"/>', clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  screen: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>', flow: '<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.5 6H15a3 3 0 010 6H9a3 3 0 000 6h6.5"/>',
+  flag: '<path d="M5 21V4h11l-2 4 2 4H5"/>', filter: '<path d="M4 5h16l-6 8v6l-4-2v-4z"/>', download: '<path d="M12 4v11m-5-5l5 5 5-5M5 20h14"/>', refresh: '<path d="M20 11a8 8 0 10-2.3 5.7M20 4v7h-7"/>',
+  back: '<path d="M15 6l-6 6 6 6"/>', plus: '<path d="M12 5v14M5 12h14"/>', minus: '<path d="M5 12h14"/>', fit: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
+  panel: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16"/>', x: '<path d="M6 6l12 12M18 6L6 18"/>', send: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  review: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 12l2 2 4-4"/>', help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 114 2c-.8.6-1.5 1-1.5 2M12 17h.01"/>',
+  play: '<path d="M7 5l12 7-12 7z"/>', left: '<path d="M15 6l-6 6 6 6"/>', right: '<path d="M9 6l6 6-6 6"/>',
+};
+const ic = n => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n]}</svg>`;
+const shortEp = k => String(k).replace(/\(\?P<(\w+)>[^)]*\)/g, "{$1}");
+let EPRE = ""; // path prefix every endpoint shares (e.g. /api/v1), trimmed on cards
+const epShow = p => EPRE && p.startsWith(EPRE + "/") ? "…" + p.slice(EPRE.length) : p;
+const base = p => String(p).split("/").pop();
+const dir = p => { const s = String(p).split("/"); s.pop(); return s.join("/"); };
+// Framework files share names (route.ts, page.tsx, index.js): show the folder they're in, so cards can be told apart.
+const GENERIC = /^(?:route|page|index|layout|loading|error|template|default|handler|server|main|mod|\+page|\+server|\+layout|\+page\.server|__init__)\.[\w.]+$/;
+const fname = p => { const b = base(p), d = base(dir(p)); return GENERIC.test(b) && d ? `${d.replace(/^\[(.+)\]$/, "[$1]")}/${b}` : b; };
+const plural = (n, w, ws) => `${n} ${n === 1 ? w : ws || w + "s"}`;
+function ago(iso) {
+  if (!iso) return ""; const s = (Date.now() - new Date(iso)) / 1000;
+  if (isNaN(s)) return ""; if (s < 60) return "just now"; if (s < 3600) return Math.floor(s / 60) + " min ago"; if (s < 86400) return Math.floor(s / 3600) + " h ago";
+  if (s < 86400 * 7) return Math.floor(s / 86400) + " d ago"; return new Date(iso).toLocaleDateString();
+}
+const money = c => c ? "$" + (c < 1 ? c.toFixed(2) : c.toFixed(2)) : "";
+const clean = (t, e) => /<task-notification|^\s*<[a-z-]+>/.test(t || "") ? (e?.done?.[0]?.title || "Background task finished") : String(t || "").replace(/<[^>]*>/g, " ").replace(/^[\s›>]+/, "").replace(/\s+/g, " ").trim();
+function md(s) {
+  const inl = t => esc(t).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/(^|[^*\w])\*([^*\s][^*]*?)\*(?!\w)/g, "$1<i>$2</i>");
+  const out = []; let list = null, para = [];
+  const fp = () => { if (para.length) out.push(`<p>${inl(para.join(" "))}</p>`); para = []; };
+  const fl = () => { if (list) out.push(`<${list.t}>${list.items.map(i => `<li>${inl(i)}</li>`).join("")}</${list.t}>`); list = null; };
+  const lines = String(s || "").split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i];
+    if (/^\s*```/.test(l)) { fp(); fl(); const code = []; while (++i < lines.length && !/^\s*```/.test(lines[i])) code.push(lines[i]); out.push(`<pre><code>${esc(code.join("\n"))}</code></pre>`); continue; }
+    let m;
+    if ((m = l.match(/^#{1,6}\s+(.*)/))) { fp(); fl(); out.push(`<h4>${inl(m[1])}</h4>`); }
+    else if ((m = l.match(/^\s*[-*]\s+(.*)/))) { fp(); if (!list || list.t !== "ul") { fl(); list = { t: "ul", items: [] }; } list.items.push(m[1]); }
+    else if ((m = l.match(/^\s*\d+[.)]\s+(.*)/))) { fp(); if (!list || list.t !== "ol") { fl(); list = { t: "ol", items: [] }; } list.items.push(m[1]); }
+    else if (!l.trim()) { fp(); fl(); }
+    else if (list && /^\s{2,}/.test(l)) list.items[list.items.length - 1] += " " + l.trim();
+    else { fl(); para.push(l.trim()); }
+  }
+  fp(); fl(); return out.join("");
+}
+let toastT;
+function toast(t) { const el = $("#toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("on"), 2600); }
+async function post(path, body) {
+  const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || j.error) throw new Error(j.error || (r.status === 404 || r.status === 501 ? "The board server is out of date. Start a new Claude session in this project, or rerun /project-plan." : "Couldn't send (" + r.status + ")."));
+  return j;
+}
+async function copy(t, what) { try { await navigator.clipboard.writeText(t); toast((what || "Copied") + " ✓"); } catch (e) { toast("Couldn't copy"); } }
+
+// ---------------------------------------------------------------- state
+let G = null, I = null, notes = {}, asks = [], hist = [], prog = { sessions: {} }, raw = {};
+let view = { t: "overview" }, prevView = null, sel = null, marks = {}, steps = {}, panelMode = null, edgeSel = null;
+let cam = { x: 0, y: 0, k: 1 }, SC = null;
+let flow = null, ctxIds = [], mode = "ask", busy = null, askErr = "", answer = null, changeRes = null, extraChanged = new Set();
+let dismissedLocal = {}, sentMsg = {};
+const F = (() => { let s = {}; try { s = JSON.parse(store.get("filters") || "{}"); } catch (e) {} return { kinds: new Set(s.kinds || KINDS.map(k => k[0])), tech: s.tech, recent: s.recent !== false, tools: !!s.tools, span: s.span || 1 }; })();
+const saveF = () => store.set("filters", JSON.stringify({ kinds: [...F.kinds], tech: F.tech, recent: F.recent, tools: F.tools, span: F.span }));
+const tech = () => F.tech ?? (G?.style !== "plain");
+
+// ---------------------------------------------------------------- data model
+function normalize(g) {
+  g.parts = g.parts || []; g.edges = g.edges || []; g.files = g.files || {}; g.endpoints = g.endpoints || {}; g.screens = g.screens || []; g.flows = g.flows || []; g.tour = g.tour || [];
+  g.health = g.health || { issues: [] }; g.health.issues = g.health.issues || []; g.review = g.review || []; g.repos = g.repos || []; g.stale = g.stale || []; g.unassigned = g.unassigned || [];
+  g.parts.forEach(p => { p.files = p.files || []; p.endpoints = p.endpoints || []; p.new = p.new || []; p.changed = p.changed || []; p.removed = p.removed || []; });
+  [...g.health.issues, ...g.review].forEach(i => { i.locations = i.locations || []; i.parts = i.parts || []; });
+  return g;
+}
+function buildIndex() {
+  I = { part: {}, group: {}, groupsOf: {}, groupOfFile: {}, eps: {}, fine: [], chain: new Map(), ext: [], usedBy: {}, screen: {}, callers: {} };
+  G.parts.forEach(p => I.part[p.id] = p);
+  Object.entries(G.endpoints).forEach(([k, e]) => { if (e.file) (I.eps[e.file] = I.eps[e.file] || []).push(k); });
+  G.screens.forEach(s => I.screen[s.id] = s);
+  // Part files: trust files[path].part, fall back to the part's own list.
+  Object.entries(G.files).forEach(([path, f]) => { if (f.part && I.part[f.part] && !I.part[f.part].files.includes(path)) I.part[f.part].files.push(path); });
+  G.parts.forEach(p => p.files.forEach(path => { if (G.files[path] && !G.files[path].part) G.files[path].part = p.id; }));
+  G.parts.forEach(groupFiles);
+  I.ext = G.parts.filter(p => p.external || p.kind === "service").map(p => ({ id: p.id, toks: [p.id, ...String(p.name).toLowerCase().split(/[^a-z0-9]+/)].map(t => t.toLowerCase()).filter(t => t.length >= 3) }));
+  const seen = new Set(), add = (from, to, kind, ep) => { const k = from + "|" + to + "|" + (ep || ""); if (seen.has(k) || from === to) return; seen.add(k); I.fine.push({ from, to, kind, ep }); };
+  Object.entries(G.files).forEach(([path, f]) => {
+    (f.uses || []).forEach(u => { if (G.files[u]) { add("file:" + path, "file:" + u, "imports"); (I.usedBy[u] = I.usedBy[u] || new Set()).add(path); } });
+    (f.calls || []).forEach(k => { if (G.endpoints[k]) { add("file:" + path, "ep:" + k, "request", k); (I.callers[k] = I.callers[k] || new Set()).add(path); } });
+    const hits = new Set();
+    [...(f.hosts || []), ...(f.pkgs || [])].forEach((h, i) => {
+      const hl = String(h).toLowerCase(), x = I.ext.find(e => e.toks.some(t => hl.includes(t)));
+      if (x) hits.add("part:" + x.id); else if (i < (f.hosts || []).length) hits.add("host:" + h);
+    });
+    hits.forEach(h => add("file:" + path, h, "uses"));
+  });
+  const segs = Object.values(G.endpoints).map(e => String(e.path || "").split("/"));
+  let pre = segs.length > 3 ? segs[0].slice(0, -1) : []; segs.forEach(sg => { let i = 0; while (i < pre.length && i < sg.length - 1 && pre[i] === sg[i]) i++; pre = pre.slice(0, i); });
+  EPRE = pre.join("/").length > 1 ? pre.join("/") : "";
+  Object.entries(G.endpoints).forEach(([k, e]) => (e.callers || []).forEach(c => { if (G.files[c]) { add("file:" + c, "ep:" + k, "request", k); (I.callers[k] = I.callers[k] || new Set()).add(c); } }));
+  Object.entries(G.files).forEach(([path, f]) => (f.usedBy || []).forEach(u => { if (G.files[u]) { (I.usedBy[path] = I.usedBy[path] || new Set()).add(u); add("file:" + u, "file:" + path, "imports"); } }));
+}
+// A part with many files gets folder groups: one per sub-folder below the part's common folder.
+function groupFiles(p) {
+  const files = p.files.filter(f => G.files[f]);
+  if (files.length < 9) return;
+  const dirs = files.map(f => dir(f).split("/").filter(Boolean));
+  let cp = dirs[0].slice();
+  dirs.forEach(d => { let i = 0; while (i < cp.length && cp[i] === d[i]) i++; cp = cp.slice(0, i); });
+  const by = new Map();
+  files.forEach((f, i) => { const k = dirs[i][cp.length] || ""; if (!by.has(k)) by.set(k, []); by.get(k).push(f); });
+  if (by.size < 2 || by.size >= files.length) return;
+  const common = cp.join("/");
+  I.groupsOf[p.id] = [...by.entries()].sort((a, b) => (a[0] === "") - (b[0] === "") || a[0].localeCompare(b[0])).map(([k, fs]) => {
+    const folder = k ? (common ? common + "/" + k : k) : (common || ".");
+    const id = `group:${p.id}:${folder}`;
+    const g = { id, part: p.id, folder, name: k ? k + "/" : (common ? base(common) + "/ (top)" : "Top level"), files: fs };
+    I.group[id] = g; fs.forEach(f => I.groupOfFile[f] = id); return id;
+  });
+}
+function chain(id) {
+  if (I.chain.has(id)) return I.chain.get(id);
+  let c = [id], m;
+  if (id.startsWith("group:")) { const g = I.group[id]; c = g ? ["part:" + g.part, id] : [id]; }
+  else if (id.startsWith("file:")) { const path = id.slice(5), f = G.files[path]; c = []; if (f?.part && I.part[f.part]) c.push("part:" + f.part); if (I.groupOfFile[path]) c.push(I.groupOfFile[path]); c.push(id); }
+  else if (id.startsWith("ep:")) { const e = G.endpoints[id.slice(3)]; c = e && G.files[e.file] ? [...chain("file:" + e.file), id] : e?.part && I.part[e.part] ? ["part:" + e.part, id] : [id]; }
+  else if ((m = id.match(/^def:(.*)#([^#]*)$/))) c = [...chain("file:" + m[1]), id];
+  I.chain.set(id, c); return c;
+}
+function exists(id) {
+  if (!id || !G) return false; const [t, ...r] = id.split(":"), k = r.join(":");
+  return t === "part" ? !!I.part[k] : t === "group" ? !!I.group[id] : t === "file" ? !!G.files[k] : t === "ep" ? !!G.endpoints[k] : t === "screen" ? !!I.screen[k] : t === "def" ? !!G.files[k.replace(/#[^#]*$/, "")] : false;
+}
+const typeOf = id => id === ROOT ? "overview" : id.slice(0, id.indexOf(":"));
+const isExt = p => p && (p.external || p.kind === "service");
+const hiddenTool = id => !F.tools && I.part[chain(id)[0]?.slice(5)]?.kind === "tool";
+function children(C) {
+  if (C === ROOT) return G.parts.filter(p => F.tools || p.kind !== "tool").map(p => "part:" + p.id);
+  const t = typeOf(C);
+  if (t === "part") { const p = I.part[C.slice(5)]; return I.groupsOf[p.id] || p.files.filter(f => G.files[f]).map(f => "file:" + f); }
+  if (t === "group") return I.group[C].files.map(f => "file:" + f);
+  if (t === "file") { const path = C.slice(5); return [...(I.eps[path] || []).map(k => "ep:" + k), ...(G.files[path].defs || []).map(d => `def:${path}#${d}`)]; }
+  return [];
+}
+const openable = id => { const t = typeOf(id); return (t === "part" && !isExt(I.part[id.slice(5)])) || t === "group" || t === "file" || t === "screen"; };
+function filesIn(id) {
+  const t = typeOf(id), k = id.slice(t.length + 1);
+  if (t === "part") return I.part[k]?.files || [];
+  if (t === "group") return I.group[id]?.files || [];
+  if (t === "file") return [k];
+  if (t === "ep") return G.endpoints[k]?.file ? [G.endpoints[k].file] : [];
+  if (t === "def") return [k.replace(/#[^#]*$/, "")];
+  if (t === "screen") { const s = I.screen[k]; return s ? [...new Set([s.file, ...(s.files || [])].filter(Boolean))] : []; }
+  return [];
+}
+function epsIn(id) {
+  const t = typeOf(id);
+  if (t === "part") { const p = I.part[id.slice(5)]; return [...new Set([...p.endpoints, ...p.files.flatMap(f => I.eps[f] || [])])].filter(k => G.endpoints[k]); }
+  if (t === "ep") return [id.slice(3)];
+  if (t === "screen") return [];
+  return filesIn(id).flatMap(f => I.eps[f] || []);
+}
+function info(id) {
+  const t = typeOf(id), k = id.slice(t.length + 1);
+  if (t === "part") { const p = I.part[k]; if (!p) return { t, title: k }; const gs = I.groupsOf[p.id]; const ne = epsIn(id).length;
+    return { t, kind: isExt(p) && p.kind === "other" ? "service" : p.kind, title: p.name || p.id, desc: p.summary, ext: isExt(p),
+      foot: isExt(p) && !p.files.length ? "outside service" : [plural(p.files.length, "file"), ne && plural(ne, "endpoint")].filter(Boolean).join(" · "),
+      tip: [KINDNAME[p.kind] || p.kind, p.files.length ? (p.lines || 0).toLocaleString() + " lines" : ""] }; }
+  if (t === "group") { const g = I.group[id]; const p = I.part[g.part]; const ne = epsIn(id).length;
+    return { t, kind: p.kind, title: g.name, desc: g.folder, foot: [plural(g.files.length, "file"), ne && plural(ne, "endpoint")].filter(Boolean).join(" · "), tip: ["Folder in " + p.name, g.folder] }; }
+  if (t === "file") { const f = G.files[k] || {}; const ne = (I.eps[k] || []).length, nd = (f.defs || []).length;
+    return { t, title: fname(k), sub: dir(k), desc: f.desc, foot: [f.lines ? f.lines.toLocaleString() + " lines" : "", ne && plural(ne, "endpoint"), tech() && nd && plural(nd, "definition")].filter(Boolean).join(" · "),
+      defs: f.defs || [], tip: ["File" + (f.repo ? " in " + f.repo : ""), k, f.lines ? f.lines + " lines" : ""] }; }
+  if (t === "ep") { const e = G.endpoints[k] || {};
+    return { t, method: e.method || k.split(" ")[0], path: shortEp(e.path || k.split(" ").slice(1).join(" ")), title: e.desc || (tech() && e.handler) || shortEp(e.path || k), desc: e.desc || (tech() && e.handler ? e.handler : ""), auth: e.auth || (e.public ? "public" : ""),
+      foot: [e.auth && e.auth !== "unknown" ? e.auth : "", I.callers[k]?.size ? plural(I.callers[k].size, "caller") : ""].filter(Boolean).join(" · "), tip: ["Endpoint" + (e.kind && tech() ? " (" + e.kind + ")" : ""), `${e.file || ""}${e.line ? ":" + e.line : ""}`, e.auth ? "auth: " + e.auth : ""] }; }
+  if (t === "def") { const path = k.replace(/#[^#]*$/, ""), name = k.slice(path.length + 1); return { t, title: name, sub: base(path), tip: ["Definition", path] }; }
+  if (t === "screen") { const s = I.screen[k] || {}; return { t, kind: "screen", title: s.name || k, desc: s.route, foot: [s.framework, plural((s.files || []).length, "file"), (s.calls || []).length && plural(s.calls.length, "endpoint")].filter(Boolean).join(" · "), tip: ["Screen", s.file, s.route] }; }
+  if (t === "host") return { t, kind: "service", title: k, foot: "outside host", ext: true, tip: ["Outside host", k] };
+  return { t, title: id };
+}
+const title = id => id === ROOT ? "Overview" : info(id).title;
+
+// Recent work: files touched by requests (history.jsonl) and live sessions (progress.json) within the span.
+function since() { return F.span === 1 ? new Date(new Date().setHours(0, 0, 0, 0)) : new Date(Date.now() - F.span * 864e5); }
+const liveS = () => Object.entries(prog.sessions || {}).filter(([, s]) => ["working", "active", "idle"].includes(s.status));
+function recentMap() {
+  const s = since(), by = {};
+  const add = (p, t) => { if (G?.files[p]) (by[p] = by[p] || []).push(t); };
+  hist.forEach(e => { const at = e.ended || e.started; if (at && new Date(at) >= s) (e.files || []).forEach(f => add(f.path, { at, text: clean(e.prompt || e.title, e), id: e.id, done: (e.done || []).map(d => d.title) })); });
+  liveS().forEach(([id, ss]) => (ss.files || []).forEach(f => { if (f.at && new Date(f.at) >= s && !(by[f.path] || []).some(x => x.live === id)) add(f.path, { at: f.at, text: clean(ss.round?.prompt || ss.title) || "Running session", live: id, done: [] }); }));
+  Object.values(by).forEach(l => l.sort((a, b) => (b.at > a.at ? 1 : -1)));
+  return by;
+}
+function editingSet() { const out = new Set(), lim = Date.now() - 10 * 60e3; liveS().forEach(([, s]) => { if (s.status === "working") (s.files || []).forEach(f => { if (f.at && new Date(f.at) >= lim && G?.files[f.path]) out.add(f.path); }); }); return out; }
+let R = {}, EDIT = new Set();
+function refreshRecent() { R = G ? recentMap() : {}; EDIT = G ? editingSet() : new Set(); }
+const isNew = path => I.part[G.files[path]?.part]?.new.includes(path);
+function changedCount(id) { const fs = filesIn(id); return fs.filter(f => R[f]).length; }
+const issues = () => (G?.blueprint ? [] : G?.health.issues || []).map(i => ({ ...i, dismissed: dismissedLocal[i.id] ? dismissedLocal[i.id].on : i.dismissed, reason: dismissedLocal[i.id] ? dismissedLocal[i.id].reason : i.reason }));
+function issuesFor(id) {
+  const t = typeOf(id), fs = new Set(filesIn(id));
+  return issues().filter(i => !i.dismissed && i.severity !== "low" && (t === "part" ? i.parts.includes(id.slice(5)) || i.locations.some(l => fs.has(l.file)) : t === "ep" ? i.locations.some(l => l.node === id) : i.locations.some(l => fs.has(l.file) || l.node === id)));
+}
+
+// ---------------------------------------------------------------- relations
+function rep(x, C) {
+  const c = chain(x), i = c.indexOf(C);
+  if (i >= 0) return i === c.length - 1 ? FRAME : c[i + 1];
+  const cc = C === ROOT ? [] : chain(C); let d = 0;
+  while (d < cc.length && d < c.length && cc[d] === c[d]) d++;
+  return c[Math.min(d, c.length - 1)];
+}
+function agg(map, from, to, kind, o = {}) {
+  const k = from + "\n" + to; let e = map.get(k);
+  if (!e) map.set(k, e = { from, to, w: 0, kinds: new Set(), eps: new Set(), imports: 0, labels: new Set() });
+  e.w += o.w || 1; e.kinds.add(kind); if (o.ep) e.eps.add(o.ep); if (kind === "imports") e.imports += o.n || 1; if (o.label) e.labels.add(o.label);
+  return e;
+}
+const pkinds = e => e.kind ? [e.kind] : [e.imports && "imports", e.calls && "request"].filter(Boolean).concat(e.imports || e.calls ? [] : ["uses"]);
+function partEdges(ids) {
+  const S = new Set(ids), m = new Map();
+  G.edges.forEach(e => { const a = "part:" + e.from, b = "part:" + e.to; if (!S.has(a) || !S.has(b) || a === b) return;
+    pkinds(e).forEach(k => agg(m, a, b, k, { w: (e.imports || 0) + 2 * (e.calls || 0) + (e.label ? 3 : 0) || 1, label: e.label, n: e.imports })); });
+  return m;
+}
+// Outside things a container is used by / relies on, plus edges between its children.
+function outside(C) {
+  const kids = new Set(children(C)), inner = new Map(), used = new Map(), uses = new Map();
+  I.fine.forEach(e => {
+    const a = rep(e.from, C), b = rep(e.to, C); if (!a || !b) return;
+    const ai = a === FRAME || kids.has(a), bi = b === FRAME || kids.has(b);
+    const o = { ep: e.ep };
+    if (ai && bi) { if (a !== b && a !== FRAME && b !== FRAME) agg(inner, a, b, e.kind, o); }
+    else if (!ai && bi) { if (!hiddenTool(a) && (a.startsWith("part:") || a.startsWith("group:") || a.startsWith("file:") || a.startsWith("ep:"))) agg(used, a, b, e.kind, o); }
+    else if (ai && !bi) { if (!hiddenTool(b)) agg(uses, a, b, e.kind, o); }
+  });
+  if (typeOf(C) === "part") {
+    const pid = C.slice(5);
+    G.edges.forEach(e => {
+      const lbl = { label: e.label, w: e.label ? 3 : 1 };
+      if (e.from === pid && e.to !== pid && !hiddenTool("part:" + e.to)) { const other = "part:" + e.to, hit = [...uses.values()].filter(x => x.to === other);
+        if (hit.length) hit.forEach(x => e.label && x.labels.add(e.label)); else pkinds(e).forEach(k => agg(uses, FRAME, other, k, lbl)); }
+      if (e.to === pid && e.from !== pid && !hiddenTool("part:" + e.from)) { const other = "part:" + e.from, hit = [...used.values()].filter(x => x.from === other);
+        if (hit.length) hit.forEach(x => e.label && x.labels.add(e.label)); else pkinds(e).forEach(k => agg(used, other, FRAME, k, lbl)); }
+    });
+  }
+  return { inner, used, uses };
+}
+// Edges between an arbitrary set of nodes: each fine edge lifts to the nearest node of the set that contains it.
+function lift(ids) {
+  const S = new Set(ids), m = new Map();
+  const near = x => { const c = chain(x); for (let i = c.length - 1; i >= 0; i--) if (S.has(c[i])) return c[i]; return null; };
+  I.fine.forEach(e => { const a = near(e.from), b = near(e.to); if (a && b && a !== b) agg(m, a, b, e.kind, { ep: e.ep }); });
+  partEdges(ids).forEach((e, k) => { if (!m.has(k)) m.set(k, e); });
+  ids.filter(i => i.startsWith("screen:")).forEach(sid => { const s = I.screen[sid.slice(7)]; if (!s) return;
+    const r = s.file && near("file:" + s.file); if (r && r !== sid) agg(m, sid, r, "imports");
+    (s.calls || []).forEach(k => { const b = near("ep:" + k); if (b) agg(m, sid, b, "request", { ep: k }); }); });
+  return m;
+}
+function impact(id) {
+  const own = new Set(filesIn(id)), t = typeOf(id), seen = new Set(), q = [];
+  const push = f => { if (!seen.has(f) && !own.has(f)) { seen.add(f); q.push(f); } };
+  const fromFile = f => { (I.usedBy[f] || []).forEach(push); (I.eps[f] || []).forEach(k => (I.callers[k] || []).forEach(push)); };
+  if (t === "ep") (I.callers[id.slice(3)] || []).forEach(push); else own.forEach(fromFile);
+  while (q.length) fromFile(q.shift());
+  const parts = new Set();
+  if (t === "part") { const pq = [id.slice(5)]; const ps = new Set(pq); while (pq.length) { const p = pq.shift(); G.edges.forEach(e => { if (e.to === p && !ps.has(e.from)) { ps.add(e.from); pq.push(e.from); } }); } ps.delete(id.slice(5)); ps.forEach(p => parts.add(p)); }
+  const byPart = {}; seen.forEach(f => { const p = G.files[f]?.part || ""; (byPart[p] = byPart[p] || []).push(f); });
+  Object.keys(byPart).forEach(p => parts.delete(p));
+  const all = new Set([...own, ...seen]), allEps = new Set([...all].flatMap(f => I.eps[f] || []));
+  if (t === "ep") allEps.add(id.slice(3));
+  const screens = G.screens.filter(s => !filesIn("screen:" + s.id).every(f => !all.has(f)) || (s.calls || []).some(k => allEps.has(k)));
+  return { files: seen.size, byPart, parts: [...parts], screens };
+}
+function screensReaching(id) { const fs = new Set(filesIn(id)), eps = new Set(epsIn(id)); return G.screens.filter(s => filesIn("screen:" + s.id).some(f => fs.has(f)) || (s.calls || []).some(k => eps.has(k))); }
+
+// ---------------------------------------------------------------- layout (layered, deterministic)
+function layout(nodes, edges, o = {}) {
+  const N = new Map(nodes.map((n, i) => [n.id, { ...n, i }])), ids = nodes.map(n => n.id);
+  const out = new Map(ids.map(i => [i, []])), inn = new Map(ids.map(i => [i, []]));
+  edges.forEach(e => { if (e.from !== e.to && N.has(e.from) && N.has(e.to) && !out.get(e.from).includes(e.to)) { out.get(e.from).push(e.to); inn.get(e.to).push(e.from); } });
+  const band = id => N.get(id).band || 0;
+  // break cycles with a DFS: edges back to the stack don't count for layering
+  const st = new Map(), fwd = new Set();
+  const dfs = v => { st.set(v, 1); for (const w of out.get(v)) { if (!st.has(w)) { fwd.add(v + "|" + w); dfs(w); } else if (st.get(w) === 2) fwd.add(v + "|" + w); } st.set(v, 2); };
+  ids.filter(v => !inn.get(v).length).forEach(v => st.has(v) || dfs(v)); ids.forEach(v => st.has(v) || dfs(v));
+  const rank = new Map(); let off = 0;
+  [...new Set(ids.map(band))].sort((a, b) => a - b).forEach(b => {
+    const vs = ids.filter(v => band(v) === b), ok = (v, w) => band(w) === b && fwd.has(v + "|" + w);
+    const lone = vs.filter(v => !out.get(v).length && !inn.get(v).length), conn = vs.filter(v => !lone.includes(v));
+    const indeg = new Map(conn.map(v => [v, 0])); conn.forEach(v => out.get(v).forEach(w => ok(v, w) && indeg.set(w, indeg.get(w) + 1)));
+    const r = new Map(conn.map(v => [v, 0])), q = conn.filter(v => !indeg.get(v)), topo = [];
+    while (q.length) { const v = q.shift(); topo.push(v); out.get(v).forEach(w => { if (ok(v, w)) { r.set(w, Math.max(r.get(w), r.get(v) + 1)); indeg.set(w, indeg.get(w) - 1); if (!indeg.get(w)) q.push(w); } }); }
+    // pull nodes right next to their successors so edges stay short
+    topo.slice().reverse().forEach(v => { const ss = out.get(v).filter(w => ok(v, w)); if (ss.length) r.set(v, Math.max(r.get(v), Math.min(...ss.map(w => r.get(w))) - 1)); });
+    let mx = conn.length ? Math.max(...conn.map(v => r.get(v))) : -1;
+    // keep the map from turning into one long chain: squeeze deep bands into a few layers
+    const cap = o.cap ? o.cap(vs.length) : Math.max(2, Math.round(Math.sqrt(vs.length * .5)));
+    if (mx + 1 > cap) { conn.forEach(v => r.set(v, Math.floor(r.get(v) * cap / (mx + 1)))); mx = cap - 1; }
+    conn.forEach(v => rank.set(v, off + r.get(v)));
+    lone.forEach(v => rank.set(v, off + (conn.length && !o.loneFirst ? mx + 1 : 0)));
+    if (lone.length && conn.length && !o.loneFirst) mx++;
+    off += Math.max(mx, 0) + 1;
+  });
+  const L = []; ids.forEach(v => (L[rank.get(v)] = L[rank.get(v)] || []).push(v));
+  const layers = L.filter(Boolean);
+  // barycenter ordering, a few sweeps each way
+  const pos = new Map(); const idx = () => layers.forEach(l => l.forEach((v, i) => pos.set(v, (i + .5) / l.length)));
+  idx();
+  for (let pass = 0; pass < 6; pass++) {
+    const order = pass % 2 ? layers.slice().reverse() : layers;
+    order.forEach(l => {
+      const by = v => { const nb = (pass % 2 ? out : inn).get(v).concat((pass % 2 ? inn : out).get(v).filter(() => false)), xs = nb.map(w => pos.get(w));
+        const all = xs.length ? xs : out.get(v).concat(inn.get(v)).map(w => pos.get(w)); return all.length ? all.reduce((a, b) => a + b, 0) / all.length : pos.get(v); };
+      const b = new Map(l.map(v => [v, by(v)])); l.sort((x, y) => b.get(x) - b.get(y) || N.get(x).i - N.get(y).i); l.forEach((v, i) => pos.set(v, (i + .5) / l.length));
+    });
+  }
+  // place: layers left to right; long layers wrap into sub-columns
+  const maxRows = o.maxRows || Math.max(8, Math.round(Math.sqrt(nodes.length) * 1.8));
+  const gapX = o.gapX ?? 110, subGap = 34, gapY = o.gapY ?? 18, P = new Map(), cols = [];
+  let x = 0;
+  layers.forEach((l, li) => {
+    const chunks = []; for (let i = 0; i < l.length; i += maxRows) chunks.push(l.slice(i, i + maxRows));
+    chunks.forEach((ch, ci) => {
+      const w = Math.max(...ch.map(v => N.get(v).w)), h = ch.reduce((a, v) => a + N.get(v).h, 0) + gapY * (ch.length - 1);
+      let y = -h / 2;
+      ch.forEach(v => { const n = N.get(v); P.set(v, { x: x + (w - n.w) / 2, y, w: n.w, h: n.h }); y += n.h + gapY; });
+      cols.push({ x, w, band: band(ch[0]), layer: li });
+      x += w + (ci < chunks.length - 1 ? subGap : gapX);
+    });
+  });
+  return { P, cols };
+}
+function bbox(rects) {
+  let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity;
+  rects.forEach(r => { a = Math.min(a, r.x); b = Math.min(b, r.y); c = Math.max(c, r.x + r.w); d = Math.max(d, r.y + r.h); });
+  return a === Infinity ? { x: 0, y: 0, w: 0, h: 0 } : { x: a, y: b, w: c - a, h: d - b };
+}
+
+// ---------------------------------------------------------------- scenes
+function size(id, role) {
+  if (role === "pill") return { w: 230, h: 40 };
+  const t = typeOf(id); let w = 250, h = 104;
+  if (t === "part") h = 112;
+  else if (t === "group") h = 92;
+  else if (t === "file") { w = 240; h = G.files[id.slice(5)]?.desc ? 112 : 78; if (tech() && G.files[id.slice(5)]?.defs?.length) h += 17; }
+  else if (t === "ep") { w = 260; h = 96; }
+  else if (t === "def") { w = 200; h = 50; }
+  else if (t === "screen") { w = 240; h = 92; }
+  if (role === "recent") { w = 290; h = 150; }
+  if (marks[id]) h += 58;
+  return { w, h };
+}
+function node(id, role, band) { return { id, role: role || "in", band, ...size(id, role) }; }
+const kindsOk = e => [...e.kinds].some(k => F.kinds.has(k));
+function buildScene() {
+  const v = view, sc = { nodes: [], edges: [], heads: [], frame: null };
+  if (v.t === "overview") {
+    const ids = children(ROOT);
+    const nodes = ids.map(id => { const p = I.part[id.slice(5)]; return node(id, "in", isExt(p) ? 3 : BAND[p.kind] ?? 1); });
+    const es = [...partEdges(ids).values()].filter(kindsOk);
+    const L = layout(nodes, es, { cap: n => n >= 4 ? 1 : 2 });
+    nodes.forEach(n => Object.assign(n, L.P.get(n.id)));
+    sc.nodes = nodes; sc.edges = es;
+    const top = Math.min(...nodes.map(n => n.y)) - 40, seen = new Set();
+    L.cols.forEach(c => { if (!seen.has(c.band)) { seen.add(c.band); sc.heads.push({ x: c.x, y: top, text: BANDNAME[c.band] }); } });
+    return sc;
+  }
+  if (["part", "group", "file"].includes(v.t)) {
+    const C = v.id, { inner, used, uses } = outside(C);
+    const kids = children(C), nodes = kids.map(id => node(id));
+    const ies = [...inner.values()].filter(kindsOk);
+    const L = layout(nodes, ies, { gapX: 90 });
+    nodes.forEach(n => Object.assign(n, L.P.get(n.id)));
+    let fb = nodes.length ? bbox(nodes) : { x: -160, y: -60, w: 320, h: 120 };
+    const pad = 26; fb = { x: fb.x - pad, y: fb.y - pad, w: fb.w + pad * 2, h: fb.h + pad * 2 };
+    sc.frame = { ...fb, empty: !nodes.length ? (v.t === "file" ? "No endpoints or exported definitions in this file." : "Nothing inside.") : "" };
+    const pills = (m, side) => {
+      const es = [...m.values()].filter(kindsOk), by = new Map();
+      es.forEach(e => { const pid = side === "used" ? e.from : e.to; by.set(pid, (by.get(pid) || 0) + e.w); });
+      let list = [...by.entries()].sort((a, b) => b[1] - a[1] || title(a[0]).localeCompare(title(b[0])));
+      const extra = list.length > 14 ? list.length - 13 : 0; if (extra) list = list.slice(0, 13);
+      const keep = new Set(list.map(x => x[0]));
+      const ps = list.map(([id]) => node(id, "pill")); if (extra) ps.push({ id: "more:" + side, role: "more", w: 230, h: 40, more: extra });
+      const h = ps.reduce((a, p) => a + p.h, 0) + 12 * (ps.length - 1); let y = fb.y + fb.h / 2 - h / 2;
+      const x = side === "used" ? fb.x - 150 - 230 : fb.x + fb.w + 150;
+      ps.forEach(p => { p.x = x; p.y = y; y += p.h + 12; });
+      sc.nodes.push(...ps); sc.edges.push(...es.filter(e => keep.has(side === "used" ? e.from : e.to)));
+      sc.heads.push({ x, y: fb.y - 34, text: side === "used" ? "Used by" : "Uses", empty: !ps.length ? "Nothing outside" : "" });
+      return ps;
+    };
+    sc.nodes.push(...nodes); sc.edges.push(...ies);
+    pills(used, "used"); pills(uses, "uses");
+    sc.heads.push({ x: fb.x + 4, y: fb.y - 34, text: "Inside " + title(C) });
+    return sc;
+  }
+  // Boards: a free set of nodes with their connections.
+  let ids = [], bands = {}, role = "in", o = {};
+  if (v.t === "screen") {
+    const s = I.screen[v.id.slice(7)]; if (!s) return sc;
+    const sf = filesIn(v.id).filter(f => G.files[f]), eps = (s.calls || []).filter(k => G.endpoints[k]);
+    const srv = [...new Set(eps.map(k => G.endpoints[k].file).filter(f => G.files[f] && !sf.includes(f)))];
+    const dataParts = new Set();
+    srv.forEach(f => { I.fine.forEach(e => { if (e.from === "file:" + f) { const pid = e.to.startsWith("part:") ? e.to.slice(5) : G.files[e.to.slice(5)]?.part; const p = I.part[pid]; if (p && (p.kind === "data" || isExt(p)) && pid !== G.files[f].part) dataParts.add(pid); } });
+      G.edges.forEach(e => { const p = I.part[e.to]; if (e.from === G.files[f].part && p && (p.kind === "data" || isExt(p))) dataParts.add(e.to); }); });
+    ids = [v.id, ...sf.map(f => "file:" + f), ...eps.map(k => "ep:" + k), ...srv.map(f => "file:" + f), ...[...dataParts].map(p => "part:" + p)];
+    ids.forEach(id => bands[id] = id === v.id ? 0 : id.startsWith("ep:") ? 2 : id.startsWith("part:") ? 4 : srv.includes(id.slice(5)) ? 3 : 1);
+  } else if (v.t === "recent") {
+    ids = Object.keys(R).sort((a, b) => (R[b][0].at > R[a][0].at ? 1 : -1)).map(p => "file:" + p);
+    [...extraChanged].forEach(id => exists(id) && !ids.includes(id) && ids.push(id));
+    role = "recent"; o = { loneFirst: true, maxRows: Math.max(2, Math.ceil(Math.sqrt(ids.length * .6))), gapX: 70 };
+  } else if (v.t === "answer") {
+    ids = (answer?.nodes || []).map(n => n.id).filter(exists);
+  }
+  ids = [...new Set(ids)];
+  const nodes = ids.map(id => node(id, role, bands[id]));
+  const m = lift(ids);
+  if (v.t === "screen") {
+    ids.filter(i => i.startsWith("ep:")).forEach(i => { const f = "file:" + G.endpoints[i.slice(3)].file; if (ids.includes(f)) agg(m, i, f, "request", { label: "handled by" }); });
+    ids.filter(i => i.startsWith("file:") && bands[i] === 3).forEach(f => G.edges.forEach(e => { const to = "part:" + e.to; if (e.from === G.files[f.slice(5)].part && ids.includes(to) && ![...m.values()].some(x => x.from === f && x.to === to)) pkinds(e).forEach(k => agg(m, f, to, k, { label: e.label })); }));
+  }
+  const es = [...m.values()].filter(kindsOk);
+  const L = layout(nodes, es, o);
+  nodes.forEach(n => Object.assign(n, L.P.get(n.id)));
+  sc.nodes = nodes; sc.edges = es;
+  if (v.t === "screen" && nodes.length) { const top = Math.min(...nodes.map(n => n.y)) - 40, seen = new Set(); L.cols.forEach(c => { if (!seen.has(c.band)) { seen.add(c.band); sc.heads.push({ x: c.x, y: top, text: ["Screen", "Its files", "Endpoints it calls", "Server code", "Data and services"][c.band] }); } }); }
+  return sc;
+}
+
+// ---------------------------------------------------------------- rendering
+const world = $("#world"), vp = $("#vp");
+function cardHtml(n) {
+  if (n.role === "more") return `<div class="card pl more" style="left:${n.x}px;top:${n.y}px;width:${n.w}px;height:${n.h}px"><div class="tt">+${n.more} more</div></div>`;
+  const d = info(n.id), t = d.t, fs = filesIn(n.id);
+  const nch = t === "file" ? (R[n.id.slice(5)] ? 1 : 0) : changedCount(n.id);
+  const chg = (t === "file" || t === "ep" || t === "def" ? nch > 0 : false) || extraChanged.has(n.id);
+  const live = fs.some(f => EDIT.has(f)), hi = issuesFor(n.id), note = t === "file" && notes[n.id.slice(5)]?.text;
+  const cls = ["card", "t-" + t, d.kind ? "k-" + d.kind : "", d.ext ? "ext" : "", n.role === "pill" ? "pl" : "", G.blueprint ? "bp" : "", F.recent && chg ? "chg" : "", F.recent && nch && t !== "file" && n.role !== "pill" ? "chg" : "", marks[n.id] ? "mk" : "", live ? "has-live" : "", steps[n.id] ? "has-step" : ""].filter(Boolean).join(" ");
+  const tags = [];
+  if (F.recent && n.role !== "pill") { if (t === "file" && nch) tags.push(`<span class="tag ok">${isNew(n.id.slice(5)) ? "New" : "Changed"}</span>`); else if (nch) tags.push(`<span class="tag ok">${nch} changed</span>`); else if (extraChanged.has(n.id)) tags.push(`<span class="tag ok">Changed</span>`); }
+  if (hi.length) tags.push(`<span class="tag ${hi.some(i => i.severity === "high") ? "bad" : "warn"}" title="Health issues">${hi.length}</span>`);
+  if (note) tags.push(`<span class="ndot" title="Has a note"></span>`);
+  if (d.auth === "public") tags.push(`<span class="tag warn">public</span>`);
+  if (live && n.role === "recent") tags.push(`<span class="tag info">editing now</span>`);
+  const kd = t === "part" || t === "group" || t === "screen" ? `<div class="kd"><i></i><span>${esc(t === "group" ? "Folder" : t === "screen" ? "Screen" : KINDNAME[d.kind] || d.kind)}${d.sub ? "" : ""}</span></div>` : (t === "file" || t === "def") && !containerOf(view) ? `<div class="kd"><span>${esc(d.sub || "")}</span></div>` : "";
+  let body;
+  if (n.role === "pill") body = `<div class="kd"><i></i><span></span></div><div class="tt">${esc(d.method ? d.method + " " + d.path : d.title)}</div><div class="ft">${tags.join("")}</div>`;
+  else if (t === "ep") body = `<div class="em"><span class="meth ${esc(d.method)}">${esc(d.method)}</span><span class="tt p" title="${esc(d.path)}">${esc(epShow(d.path))}</span></div>${d.desc ? `<div class="ds">${esc(d.desc)}</div>` : ""}<div class="ft"><span class="cnt">${esc(d.foot)}</span>${tags.join("")}</div>`;
+  else if (n.role === "recent") {
+    const r = R[n.id.slice(5)] || [], last = r[0];
+    body = `${kd}<div class="tt">${esc(d.title)}</div>${last ? `<div class="asked"><b>${last.live ? "Now" : esc(ago(last.at))}:</b> ${esc(last.text)}</div><div class="tasks">${esc([...new Set(r.flatMap(x => x.done))].slice(0, 4).join(" · "))}</div>` : `<div class="asked">${esc(changeRes?.summary || "")}</div>`}<div class="ft"><span class="cnt">${r.length > 1 ? plural(r.length, "request") : ""}</span>${tags.join("")}</div>`;
+  } else body = `${kd}<div class="tt">${esc(d.title)}</div>${d.desc && t !== "def" ? `<div class="ds">${esc(d.desc)}</div>` : ""}${t === "file" && tech() && d.defs.length ? `<div class="defs">${esc(d.defs.join(", "))}</div>` : ""}${t !== "def" ? `<div class="ft"><span class="cnt">${esc(d.foot || "")}</span>${tags.join("")}</div>` : ""}`;
+  return `<div class="${cls}" data-id="${esc(n.id)}" tabindex="0" role="button" aria-label="${esc((d.method ? d.method + " " + d.path + " " : "") + d.title)}" style="left:${n.x}px;top:${n.y}px;width:${n.w}px;height:${n.h}px">${body}${marks[n.id] ? `<div class="note">${esc(marks[n.id])}</div>` : ""}${live ? `<span class="live" title="A running session is editing this"></span>` : ""}${steps[n.id] ? `<span class="step">${steps[n.id]}</span>` : ""}</div>`;
+}
+function rectOf(id) { if (id === FRAME) return SC.frame; return SC.nodes.find(n => n.id === id); }
+function edgePath(a, b) {
+  const ay = a.y + a.h / 2, by = b.y + b.h / 2;
+  if (b.x >= a.x + a.w + 16) { const x1 = a.x + a.w, x2 = b.x - 3, m = Math.max(30, (x2 - x1) / 2); return `M${x1},${ay} C${x1 + m},${ay} ${x2 - m},${by} ${x2},${by}`; }
+  if (a.x >= b.x + b.w + 16) { const x1 = a.x, x2 = b.x + b.w + 3, m = Math.max(30, (x1 - x2) / 2); return `M${x1},${ay} C${x1 - m},${ay} ${x2 + m},${by} ${x2},${by}`; }
+  const x1 = a.x + a.w, x2 = b.x + b.w + 3, bx = Math.max(x1, x2) + 36 + Math.abs(by - ay) * .12;
+  return `M${x1},${ay} C${bx},${ay} ${bx},${by} ${x2},${by}`;
+}
+function edgesHtml() {
+  let s = `<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z"/></marker><marker id="ahh" class="hot" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z"/></marker></defs>`;
+  SC.edges.forEach((e, i) => {
+    const a = rectOf(e.from), b = rectOf(e.to); if (!a || !b) return;
+    const k = [...e.kinds], d = edgePath(a, b), sw = Math.min(5, 1.2 + Math.log2(1 + e.w) * .7);
+    const ext = e.to.startsWith("host:") || isExt(I.part[e.to.slice(5)]) && e.to.startsWith("part:");
+    s += `<g class="e k-${k[0]}${k.some(x => ASYNC.has(x)) ? " async" : ""}${ext ? " ext" : ""}" data-e="${i}" data-from="${esc(e.from)}" data-to="${esc(e.to)}"><path class="hit" d="${d}"/><path class="ln" d="${d}" stroke-width="${sw.toFixed(2)}"${e.w < 3 && !e.labels.size ? ' opacity=".55"' : ""} marker-end="url(#ah)"/></g>`;
+  });
+  return `<svg id="edges" aria-hidden="true">${s}</svg>`;
+}
+let lastHtml = "";
+function render(o = {}) {
+  hideTip();
+  if (!G) { world.innerHTML = ""; lastHtml = ""; renderEmpty(); renderChrome(); renderPanel(); return; }
+  $("#banner").innerHTML = bannerHtml();
+  refreshMarks();
+  SC = buildScene();
+  const html = (SC.frame ? `<div class="frame" style="left:${SC.frame.x}px;top:${SC.frame.y}px;width:${SC.frame.w}px;height:${SC.frame.h}px">${SC.frame.empty ? `<div class="empty">${esc(SC.frame.empty)}</div>` : ""}</div>` : "")
+    + SC.heads.map(h => `<div class="colhead" style="left:${h.x}px;top:${h.y}px">${esc(h.text)}${h.empty ? `<small>${esc(h.empty)}</small>` : ""}</div>`).join("")
+    + edgesHtml() + SC.nodes.map(cardHtml).join("")
+    + (!SC.nodes.length && !SC.frame ? "" : "");
+  if (html !== lastHtml) {
+    const foc = document.activeElement?.closest?.(".card")?.dataset.id;
+    world.innerHTML = html; lastHtml = html;
+    if (foc) world.querySelector(`.card[data-id="${CSS.escape(foc)}"]`)?.focus({ preventScroll: true });
+  }
+  if (!SC.nodes.length && view.t !== "overview" && !SC.frame) world.innerHTML = `<div class="colhead" style="left:-120px;top:-10px">Nothing to show here</div>`;
+  applySel(); renderChrome(); renderPanel();
+  if (o.fit) fit(o.anim);
+}
+function renderEmpty() {
+  world.innerHTML = ""; $("#banner").innerHTML = "";
+  let el = $(".emptyst"); if (!el) { el = document.createElement("div"); el.className = "emptyst"; vp.appendChild(el); }
+  el.innerHTML = `<div><h2 style="margin:0 0 6px">No map yet</h2><p class="n">The map shows how this project fits together: its screens, server code, data and outside services, and what each request changed. It comes from a free scan of the code, plus a short description Claude writes once.</p>${RO ? "" : `<div class="acts" style="justify-content:center"><button class="btn primary" type="button" data-act="make-map">Ask Claude to make the map</button><button class="btn" type="button" data-act="rescan">Scan now (free)</button></div>`}</div>`;
+}
+function bannerHtml() {
+  if (RO || !G) return "";
+  if (G.auto) return `<div class="banner">These parts are only folders: Claude hasn't described the project yet. <button class="btn" type="button" data-act="make-map">Ask Claude to make the map</button></div>`;
+  return "";
+}
+function refreshMarks() { if (view.t !== "answer") steps = {}; }
+function applySel() {
+  world.querySelectorAll(".card.sel").forEach(c => c.classList.remove("sel"));
+  world.querySelectorAll(".e.hot").forEach(c => { c.classList.remove("hot"); c.querySelector(".ln").setAttribute("marker-end", "url(#ah)"); });
+  const c = sel && world.querySelector(`.card[data-id="${CSS.escape(sel)}"]`);
+  world.classList.toggle("focus", !!c || !!edgeSel);
+  if (c) { c.classList.add("sel"); world.querySelectorAll(`.e[data-from="${CSS.escape(sel)}"], .e[data-to="${CSS.escape(sel)}"]`).forEach(hot); }
+  if (edgeSel) { const g = world.querySelector(`.e[data-from="${CSS.escape(edgeSel.from)}"][data-to="${CSS.escape(edgeSel.to)}"]`); if (g) hot(g); }
+}
+function hot(g) { g.classList.add("hot"); g.querySelector(".ln").setAttribute("marker-end", "url(#ahh)"); }
+
+// ---------------------------------------------------------------- camera
+let camRaf = 0, tween = null;
+function applyCam() {
+  world.style.transform = `translate(${cam.x}px,${cam.y}px) scale(${cam.k})`;
+  world.classList.toggle("far", cam.k < .62); world.classList.toggle("vfar", cam.k < .34);
+  vp.style.backgroundSize = `${22 * cam.k}px ${22 * cam.k}px`; vp.style.backgroundPosition = `${cam.x}px ${cam.y}px`;
+}
+const schedule = () => { if (!camRaf) camRaf = requestAnimationFrame(() => { camRaf = 0; applyCam(); }); };
+function animCam(to, ms = 380) {
+  tween = null;
+  if (RM.matches || ms === 0) { Object.assign(cam, to); applyCam(); return; }
+  const from = { ...cam }, t0 = performance.now(), me = {}; tween = me;
+  const step = now => { if (tween !== me) return; const p = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(1 - p, 3);
+    cam.x = from.x + (to.x - from.x) * e; cam.y = from.y + (to.y - from.y) * e; cam.k = from.k + (to.k - from.k) * e; applyCam(); if (p < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+function viewRect() {
+  const r = vp.getBoundingClientRect(), dock = $("#dock").getBoundingClientRect();
+  const bottom = dock.height && !phone() ? r.height - (dock.top - r.top) + 10 : phone() ? 80 : 20;
+  const sheet = phone() && !$("#panel").classList.contains("closed") ? $("#panel").getBoundingClientRect().height : 0;
+  return { w: r.width, h: Math.max(120, r.height - Math.max(bottom, sheet)), top: phone() ? 50 : 0 };
+}
+function fitTo(b, anim = true, maxK = 1.15, whole) {
+  const r = viewRect(), pad = phone() ? 24 : 60, h = r.h - r.top;
+  const k = Math.max(.12, Math.min(maxK, (r.w - pad * 2) / Math.max(b.w, 1), (h - pad * 2) / Math.max(b.h, 1)));
+  // On a phone a whole-map fit is too small to read: start readable at the left edge instead (F still fits everything).
+  if (phone() && !whole && k < .5) return animCam({ k: .5, x: 16 - b.x * .5, y: r.top + h / 2 - (b.y + b.h / 2) * .5 }, anim ? 380 : 0);
+  animCam({ k, x: r.w / 2 - (b.x + b.w / 2) * k, y: r.top + h / 2 - (b.y + b.h / 2) * k }, anim ? 380 : 0);
+}
+function sceneBox() { if (!SC) return { x: 0, y: 0, w: 1, h: 1 }; const rs = [...SC.nodes, ...(SC.frame ? [SC.frame] : []), ...SC.heads.map(h => ({ x: h.x, y: h.y, w: 120, h: 20 }))]; return bbox(rs); }
+function fit(anim = true, whole) { if (SC) fitTo(sceneBox(), anim, 1.15, whole); }
+function centerOn(id, anim = true) {
+  const n = SC?.nodes.find(x => x.id === id); if (!n) return;
+  const r = viewRect(), k = Math.max(cam.k, .85), h = r.h - r.top;
+  animCam({ k, x: r.w / 2 - (n.x + n.w / 2) * k, y: r.top + h / 2 - (n.y + n.h / 2) * k }, anim ? 420 : 0);
+}
+function zoomAt(px, py, f) {
+  tween = null; const k = Math.max(.12, Math.min(2.5, cam.k * f)); cam.x = px - (px - cam.x) * (k / cam.k); cam.y = py - (py - cam.y) * (k / cam.k); cam.k = k; schedule();
+}
+function zoomBtn(f) { const r = vp.getBoundingClientRect(); const to = Math.max(.12, Math.min(2.5, cam.k * f)); const cx = r.width / 2, cy = r.height / 2; animCam({ k: to, x: cx - (cx - cam.x) * (to / cam.k), y: cy - (cy - cam.y) * (to / cam.k) }, 200); }
+
+// ---------------------------------------------------------------- navigation
+const viewKey = v => v.t + ":" + (v.id || (v.a ? v.a.q : ""));
+function containerOf(v) { return ["part", "group", "file"].includes(v.t) ? v.id : v.t === "overview" ? ROOT : null; }
+function go(v, o = {}) {
+  closeFloating();
+  const same = viewKey(v) === viewKey(view);
+  if (!same && view.t !== "answer" && v.t === "answer") prevView = view;
+  if (!same && !o.keepMarks) marks = {};
+  const swap = () => {
+    view = v; edgeSel = null; if (!o.keepSel) sel = o.select || null; if (o.select) sel = o.select;
+    if (!o.keepPanel) panelMode = o.panel ?? (v.t === "answer" ? "answer" : null);
+    render();
+    if (o.focus) { fit(false); centerOn(o.focus, false); } else fit(false);
+    if (!RM.matches && !same) { const t = { ...cam }; Object.assign(cam, { k: t.k * (o.out ? 1.08 : .92), x: t.x + (o.out ? -1 : 1) * 0, y: t.y }); applyCam(); world.classList.remove("fade"); animCam(t, 320); }
+    else world.classList.remove("fade");
+    if (o.beat) beat(o.beat);
+    if (sel) world.querySelector(`.card[data-id="${CSS.escape(sel)}"]`)?.focus({ preventScroll: true });
+  };
+  if (same) { if (o.select !== undefined) sel = o.select; if (o.panel !== undefined) panelMode = o.panel; render(); if (o.focus) centerOn(o.focus); if (o.beat) beat(o.beat); return; }
+  if (RM.matches || !SC) return swap();
+  const from = o.from && SC.nodes.find(n => n.id === o.from);
+  if (from) { const r = viewRect(), k = cam.k * 1.6; animCam({ k, x: r.w / 2 - (from.x + from.w / 2) * k, y: r.h / 2 - (from.y + from.h / 2) * k }, 200); }
+  world.classList.add("fade");
+  setTimeout(swap, 170);
+}
+function beat(id) { const c = world.querySelector(`.card[data-id="${CSS.escape(id)}"]`); if (c) { c.classList.remove("beat"); void c.offsetWidth; c.classList.add("beat"); } }
+function open(id) {
+  if (!id || !exists(id)) return;
+  const t = typeOf(id);
+  if (t === "screen") return go({ t: "screen", id });
+  if (openable(id)) return go({ t, id }, { from: id });
+  reveal(id);
+}
+function viewFor(id) {
+  const c = chain(id); if (typeOf(id) === "screen") return { t: "screen", id };
+  if (c.length > 1) { const cont = c[c.length - 2]; return { t: typeOf(cont), id: cont }; }
+  return { t: "overview" };
+}
+function reveal(id, o = {}) {
+  if (!id || id === "overview") { go({ t: "overview" }, { select: null }); return; }
+  if (!exists(id)) { toast("That isn't on the map any more."); return; }
+  if (typeOf(id) === "screen") { go({ t: "screen", id }, { select: id, ...o }); return; }
+  if (typeOf(id) === "part" && I.part[id.slice(5)].kind === "tool" && !F.tools) { F.tools = true; saveF(); }
+  const c = chain(id); if (c.length === 1 && typeOf(id) === "file") { go({ t: "file", id }, o); return; }
+  go(viewFor(id), { select: id, focus: id, beat: id, ...o });
+}
+function up() {
+  if (flow) return;
+  if (view.t === "answer") return go(prevView || { t: "overview" }, { out: true });
+  const C = containerOf(view);
+  if (C && C !== ROOT) { const c = chain(C); go(c.length > 1 ? { t: typeOf(c[c.length - 2]), id: c[c.length - 2] } : { t: "overview" }, { out: true, select: C }); return; }
+  if (view.t !== "overview") go({ t: "overview" }, { out: true });
+}
+function crumbs() {
+  const list = [{ v: { t: "overview" }, label: G ? (G.project || "Overview") : "Overview" }];
+  const C = containerOf(view);
+  if (C && C !== ROOT) chain(C).forEach(id => list.push({ v: { t: typeOf(id), id }, label: title(id) }));
+  else if (view.t === "screen") list.push({ v: null, label: "Screens", act: "pop-screens" }, { v: view, label: title(view.id) });
+  else if (view.t === "recent") list.push({ v: view, label: "Recent work" });
+  else if (view.t === "answer") list.push({ v: view, label: "Answer: " + (answer?.q || "") });
+  return list;
+}
+
+// ---------------------------------------------------------------- chrome: header, ask bar, flow bar
+let CR = [];
+function renderChrome() {
+  document.body.classList.toggle("ro", RO);
+  const bp = !!G?.blueprint;
+  $("#title").textContent = (G?.project ? G.project + " · " : "") + "Map";
+  $("#logo").textContent = (G?.project || "M")[0].toUpperCase();
+  $("#modetag").innerHTML = [bp ? `<span class="pill bp">Blueprint</span>` : "", X ? `<span class="pill">Exported ${esc(new Date(X.exported || Date.now()).toLocaleDateString())}</span>` : ""].join(" ");
+  CR = crumbs();
+  $("#crumbs").innerHTML = (view.t !== "overview" ? `<button type="button" class="back" data-act="up" title="Up one level (Backspace)" aria-label="Up one level">${ic("back")}</button>` : "")
+    + CR.map((c, i) => `${i ? `<span class="sep">/</span>` : ""}<button type="button" data-act="crumb" data-i="${i}" ${i === CR.length - 1 ? 'aria-current="page"' : ""} title="${esc(c.label)}">${esc(c.label)}</button>`).join("");
+  const open = issues().filter(i => !i.dismissed && i.severity !== "low"), hi = open.filter(i => i.severity === "high").length;
+  const rv = (G?.review || []).filter(i => !i.dismissed).length;
+  const B = (act, icon, label, extra = "", cls = "") => `<button type="button" class="btn ${cls}" data-act="${act}" title="${esc(label)}" aria-label="${esc(label)}" ${extra}>${ic(icon)}<span class="lbl">${esc(label)}</span>`;
+  const pressed = n => `aria-expanded="${popOpen === n}"`;
+  $("#tools").innerHTML = !G ? B("help", "help", "Shortcuts") + "</button>" : [
+    B("search", "search", "Search") + "</button>",
+    bp ? B("health", "review", "Review", `aria-pressed="${panelMode === "health"}"`) + (rv ? `<span class="tag warn">${rv}</span>` : "") + "</button>"
+      : B("health", "pulse", "Health", `aria-pressed="${panelMode === "health"}"`) + (open.length ? `<span class="tag ${hi ? "bad" : "warn"}">${open.length}</span>` : "") + "</button>",
+    B("pop-recent", "clock", "Recent work", pressed("recent"), F.recent ? "" : "") + (F.recent && Object.keys(R).length ? `<span class="tag ok">${Object.keys(R).length}</span>` : "") + "</button>",
+    G.screens.length ? B("pop-screens", "screen", "Screens", pressed("screens")) + "</button>" : "",
+    B("pop-flows", "flow", "Flows", pressed("flows")) + "</button>",
+    B("tour", "flag", "Start here") + "</button>",
+    B("pop-filters", "filter", "Filters", pressed("filters")) + "</button>",
+    RO ? "" : B("export", "download", "Export") + "</button>",
+    RO ? "" : B("rescan", "refresh", "Rescan") + "</button>",
+    B("panel", "panel", "Details panel (P)", `aria-pressed="${!$("#panel").classList.contains("closed")}"`) + "</button>",
+  ].join("");
+  $("#tools").querySelectorAll('[data-act="panel"] .lbl').forEach(l => l.textContent = "Details");
+  renderAsk(); renderFlowbar();
+}
+let pastOpen = false;
+function renderAsk() {
+  const f = $("#askbar"); if (RO || !G) { f.innerHTML = ""; f.hidden = true; return; }
+  f.hidden = !!flow;
+  const val = f.querySelector("input")?.value ?? "", had = document.activeElement === f.querySelector("input");
+  const bp = !!G.blueprint;
+  const past = asks.slice(-8).reverse();
+  f.innerHTML = `${pastOpen && past.length && !busy ? `<div class="past" role="listbox"><h4>Earlier answers</h4>${past.map((a, i) => `<button type="button" data-act="answer" data-i="${asks.length - 1 - i}"><span>${esc(a.q)}</span><small class="n">${esc(ago(a.at))}</small></button>`).join("")}</div>` : ""}
+    <div class="chips">${ctxIds.map(id => `<span class="chip" title="${esc(id)}"><span>${esc(title(id))}</span><button type="button" data-act="ctx-x" data-id="${esc(id)}" aria-label="Remove ${esc(title(id))}">${ic("x")}</button></span>`).join("")}</div>
+    ${bp ? `<div class="seg" role="group" aria-label="Mode"><button type="button" data-act="mode" data-m="ask" aria-pressed="${mode === "ask"}">Ask</button><button type="button" data-act="mode" data-m="change" aria-pressed="${mode === "change"}">Change</button></div>` : ""}
+    <input name="q" aria-label="${mode === "change" ? "Describe a change to the plan" : "Ask about the code"}" placeholder="${mode === "change" ? "Describe a change to the plan…" : view.t === "answer" ? "Ask a follow-up…" : ctxIds.length ? "Ask about these…" : "Ask how something works…"}" ${busy ? "disabled" : ""}>
+    <button class="btn primary send" type="submit" aria-label="Send" ${busy ? "disabled" : ""}>${ic("send")}</button>
+    ${busy ? `<div class="busy"><span class="spin"></span><span>${mode === "change" ? "Claude is updating the plan" : "Claude is reading the code"}… <span id="busyt">${Math.round((Date.now() - busy.t0) / 1000)}s</span></span><span class="n" style="margin-left:auto">usually under a minute</span></div>` : ""}
+    ${askErr ? `<div class="err">${esc(askErr)}</div>` : ""}`;
+  const inp = f.querySelector("input"); inp.value = val; if (had && !busy) inp.focus();
+}
+function renderFlowbar() {
+  const b = $("#flowbar");
+  if (!flow) { b.hidden = true; b.innerHTML = ""; return; }
+  const s = flow.steps[flow.i] || {};
+  b.hidden = false;
+  b.innerHTML = `<div class="fn">${esc(flow.name)} · ${flow.i + 1} of ${flow.steps.length}</div>
+    <div class="ctl"><button class="btn sm" type="button" data-act="flow-prev" aria-label="Previous step" ${flow.i ? "" : "disabled"}>${ic("left")}</button><button class="btn sm ${flow.i === flow.steps.length - 1 ? "" : "primary"}" type="button" data-act="flow-next" aria-label="Next step">${flow.i === flow.steps.length - 1 ? "Done" : ic("right")}</button><button class="btn sm ghost" type="button" data-act="flow-stop" aria-label="Stop (Esc)" title="Stop (Esc)">${ic("x")}</button></div>
+    <p>${s.node && s.node !== "overview" && exists(s.node) ? `<b>${esc(String(title(s.node)).replace(/[.!?:]+$/, ""))}.</b> ` : ""}${esc(s.text || "")}</p>
+    <div class="dots">${flow.steps.map((_, i) => `<i class="${i <= flow.i ? "on" : ""}"></i>`).join("")}</div>`;
+}
+function playFlow(f, name) {
+  const st = (f.steps || []).filter(s => !s.node || s.node === "overview" || exists(s.node));
+  if (!st.length) { toast("That flow has no steps on the current map."); return; }
+  flow = { name: name || f.name, steps: st, i: 0 }; closeFloating(); stepFlow(0);
+}
+function stepFlow(i) {
+  if (!flow) return;
+  if (i >= flow.steps.length) return stopFlow();
+  flow.i = Math.max(0, i); const s = flow.steps[flow.i];
+  renderFlowbar(); $("#askbar").hidden = true;
+  if (!s.node || s.node === "overview") { go({ t: "overview" }, { select: null, panel: null }); return; }
+  reveal(s.node, { panel: null });
+}
+function stopFlow() { flow = null; renderChrome(); fit(); }
+function autoTour() {
+  const steps = [{ node: "overview", text: G.summary || `This is the map of ${G.project}. Each card is a part of the project; lines show what uses what.` }];
+  G.parts.filter(p => p.kind !== "tool" && !isExt(p)).forEach(p => steps.push({ node: "part:" + p.id, text: p.summary || `${p.name}: ${plural(p.files.length, "file")}.` }));
+  if (G.parts.some(isExt)) steps.push({ node: "overview", text: "Outside services sit on the right. Double-click a part to go inside it, press / to search, or ask a question at the bottom." });
+  return steps;
+}
+function tour() { playFlow({ steps: G.tour.length ? G.tour : autoTour() }, "Start here"); }
+
+// ---------------------------------------------------------------- side panel
+const lk = (id, right = "") => `<button type="button" class="lk" data-act="go" data-id="${esc(id)}" title="${esc(id)}"><span class="t">${esc(info(id).method ? info(id).method + " " + info(id).path : title(id))}</span>${right ? `<span class="r">${right}</span>` : ""}</button>`;
+let lastPanel = "";
+function renderPanel() {
+  const p = $("#panel"); let h = "";
+  if (!G) h = `<p class="n">Ask Claude to “make the project map”, in the terminal or with the button. It runs a free scan, reads the code, and writes the parts.</p>`;
+  else if (panelMode === "health") h = G.blueprint ? reviewPanel() : healthPanel();
+  else if (panelMode === "edge" && edgeSel) h = edgePanel(edgeSel);
+  else if (panelMode === "change" && changeRes) h = changePanel();
+  else if (sel && exists(sel)) h = nodePanel(sel);
+  else if (view.t === "answer" && answer) h = answerPanel();
+  else if (containerOf(view) && containerOf(view) !== ROOT) h = nodePanel(view.id, true);
+  else if (view.t === "screen") h = nodePanel(view.id, true);
+  else if (view.t === "recent") h = recentPanel();
+  else h = appPanel();
+  if (phone()) p.classList.toggle("closed", !(sel || panelMode || view.t === "answer") || p.dataset.user === "closed");
+  if (h !== lastPanel) { const st = $("#pbody").scrollTop, same = lastPanel.slice(0, 200) === h.slice(0, 200); $("#pbody").innerHTML = h; lastPanel = h; $("#pbody").scrollTop = same ? st : 0; }
+}
+const closeBtn = act => `<button type="button" class="btn ghost x" data-act="${act}" aria-label="Close" title="Close (Esc)">${ic("x")}</button>`;
+function appPanel() {
+  const nfiles = Object.values(G.files).filter(f => !f.config).length, ne = Object.keys(G.endpoints).length;
+  const stale = G.stale.map(id => I.part[id]).filter(Boolean);
+  const reqs = recentReqs().slice(0, 5);
+  let h = `<div class="ph"><h2>${esc(G.project || "This project")}</h2></div>${G.summary ? `<p class="lead">${esc(G.summary)}</p>` : ""}
+    <div class="stats"><div class="stat"><b>${G.parts.filter(p => !isExt(p)).length}</b><span>parts</span></div><div class="stat"><b>${nfiles}</b><span>files</span></div><div class="stat"><b>${ne}</b><span>endpoints</span></div></div>
+    <p class="n" style="margin-top:10px">${G.blueprint ? "Planned, not built yet. " : ""}${G.scanned ? "Scanned " + esc(ago(G.scanned)) : ""}${G.described ? " · described " + esc(ago(G.described)) : ""}</p>`;
+  if (G.blueprint && G.plan) { const pl = G.plan;
+    h += `<h3>The plan</h3>${pl.source ? `<p class="n">From <span class="mono">${esc(pl.source)}</span></p>` : ""}${pl.stack?.length ? `<div class="acts">${pl.stack.map(s => `<span class="tag info">${esc(s)}</span>`).join("")}</div>` : ""}
+      ${pl.assumptions?.length ? `<h3>Assumptions</h3><ul class="ls">${pl.assumptions.map(a => `<li class="mdesc">• ${esc(a)}</li>`).join("")}</ul>` : ""}
+      ${pl.questions?.length ? `<h3>Open questions</h3><div class="box warn"><ul class="ls">${pl.questions.map(a => `<li>• ${esc(a)}</li>`).join("")}</ul></div>` : ""}`; }
+  if (G.repos.length > 1) { const cnt = {}; Object.values(G.files).forEach(f => cnt[f.repo || ""] = (cnt[f.repo || ""] || 0) + 1);
+    h += `<h3>Repositories <span class="c">${G.repos.length}</span></h3><ul class="ls">${G.repos.map(r => `<li class="lk" style="cursor:default"><span class="t">${esc(r)}</span><span class="r">${plural(cnt[r] || 0, "file")}</span></li>`).join("")}</ul>`; }
+  if (stale.length) h += `<h3>Out of date</h3><div class="box warn">${plural(stale.length, "part")} changed since Claude last described the map: ${stale.map(p => esc(p.name)).join(", ")}.${RO ? "" : `<div class="acts"><button class="btn" type="button" data-act="update-map">Update the map</button><span class="msg" data-msg="update">${esc(sentMsg.update || "")}</span></div>`}</div>`;
+  if (reqs.length && F.recent) h += `<h3>Changed ${F.span === 1 ? "today" : "this week"}</h3><ul class="ls">${reqs.map(r => `<li><button type="button" class="lk" data-act="recent-board"><span class="t">${esc(r.text)}</span><span class="r">${r.live ? "now" : esc(ago(r.at))}</span></button></li>`).join("")}</ul>`;
+  const open = issues().filter(i => !i.dismissed && i.severity !== "low");
+  if (!G.blueprint) h += `<h3>Health</h3>${open.length ? `<ul class="ls">${open.slice(0, 5).map(i => `<li class="lk" style="cursor:default"><span class="t">${esc(i.title)}</span><span class="tag ${i.severity === "high" ? "bad" : "warn"}">${i.severity}</span></li>`).join("")}</ul><div class="acts"><button class="btn sm" type="button" data-act="health">Open the health check</button></div>` : `<p class="n">No open issues.</p>`}`;
+  if (G.unassigned.length) h += `<h3>Files in no part <span class="c">${G.unassigned.length}</span></h3><ul class="ls">${G.unassigned.slice(0, 10).map(f => `<li>${G.files[f] ? lk("file:" + f) : `<span class="mono">${esc(f)}</span>`}</li>`).join("")}</ul>`;
+  h += `<p class="n" style="margin-top:22px">Double-click a card to go inside. Right-click for more. Press <kbd>?</kbd> for shortcuts.</p>`;
+  return h;
+}
+function recentReqs() {
+  const by = {}; Object.entries(R).forEach(([path, l]) => l.forEach(t => { const k = t.id || t.live; (by[k] = by[k] || { ...t, paths: new Set() }).paths.add(path); }));
+  return Object.values(by).sort((a, b) => (b.at > a.at ? 1 : -1));
+}
+function recentPanel() {
+  const reqs = recentReqs();
+  return `<div class="ph"><h2>Recent work</h2></div><p class="n">Files changed ${F.span === 1 ? "today" : "in the last 7 days"}, newest first, with what was asked.</p>
+    ${reqs.length ? reqs.map(r => `<div class="box" style="margin-top:10px"><div style="display:flex;gap:8px"><b style="flex:1;min-width:0;overflow-wrap:anywhere">${esc(r.text)}</b><span class="n">${r.live ? `<span class="tag info">now</span>` : esc(ago(r.at))}</span></div>
+      ${r.done?.length ? `<div class="mdesc">${esc(r.done.slice(0, 6).join(" · "))}</div>` : ""}<ul class="ls" style="margin-top:6px">${[...r.paths].slice(0, 8).map(p => `<li>${lk("file:" + p)}</li>`).join("")}</ul></div>`).join("") : `<p>Nothing changed ${F.span === 1 ? "today" : "this week"}.</p>`}`;
+}
+function nodePanel(id, isView) {
+  const d = info(id), t = d.t, k = id.slice(t.length + 1), c = chain(id);
+  const ep = t === "ep" ? G.endpoints[k] : null, f = t === "file" ? G.files[k] : null, pt = t === "part" ? I.part[k] : null, scr = t === "screen" ? I.screen[k] : null;
+  const path = t === "file" ? k : t === "ep" ? ep.file : t === "def" ? k.replace(/#[^#]*$/, "") : t === "screen" ? scr.file : null;
+  const line = t === "ep" ? ep.line : 1;
+  let h = `<div class="ph"><div style="flex:1;min-width:0"><div class="sub">${esc(t === "part" ? (d.ext ? "Outside service" : KINDNAME[pt.kind] || "Part") : t === "group" ? "Folder" : t === "file" ? "File" : t === "ep" ? "Endpoint" : t === "def" ? "Definition" : t === "screen" ? "Screen" : "")}${isView ? " · this view" : ""}</div>
+    <h2>${t === "ep" ? `<span class="meth ${esc(d.method)}">${esc(d.method)}</span> <span class="mono" style="font-size:15px">${esc(d.path)}</span>` : esc(d.title)}</h2>
+    ${path && !X ? `<div class="sub mono">${esc(path)}${t === "ep" && line ? ":" + line : ""}</div>` : path ? `<div class="sub mono">${esc(path)}</div>` : ""}</div>${!isView ? closeBtn("unsel") : ""}</div>`;
+  if (view.t === "answer" && !isView) h = `<button type="button" class="btn sm ghost" data-act="unsel" style="margin:-4px 0 8px -8px">${ic("back")} Back to the answer</button>` + h;
+  const desc = t === "part" ? pt.summary : t === "file" ? f.desc : t === "ep" ? ep.desc : t === "screen" ? scr.route : t === "group" ? "" : "";
+  if (desc) h += `<p class="lead">${esc(desc)}</p>`;
+  const acts = [];
+  if (!isView && (openable(id) || t === "ep" || t === "def")) acts.push(`<button class="btn primary" type="button" data-act="open" data-id="${esc(id)}">${openable(id) ? "Open" : "Show on map"}</button>`);
+  if (!RO) acts.push(`<button class="btn" type="button" data-act="ask-about" data-id="${esc(id)}">Ask about this</button>`);
+  if (!RO && G.root && path) acts.push(`<a class="btn" href="${esc(editorUrl(path, line))}">Open in editor</a>`);
+  if (t === "file") acts.push(RO ? "" : `<button class="btn" type="button" data-act="note" data-id="${esc(id)}">${notes[k] ? "Edit note" : "Add note"}</button>`);
+  if (G.blueprint && !RO && (t === "part" || t === "file" || t === "group")) acts.push(`<button class="btn" type="button" data-act="build" data-id="${esc(id)}">Build this with Claude</button><span class="msg" data-msg="build:${esc(id)}">${esc(sentMsg["build:" + id] || "")}</span>`);
+  h += `<div class="acts">${acts.join("")}</div>`;
+  if (t === "file" && notes[k]?.text) h += `<h3>Note</h3><div class="box warn">${esc(notes[k].text)}<div class="n" style="margin-top:4px">${esc(ago(notes[k].at))}</div></div>`;
+  if (marks[id]) h += `<div class="box warn" style="margin-top:12px">${esc(marks[id])}</div>`;
+  if (c.length > 1) h += `<h3>Part of</h3><ul class="ls">${c.slice(0, -1).map(x => `<li>${lk(x)}</li>`).join("")}</ul>`;
+  // facts
+  const kv = [];
+  if (t === "part" && !d.ext) kv.push(["Size", `${plural(pt.files.length, "file")} · ${(pt.lines || 0).toLocaleString()} lines`]);
+  if (t === "file") { if (f.lines) kv.push(["Size", f.lines.toLocaleString() + " lines"]); if (f.repo) kv.push(["Repository", f.repo]); if (tech() && f.pkgs?.length) kv.push(["Packages", f.pkgs.join(", ")]); if (f.hosts?.length) kv.push(["Talks to", f.hosts.join(", ")]); if (f.unused) kv.push(["Note", "Nothing seems to use this file"]); }
+  if (t === "ep") { kv.push(["Auth", ep.auth || (ep.public ? "public" : "unknown")]); if (tech() && ep.handler) kv.push(["Handler", ep.handler]); if (tech() && ep.kind) kv.push(["Kind", ep.kind]); }
+  if (t === "screen") { if (scr.framework) kv.push(["Framework", scr.framework]); if (scr.route) kv.push(["Route", scr.route]); }
+  if (kv.length) h += `<dl class="kv">${kv.map(([a, b]) => `<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join("")}</dl>`;
+  if (t === "part" && (pt.new.length || pt.changed.length || pt.removed.length)) h += `<div class="box warn">Since the last description: ${[pt.new.length && pt.new.length + " new", pt.changed.length && pt.changed.length + " changed", pt.removed.length && pt.removed.length + " removed"].filter(Boolean).join(", ")}.${RO ? "" : ` <button class="btn sm" type="button" data-act="update-map" data-part="${esc(pt.id)}">Update the map</button>`}</div>`;
+  // recent work
+  const fs = new Set(filesIn(id)), rq = [];
+  hist.slice().reverse().forEach(e => { if ((e.files || []).some(x => fs.has(x.path))) rq.push({ at: e.ended || e.started, text: clean(e.prompt || e.title, e), done: (e.done || []).map(x => x.title) }); });
+  liveS().forEach(([sid, s]) => { if ((s.files || []).some(x => fs.has(x.path))) rq.unshift({ at: s.updated, live: true, text: clean(s.round?.prompt || s.title), done: [] }); });
+  if (rq.length) h += `<h3>Recent work <span class="c">${rq.length}</span></h3><ul class="ls">${rq.slice(0, 6).map(r => `<li style="padding:3px 0"><div style="display:flex;gap:8px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.text)}">${esc(r.text)}</span><span class="n">${r.live ? `<span class="tag info">editing now</span>` : esc(ago(r.at))}</span></div>${r.done.length ? `<div class="mdesc">${esc(r.done.slice(0, 4).join(" · "))}</div>` : ""}</li>`).join("")}</ul>`;
+  // inside
+  const kids = t === "screen" ? [] : children(id);
+  if (kids.length) h += `<h3>Inside <span class="c">${kids.length}</span></h3><ul class="ls">${kids.slice(0, 14).map(x => `<li>${lk(x, R[x.slice(5)] && F.recent ? `<span class="tag ok">changed</span>` : "")}</li>`).join("")}${kids.length > 14 ? `<li class="mdesc">and ${kids.length - 14} more</li>` : ""}</ul>`;
+  // relations
+  if (t !== "def") {
+    let used = [], uses = [];
+    if (t === "ep") used = [...(I.callers[k] || [])].map(p => ["file:" + p, ""]);
+    else if (t === "screen") uses = (scr.calls || []).filter(x => G.endpoints[x]).map(x => ["ep:" + x, ""]);
+    else { const o = outside(id), lab = e => [...e.labels].join(", ");
+      const by = (m, s) => { const r = new Map(); m.forEach(e => { const k2 = s === "u" ? e.from : e.to; r.set(k2, [...(r.get(k2) || []), lab(e)].filter(Boolean)); }); return [...r.entries()].map(([a, l]) => [a, [...new Set(l)].join(", ")]); };
+      used = by(o.used, "u"); uses = by(o.uses, "s"); }
+    const li = ([x, l]) => `<li>${x.startsWith("host:") ? `<span class="lk" style="cursor:default"><span class="t">${esc(x.slice(5))}</span><span class="r">outside host</span></span>` : lk(x, esc(l))}</li>`;
+    if (used.length) h += `<h3>Used by <span class="c">${used.length}</span></h3><ul class="ls">${used.slice(0, 16).map(li).join("")}</ul>`;
+    if (uses.length) h += `<h3>Depends on <span class="c">${uses.length}</span></h3><ul class="ls">${uses.slice(0, 16).map(li).join("")}</ul>`;
+  }
+  // endpoints
+  const eps = t === "ep" || t === "screen" ? [] : epsIn(id);
+  if (eps.length) h += `<h3>Endpoints <span class="c">${eps.length}</span></h3><ul class="ls">${eps.slice(0, 30).map(x => { const e = G.endpoints[x]; return `<li><button type="button" class="lk" data-act="go" data-id="ep:${esc(x)}"><span class="meth ${esc(e.method)}">${esc(e.method)}</span><span class="t mono">${esc(shortEp(e.path || x))}</span><span class="r">${e.auth === "public" || (!e.auth && e.public) ? `<span class="tag warn">public</span>` : esc(e.auth && e.auth !== "unknown" ? e.auth : "")}${I.callers[x]?.size ? " · " + plural(I.callers[x].size, "caller") : ""}</span></button></li>`; }).join("")}</ul>`;
+  if (t === "ep" && I.callers[k]?.size === 0) h += `<p class="n">No callers found in the code.</p>`;
+  // screens
+  if (t !== "screen") { const ss = screensReaching(id); if (ss.length) h += `<h3>Screens that reach it <span class="c">${ss.length}</span></h3><ul class="ls">${ss.slice(0, 12).map(s => `<li>${lk("screen:" + s.id, esc(s.route || ""))}</li>`).join("")}</ul>`; }
+  // notes inside
+  if (t !== "file") { const ns = [...fs].filter(p => notes[p]?.text); if (ns.length) h += `<h3>Notes <span class="c">${ns.length}</span></h3><ul class="ls">${ns.map(p => `<li>${lk("file:" + p)}<div class="mdesc">${esc(notes[p].text)}</div></li>`).join("")}</ul>`; }
+  // health
+  const hi = G.blueprint ? (G.review || []).filter(i => !i.dismissed && (i.locations.some(l => l.node === id || fs.has(l.file)) || (t === "part" && i.parts.includes(k)))) : issuesFor(id);
+  if (hi.length) h += `<h3>${G.blueprint ? "Review" : "Health"} <span class="c">${hi.length}</span></h3>${hi.map(i => issueHtml(i, !G.blueprint)).join("")}`;
+  // impact
+  if (t !== "def" && t !== "screen") {
+    const im = impact(id), np = Object.keys(im.byPart).length + im.parts.length;
+    h += `<h3>Impact</h3>`;
+    if (!im.files && !im.parts.length && !im.screens.length) h += `<p class="n">Nothing else depends on this, as far as the scan can tell.</p>`;
+    else h += `<p class="n" style="margin:0 0 6px">If this changes, these could be affected: ${[im.files && plural(im.files, "file"), np && "in " + plural(np, "part"), im.screens.length && plural(im.screens.length, "screen")].filter(Boolean).join(", ")}.</p>
+      <ul class="ls">${Object.entries(im.byPart).sort((a, b) => b[1].length - a[1].length).map(([p, l]) => `<li>${p ? lk("part:" + p, plural(l.length, "file")) : `<span class="mdesc">No part · ${plural(l.length, "file")}</span>`}<div class="mdesc mono">${esc(l.slice(0, 4).map(base).join(", "))}${l.length > 4 ? ` +${l.length - 4}` : ""}</div></li>`).join("")}
+      ${im.parts.map(p => `<li>${lk("part:" + p, "via its links")}</li>`).join("")}</ul>
+      ${im.screens.length ? `<div class="mdesc" style="margin-top:6px">Screens: ${im.screens.map(s => `<button type="button" class="tag info" style="border:0;cursor:pointer" data-act="go" data-id="screen:${esc(s.id)}">${esc(s.name)}</button>`).join(" ")}</div>` : ""}`;
+  }
+  return h;
+}
+const editorUrl = (path, line) => `vscode://file/${String(G.root).replace(/\/$/, "")}/${path}:${line || 1}`;
+function issueHtml(i, health = true) {
+  const st = dismissing === i.id;
+  return `<div class="issue ${esc(i.severity)}${i.dismissed ? " off" : ""}"><div><span class="tag ${i.severity === "high" ? "bad" : i.severity === "medium" ? "warn" : ""}">${esc(i.severity)}</span> <b>${esc(i.title)}</b></div>
+    ${i.detail ? `<p>${esc(i.detail)}</p>` : ""}
+    ${i.locations.length ? `<div class="locs">${i.locations.slice(0, 6).map(l => `<button type="button" data-act="go" data-id="${esc(l.node || "file:" + l.file)}"><span class="mono">${esc(l.file || l.node)}${l.line ? ":" + l.line : ""}</span> <span class="n">${esc(l.text || "")}</span></button>`).join("")}${i.locations.length > 6 ? `<span class="n">and ${i.locations.length - 6} more</span>` : ""}</div>` : ""}
+    ${i.dismissed && i.reason ? `<p>Not a problem: ${esc(i.reason)}</p>` : ""}
+    <div class="acts" style="margin-top:6px">
+      <button class="btn sm" type="button" data-act="issue-show" data-id="${esc(i.id)}">Show on map</button>
+      ${health ? (i.dismissed ? (RO ? "" : `<button class="btn sm" type="button" data-act="issue-undis" data-id="${esc(i.id)}">Show again</button>`)
+        : `${RO ? `<button class="btn sm" type="button" data-act="issue-copy" data-id="${esc(i.id)}">Copy fix prompt</button>` : `<button class="btn sm" type="button" data-act="issue-fix" data-id="${esc(i.id)}" ${sentMsg["fix:" + i.id] ? "disabled" : ""}>Fix with Claude</button><button class="btn sm ghost" type="button" data-act="issue-dis" data-id="${esc(i.id)}">Not a problem</button>`}`)
+        : RO ? "" : `<button class="btn sm" type="button" data-act="review-resolve" data-id="${esc(i.id)}">Resolve</button>`}
+      <span class="msg">${esc(sentMsg["fix:" + i.id] || "")}</span>
+    </div>
+    ${st ? `<div class="why"><input id="whyin" placeholder="Why? (optional)" aria-label="Why it is not a problem"><button class="btn sm primary" type="button" data-act="issue-dis-ok" data-id="${esc(i.id)}">Confirm</button><button class="btn sm ghost" type="button" data-act="issue-dis-no">Cancel</button></div>` : ""}</div>`;
+}
+let dismissing = null;
+function healthPanel() {
+  const all = issues(), rank = { high: 0, medium: 1, low: 2 };
+  const open = all.filter(i => !i.dismissed).sort((a, b) => rank[a.severity] - rank[b.severity]), off = all.filter(i => i.dismissed);
+  return `<div class="ph"><h2>Health check</h2>${closeBtn("health")}</div>
+    <p class="n">Common mistakes found by pattern matching: secrets in code, endpoints anyone can call, SQL built from variables, unsafe input. A quick check, not an audit.</p>
+    ${open.length ? open.map(i => issueHtml(i)).join("") : `<div class="box ok">No open issues ✓</div>`}
+    ${off.length ? `<h3>Not a problem <span class="c">${off.length}</span></h3>${off.map(i => issueHtml(i)).join("")}` : ""}`;
+}
+function reviewPanel() {
+  const rv = G.review || [];
+  return `<div class="ph"><h2>Design review</h2>${closeBtn("health")}</div><p class="n">Things to settle in the plan before building. Resolve one to change the plan.</p>
+    ${rv.length ? rv.map(i => issueHtml(i, false)).join("") : `<div class="box ok">Nothing to review ✓</div>`}`;
+}
+function edgePanel(e) {
+  const k = [...e.kinds].map(x => (KINDS.find(y => y[0] === x) || [x, x])[1]).join(", ");
+  return `<div class="ph"><h2>${esc(e.from === FRAME ? title(view.id) : title(e.from))} → ${esc(e.to === FRAME ? title(view.id) : title(e.to))}</h2>${closeBtn("unsel")}</div>
+    <dl class="kv"><dt>Kind</dt><dd>${esc(k)}</dd>${e.imports ? `<dt>Imports</dt><dd>${e.imports}</dd>` : ""}${e.labels.size ? `<dt>Link</dt><dd>${esc([...e.labels].join("; "))}</dd>` : ""}</dl>
+    ${e.eps.size ? `<h3>Endpoints it calls</h3><ul class="ls">${[...e.eps].map(x => `<li>${lk("ep:" + x)}</li>`).join("")}</ul>` : ""}
+    <div class="acts">${RO ? "" : `<button class="btn" type="button" data-act="ask-edge">Ask about this connection</button>`}</div>`;
+}
+function answerPanel() {
+  const a = answer;
+  return `<div class="ph"><div style="flex:1;min-width:0"><div class="sub">Answer${a.at ? " · " + esc(ago(a.at)) : ""}${a.cost ? " · " + money(a.cost) : ""}${a.by ? " · " + esc(a.by) : ""}</div><h2>${esc(a.q)}</h2></div></div>
+    <div class="acts"><button class="btn" type="button" data-act="back-map">${ic("back")} Back to map</button></div>
+    <div class="md" style="margin-top:10px">${md(a.answer)}</div>
+    ${a.followups?.length && !RO ? `<h3>Follow up</h3><div class="fups">${a.followups.map(f => `<button type="button" data-act="followup" data-q="${esc(f)}">${esc(f)}</button>`).join("")}</div>` : ""}
+    ${(a.nodes || []).length ? `<h3>On the map <span class="c">${a.nodes.length}</span></h3><ul class="ls">${a.nodes.filter(n => exists(n.id)).map(n => `<li>${lk(n.id, n.step ? "step " + n.step : "")}${n.note ? `<div class="mdesc">${esc(n.note)}</div>` : ""}</li>`).join("")}</ul>` : ""}`;
+}
+function changePanel() {
+  const r = changeRes;
+  return `<div class="ph"><div style="flex:1;min-width:0"><div class="sub">Plan changed${r.cost ? " · " + money(r.cost) : ""}${r.by ? " · " + esc(r.by) : ""}</div><h2>${esc(r.q)}</h2></div>${closeBtn("change-x")}</div>
+    <div class="md" style="margin-top:10px">${md(r.summary || "")}</div>
+    ${(r.changed || []).length ? `<h3>Changed <span class="c">${r.changed.length}</span></h3><ul class="ls">${r.changed.filter(exists).map(id => `<li>${lk(id)}</li>`).join("")}</ul>` : ""}
+    <div class="acts"><button class="btn" type="button" data-act="undo">Undo this change</button><button class="btn" type="button" data-act="recent-board">See the changes</button></div>
+    ${r.followups?.length ? `<h3>Follow up</h3><div class="fups">${r.followups.map(f => `<button type="button" data-act="followup" data-q="${esc(f)}">${esc(f)}</button>`).join("")}</div>` : ""}`;
+}
+
+// ---------------------------------------------------------------- popovers, menus, dialogs
+let popOpen = null;
+function closeFloating() { $("#pop").hidden = true; $("#menu").hidden = true; if (popOpen) { popOpen = null; renderChrome(); } hideTip(); }
+function showPop(name, btn) {
+  if (popOpen === name) { closeFloating(); return; }
+  closeFloating(); popOpen = name;
+  const p = $("#pop"); p.innerHTML = popHtml(name); p.hidden = false;
+  renderChrome();
+  const b = document.querySelector(`[data-act="pop-${name}"]`) || btn, r = b ? b.getBoundingClientRect() : { left: 16, bottom: 60, right: 16 };
+  const w = p.offsetWidth; p.style.top = (r.bottom + 6) + "px"; p.style.left = Math.max(12, Math.min(innerWidth - w - 12, r.right - w)) + "px";
+  p.querySelector("input,button")?.focus({ preventScroll: true });
+}
+function popHtml(n) {
+  if (n === "recent") { const reqs = recentReqs();
+    return `<h4>Recent work</h4><label class="ck"><input type="checkbox" data-f="recent" ${F.recent ? "checked" : ""}> Highlight recent work</label>
+      <div class="seg" role="group" aria-label="Span" style="margin:6px 0"><button type="button" data-act="span" data-v="1" aria-pressed="${F.span === 1}">Today</button><button type="button" data-act="span" data-v="7" aria-pressed="${F.span === 7}">7 days</button></div>
+      <div><button class="btn primary" type="button" data-act="recent-board" style="width:100%;justify-content:center;margin:6px 0">Open the recent work board</button></div>
+      <h4>Requests <span class="n">${reqs.length}</span></h4>${reqs.length ? reqs.slice(0, 8).map(r => `<button type="button" class="row" data-act="recent-board"><span class="t"><b>${esc(r.text)}</b><small>${r.live ? "running now" : esc(ago(r.at))} · ${plural(r.paths.size, "file")}</small></span></button>`).join("") : `<p class="n">Nothing ${F.span === 1 ? "today" : "this week"}.</p>`}`; }
+  if (n === "screens") { const by = {}; G.screens.forEach(s => (by[s.framework || "other"] = by[s.framework || "other"] || []).push(s));
+    return Object.keys(by).length ? Object.entries(by).map(([fw, l]) => `<h4>${esc(fw)}</h4>${l.map(s => `<button type="button" class="row" data-act="go" data-id="screen:${esc(s.id)}"><span class="t"><b>${esc(s.name)}</b><small>${esc(s.route || s.file || "")}</small></span><span class="n">${(s.calls || []).length ? plural(s.calls.length, "call") : ""}</span></button>`).join("")}`).join("") : `<p class="n">No screens found.</p>`; }
+  if (n === "flows") return `<h4>Flows</h4>${G.flows.length ? G.flows.map((f, i) => `<button type="button" class="row" data-act="flow" data-i="${i}">${ic("play")}<span class="t"><b>${esc(f.name)}</b><small>${esc(f.summary || plural((f.steps || []).length, "step"))}</small></span>${f.requested ? `<span class="tag info">asked</span>` : ""}</button>`).join("") : `<p class="n">No flows yet.${RO ? "" : " Ask for one below."}</p>`}
+    ${RO ? "" : `<h4>Request a new flow</h4><form id="flowform"><textarea name="q" rows="2" aria-label="Describe the flow" placeholder="e.g. What happens when someone signs up?" ${flowBusy ? "disabled" : ""}>${esc(flowQ)}</textarea><div class="acts" style="margin-top:6px"><button class="btn primary" type="submit" ${flowBusy ? "disabled" : ""}>Trace it</button>${flowBusy ? `<span class="n" style="display:flex;gap:6px;align-items:center"><span class="spin"></span>Tracing… <span id="flowt">${Math.round((Date.now() - flowBusy) / 1000)}s</span></span>` : ""}</div>${flowErr ? `<p class="err">${esc(flowErr)}</p>` : ""}</form>`}`;
+  if (n === "filters") return `<h4>Connections</h4>${KINDS.map(([k, l]) => `<label class="ck"><input type="checkbox" data-kind="${k}" ${F.kinds.has(k) ? "checked" : ""}> ${esc(l)} <small><span class="swatch ${k === "request" ? "request" : ASYNC.has(k) ? "async" : ""}"></span></small></label>`).join("")}
+    <h4>Show</h4><label class="ck"><input type="checkbox" data-f="tech" ${tech() ? "checked" : ""}> Technical detail <small>definitions, handlers</small></label>
+    <label class="ck"><input type="checkbox" data-f="recent" ${F.recent ? "checked" : ""}> Highlight recent work</label>
+    <label class="ck"><input type="checkbox" data-f="tools" ${F.tools ? "checked" : ""}> Tools and tests</label>`;
+  return "";
+}
+let flowBusy = 0, flowErr = "", flowQ = "";
+function showMenu(x, y, items) {
+  const m = $("#menu"); closeFloating();
+  m.innerHTML = items.map(it => it === "-" ? "<hr>" : `<button type="button" role="menuitem" data-mi="${esc(it[0])}">${esc(it[1])}${it[2] ? `<kbd>${esc(it[2])}</kbd>` : ""}</button>`).join("");
+  m.hidden = false; m._items = items;
+  const w = m.offsetWidth, h = m.offsetHeight; m.style.left = Math.min(x, innerWidth - w - 8) + "px"; m.style.top = Math.min(y, innerHeight - h - 8) + "px";
+  m.querySelector("button")?.focus();
+}
+function cardMenu(id) {
+  const d = info(id), path = filesIn(id)[0], items = [];
+  if (openable(id)) items.push(["open", "Open", "Enter"]);
+  items.push(["show", "Show on map"]);
+  if (!RO) items.push(["ask", "Ask about this"]);
+  items.push(["details", "Show details"], "-", ["copy-name", "Copy name"]);
+  if (typeOf(id) === "ep") items.push(["copy-path", "Copy endpoint"]); else if (path) items.push(["copy-path", "Copy path"]);
+  if (!RO && G.root && path && ["file", "ep", "def", "screen"].includes(typeOf(id))) items.push(["editor", "Open in editor"]);
+  return items.map(it => it === "-" ? it : [it[0] + "|" + id, it[1], it[2]]);
+}
+function menuAct(v) {
+  const [a, id] = v.split("|"); closeFloating();
+  if (a === "open") open(id);
+  else if (a === "show") reveal(id);
+  else if (a === "ask") askAbout(id);
+  else if (a === "details") { sel = id; panelMode = null; openPanel(); render(); }
+  else if (a === "copy-name") copy(title(id), "Name copied");
+  else if (a === "copy-path") { const d = info(id); copy(typeOf(id) === "ep" ? `${d.method} ${d.path}` : filesIn(id)[0], "Copied"); }
+  else if (a === "editor") { const t = typeOf(id), p = filesIn(id)[0], line = t === "ep" ? G.endpoints[id.slice(3)].line : 1; location.href = editorUrl(p, line); }
+  else if (a === "edge-ask") { const e = SC.edges[+id]; [e.from, e.to].forEach(x => x !== FRAME ? addCtx(x) : addCtx(view.id)); focusAsk(); }
+  else if (a === "edge-details") { edgeSel = SC.edges[+id]; panelMode = "edge"; sel = null; openPanel(); applySel(); renderPanel(); }
+  else if (a === "bg-ask") { addCtx(view.id || (view.t === "overview" ? null : null)); focusAsk(); }
+  else if (a === "up") up();
+  else if (a === "overview") go({ t: "overview" }, { out: true });
+  else if (a === "fit") fit();
+  else if (a === "search") openSearch();
+}
+const dlg = $("#dlg");
+function openDialog(html, onopen) { closeFloating(); dlg.innerHTML = html; if (!dlg.open) dlg.showModal(); onopen && onopen(); }
+dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
+function helpDialog() {
+  const k = [["/ or ⌘K", "Search"], ["F", "Fit to screen"], ["+ / −", "Zoom in / out"], ["Enter or double-click", "Go inside the selected card"], ["Backspace or Alt ←", "Up one level"], ["P", "Show or hide the details panel"], ["← →", "Previous / next step while a flow plays"], ["Esc", "Close menus, stop a flow, clear the selection"], ["Right-click", "More actions on a card, a line or the background"], ["?", "This list"]];
+  openDialog(`<div class="dh"><h2>Shortcuts</h2><button class="btn ghost x" type="button" data-act="dlg-close" aria-label="Close">${ic("x")}</button></div><div class="db"><div class="keys">${k.map(([a, b]) => `<span><kbd>${esc(a)}</kbd></span><span>${esc(b)}</span>`).join("")}</div>
+    <p class="n" style="margin-top:14px">On a phone: drag to move, pinch to zoom, tap a card for details.</p></div>`);
+}
+function exportDialog() {
+  openDialog(`<div class="dh"><h2>Export the map</h2><button class="btn ghost x" type="button" data-act="dlg-close" aria-label="Close">${ic("x")}</button></div>
+    <form class="db" id="expform"><p class="n" style="margin-top:0">One HTML file anyone can open in a browser, read-only. It has the map, descriptions and connections. Choose what else goes in.</p>
+    <label class="ck" style="display:flex;gap:8px;padding:4px 0"><input type="checkbox" name="flows" checked> Flows and tour</label>
+    <label class="ck" style="display:flex;gap:8px;padding:4px 0"><input type="checkbox" name="notes" checked> Notes</label>
+    <label class="ck" style="display:flex;gap:8px;padding:4px 0"><input type="checkbox" name="recent"> Recent work (what was asked and when)</label>
+    <label class="ck" style="display:flex;gap:8px;padding:4px 0"><input type="checkbox" name="health"> Health check</label>
+    <div class="box warn" id="expwarn" hidden>The health check lists endpoints anyone can call and the files where secrets sit. Only share it with people you trust.</div>
+    <div class="acts" style="justify-content:flex-end"><button class="btn" type="button" data-act="dlg-close">Cancel</button><button class="btn primary" type="submit">${ic("download")} Download</button></div></form>`);
+  const f = $("#expform");
+  f.health.onchange = () => $("#expwarn").hidden = !f.health.checked;
+  f.onsubmit = e => { e.preventDefault(); const q = ["flows", "notes", "recent", "health"].map(k => `${k}=${f[k].checked ? 1 : 0}`).join("&"); const a = document.createElement("a"); a.href = "api/map/export?" + q; a.download = ""; document.body.appendChild(a); a.click(); a.remove(); dlg.close(); toast("Exporting…"); };
+}
+function noteDialog(id) {
+  const path = id.slice(5), cur = notes[path]?.text || "";
+  openDialog(`<div class="dh"><h2>Note on ${esc(base(path))}</h2><button class="btn ghost x" type="button" data-act="dlg-close" aria-label="Close">${ic("x")}</button></div>
+    <form class="db" id="noteform"><p class="n" style="margin-top:0">Pinned to <span class="mono">${esc(path)}</span>. Everyone using this board sees it, and Claude reads it when asked about this file.</p><textarea name="t" rows="4">${esc(cur)}</textarea><p class="err" id="noteerr"></p>
+    <div class="acts" style="justify-content:flex-end">${cur ? `<button class="btn danger" type="button" id="notedel">Delete</button>` : ""}<button class="btn" type="button" data-act="dlg-close">Cancel</button><button class="btn primary" type="submit">Save</button></div></form>`, () => dlg.querySelector("textarea").focus());
+  const save = async text => { try { await post("api/map/note", { path, text }); if (text) notes[path] = { text, at: new Date().toISOString() }; else delete notes[path]; dlg.close(); lastHtml = ""; render(); toast(text ? "Note saved ✓" : "Note deleted"); } catch (err) { $("#noteerr").textContent = err.message; } };
+  $("#noteform").onsubmit = e => { e.preventDefault(); save(e.target.t.value.trim()); };
+  const del = $("#notedel"); if (del) del.onclick = () => save("");
+}
+// search
+let SI = null, sIdx = 0, sRes = [];
+function searchIndex() {
+  const out = [];
+  G.parts.forEach(p => out.push({ id: "part:" + p.id, t: isExt(p) ? "service" : "part", title: p.name, s: p.summary || "", hay: `${p.id} ${p.name} ${p.summary || ""}` }));
+  Object.values(I.group).forEach(g => out.push({ id: g.id, t: "folder", title: g.name, s: I.part[g.part].name, hay: `${g.folder} ${g.name}` }));
+  Object.entries(G.files).forEach(([p, f]) => { out.push({ id: "file:" + p, t: "file", title: fname(p), s: p, hay: `${p} ${f.desc || ""}` }); (f.defs || []).forEach(d => out.push({ id: `def:${p}#${d}`, t: "definition", title: d, s: p, hay: `${d} ${p}` })); });
+  Object.entries(G.endpoints).forEach(([k, e]) => out.push({ id: "ep:" + k, t: "endpoint", title: `${e.method} ${shortEp(e.path || k)}`, s: e.desc || e.file, hay: `${k} ${shortEp(k)} ${e.desc || ""} ${e.handler || ""}` }));
+  G.screens.forEach(s => out.push({ id: "screen:" + s.id, t: "screen", title: s.name, s: s.route || s.file || "", hay: `${s.id} ${s.name} ${s.route || ""} ${s.file || ""}` }));
+  return out;
+}
+function openSearch() {
+  SI = SI || searchIndex();
+  openDialog(`<div class="sbox">${ic("search")}<input id="sq" placeholder="Search parts, files, functions, endpoints, screens…" aria-label="Search the map" autocomplete="off"><kbd>Esc</kbd></div><div class="sres" id="sres" role="listbox"></div>`, () => $("#sq").focus());
+  const run = () => {
+    const q = $("#sq").value.trim().toLowerCase(), w = q.split(/\s+/).filter(Boolean);
+    sRes = !w.length ? [] : SI.filter(x => w.every(t => x.hay.toLowerCase().includes(t))).map(x => ({ x, sc: (x.title.toLowerCase() === q ? 0 : x.title.toLowerCase().startsWith(w[0]) ? 1 : x.title.toLowerCase().includes(w[0]) ? 2 : 3) * 10 + ["part", "service", "screen", "folder", "endpoint", "file", "definition"].indexOf(x.t) })).sort((a, b) => a.sc - b.sc).slice(0, 50).map(r => r.x);
+    sIdx = 0; drawRes();
+  };
+  const drawRes = () => { $("#sres").innerHTML = sRes.length ? sRes.map((r, i) => `<button type="button" role="option" data-act="sgo" data-id="${esc(r.id)}" aria-selected="${i === sIdx}"><span class="tag ${r.t === "endpoint" ? "info" : r.t === "screen" ? "agent" : ""}">${esc(r.t)}</span><span class="t">${esc(r.title)}</span><span class="s">${esc(String(r.s).slice(0, 60))}</span></button>`).join("") : `<p class="n" style="padding:10px">${$("#sq").value.trim() ? "Nothing matches. Try a function name, a path, or ask a question at the bottom." : "Type to search. Enter jumps to the first result."}</p>`;
+    $("#sres").querySelector('[aria-selected="true"]')?.scrollIntoView({ block: "nearest" }); };
+  $("#sq").oninput = run;
+  $("#sq").onkeydown = e => {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); sIdx = Math.max(0, Math.min(sRes.length - 1, sIdx + (e.key === "ArrowDown" ? 1 : -1))); drawRes(); }
+    else if (e.key === "Enter" && sRes[sIdx]) { e.preventDefault(); dlg.close(); jump(sRes[sIdx].id); }
+  };
+  drawRes();
+}
+function jump(id) { openPanel(); if (typeOf(id) === "screen") go({ t: "screen", id }, { select: id }); else reveal(id); }
+
+// ---------------------------------------------------------------- actions
+function openPanel() { const p = $("#panel"); delete p.dataset.user; p.classList.remove("closed"); }
+function togglePanel() { const p = $("#panel"), c = !p.classList.contains("closed"); p.classList.toggle("closed", c); if (c) p.dataset.user = "closed"; else delete p.dataset.user; store.set("panel", c ? "0" : "1"); renderChrome(); }
+function addCtx(id) { if (id && id !== ROOT && !ctxIds.includes(id)) ctxIds.push(id); }
+function askAbout(id) { addCtx(id); if (mode !== "ask" && !G.blueprint) mode = "ask"; focusAsk(); }
+function focusAsk() { renderAsk(); $("#askbar input")?.focus(); }
+async function sendReq(text, key, btn) {
+  if (btn) btn.disabled = true;
+  try { await post("api/request", { kind: "task", text }); sentMsg[key] = "Sent to Claude ✓"; toast("Sent to Claude ✓ A listening session picks it up."); }
+  catch (err) { toast(err.message); if (btn) btn.disabled = false; }
+  lastPanel = ""; renderPanel();
+}
+function fixPrompt(i) {
+  return `Fix this issue from the project map's health check: ${i.title}.\n${i.detail || ""}\n${i.fix || ""}\nWhere:\n${i.locations.map(l => `- ${l.file || l.node}${l.line ? ":" + l.line : ""} ${l.text || ""}`).join("\n")}\nIf any of these is a false alarm or intended, say so instead of changing it.`;
+}
+function buildPrompt(id) {
+  const d = info(id), fs = filesIn(id), eps = epsIn(id), o = outside(id), q = G.plan?.questions || [];
+  const relies = [...new Set([...o.uses.values()].map(e => title(e.to)))];
+  return `Build this piece of the blueprint, and only this piece: ${d.title}${id.startsWith("part:") ? ` (${id.slice(5)})` : ""}.\n${d.desc ? d.desc + "\n" : ""}Files:\n${fs.map(f => `- ${f}${G.files[f]?.desc ? ": " + G.files[f].desc : ""}`).join("\n") || "- (none listed)"}\n${eps.length ? `Endpoints:\n${eps.map(k => { const e = G.endpoints[k]; return `- ${e.method} ${e.path} (auth: ${e.auth || "undecided"})${e.desc ? ": " + e.desc : ""}`; }).join("\n")}\n` : ""}${relies.length ? `It relies on: ${relies.join(", ")}.\n` : ""}${q.length ? `Open questions in the plan (ask me before guessing):\n${q.map(x => "- " + x).join("\n")}\n` : ""}Follow the plan in .progress/map/plan.json. Tell me what you built and anything you had to decide.`;
+}
+function showIssue(i) {
+  const ids = i.locations.map(l => l.node && exists(l.node) ? l.node : "file:" + l.file).filter(exists);
+  const tgt = ids.length ? ids : i.parts.map(p => "part:" + p).filter(exists);
+  if (!tgt.length) { toast("Nothing on the map to show for this."); return; }
+  const cs = tgt.map(chain); let cp = 0;
+  while (cs.every(c => cp < c.length - 1 && c[cp] === cs[0][cp])) cp++;
+  const C = cp ? cs[0][cp - 1] : ROOT, m = {};
+  tgt.forEach((id, n) => { const r = cs[n][cp]; const l = i.locations.find(x => (x.node || "file:" + x.file) === id); const txt = l ? `${l.line ? base(l.file) + ":" + l.line + " " : ""}${l.text || ""}`.trim() : i.title; m[r] = m[r] ? m[r] + " · " + txt : txt; });
+  Object.keys(m).forEach(r => { if (r.startsWith("part:") && I.part[r.slice(5)]?.kind === "tool") { F.tools = true; saveF(); } });
+  marks = m;
+  const v = C === ROOT ? { t: "overview" } : { t: typeOf(C), id: C };
+  go(v, { keepMarks: true, keepPanel: true });
+  if (viewKey(v) === viewKey(view)) { lastHtml = ""; render({ fit: true }); }
+}
+async function ask(q) {
+  if (!q || busy) return;
+  const followup = view.t === "answer";
+  busy = { q, t0: Date.now() }; askErr = ""; pastOpen = false; renderAsk();
+  const tm = setInterval(() => { const el = $("#busyt"); if (el) el.textContent = Math.round((Date.now() - busy.t0) / 1000) + "s"; }, 1000);
+  try {
+    const r = await post("api/map/ask", { q, context: ctxIds, followup, mode });
+    if (mode === "change") {
+      changeRes = { ...r, q }; extraChanged = new Set(r.changed || []); panelMode = "change"; F.recent = true; openPanel();
+      ctxIds = []; busy = null; clearInterval(tm); lastHtml = ""; await poll(true); render(); toast("Plan updated ✓");
+    } else {
+      const a = normAsk({ ...r, q, at: r.at || new Date().toISOString() });
+      asks.push(a); ctxIds = []; busy = null; clearInterval(tm); openAnswer(a);
+    }
+    const inp = $("#askbar input"); if (inp) inp.value = "";
+  } catch (err) { askErr = err.message; }
+  clearInterval(tm); busy = null; renderAsk();
+}
+function normAsk(a) {
+  return { ...a, answer: a.answer ?? a.a ?? "", nodes: a.nodes || (a.parts || []).map(p => ({ id: "part:" + p, note: "", step: null })), followups: a.followups || [] };
+}
+function openAnswer(a) {
+  answer = a; steps = {}; marks = {};
+  (a.nodes || []).forEach(n => { if (n.note) marks[n.id] = n.note; if (n.step) steps[n.id] = n.step; });
+  const m = marks, s = steps;
+  sel = null; openPanel();
+  go({ t: "answer", a }, { keepMarks: true, panel: "answer" });
+  marks = m; steps = s;
+}
+async function act(a, el) {
+  const id = el.dataset.id;
+  switch (a) {
+    case "zin": return zoomBtn(1.25);
+    case "zout": return zoomBtn(.8);
+    case "fit": return fit(true, true);
+    case "up": return up();
+    case "crumb": { const c = CR[+el.dataset.i]; if (c.act) return showPop("screens"); if (c.v && viewKey(c.v) !== viewKey(view)) go(c.v, { out: true }); else { sel = null; panelMode = null; render({ fit: true, anim: true }); } return; }
+    case "search": return openSearch();
+    case "help": return helpDialog();
+    case "health": panelMode = panelMode === "health" ? null : "health"; dismissing = null; if (panelMode) openPanel(); renderChrome(); return renderPanel();
+    case "pop-recent": return showPop("recent", el);
+    case "pop-screens": return showPop("screens", el);
+    case "pop-flows": return showPop("flows", el);
+    case "pop-filters": return showPop("filters", el);
+    case "tour": return tour();
+    case "export": return exportDialog();
+    case "rescan": el.disabled = true; try { await post("api/map/rescan", {}); await poll(true); toast("Rescanned ✓"); } catch (err) { toast(err.message); } el.disabled = false; return;
+    case "panel": return togglePanel();
+    case "dlg-close": return dlg.close();
+    case "go": closeFloating(); return jump(id);
+    case "sgo": dlg.close(); return jump(id);
+    case "open": return open(id);
+    case "unsel": sel = null; edgeSel = null; panelMode = null; applySel(); if (phone()) $("#panel").classList.add("closed"); return renderPanel();
+    case "ask-about": return askAbout(id);
+    case "ask-edge": [edgeSel.from, edgeSel.to].forEach(x => addCtx(x === FRAME ? view.id : x)); return focusAsk();
+    case "note": return noteDialog(id);
+    case "build": return sendReq(buildPrompt(id), "build:" + id, el);
+    case "update-map": return sendReq(`Update the project map${el.dataset.part ? ` for the ${el.dataset.part} part` : ""}: run \`python3 ~/.claude/project-plan/hook.py map worksheet${el.dataset.part ? " " + el.dataset.part : ""}\` and follow it.`, "update", el);
+    case "make-map": try { await post("api/request", { kind: "task", text: "Make the project map: run `python3 ~/.claude/project-plan/hook.py map worksheet` and follow it." }); el.textContent = "Sent to Claude ✓"; el.disabled = true; } catch (err) { toast(err.message); } return;
+    case "issue-show": { const i = (G.blueprint ? G.review : issues()).find(x => x.id === id); if (i) showIssue(i); return; }
+    case "issue-fix": { const i = issues().find(x => x.id === id); return sendReq(fixPrompt(i), "fix:" + id, el); }
+    case "issue-copy": { const i = issues().find(x => x.id === id); return copy(fixPrompt(i), "Fix prompt copied"); }
+    case "issue-dis": dismissing = id; lastPanel = ""; renderPanel(); $("#whyin")?.focus(); return;
+    case "issue-dis-no": dismissing = null; return renderPanel();
+    case "issue-dis-ok": case "issue-undis": {
+      const on = a === "issue-dis-ok", reason = on ? ($("#whyin")?.value || "").trim() : "";
+      try { await post("api/map/dismiss", { id, on, reason }); dismissedLocal[id] = { on, reason }; dismissing = null; lastHtml = ""; render(); toast(on ? "Marked as not a problem" : "Back on the list"); } catch (err) { toast(err.message); }
+      return;
+    }
+    case "review-resolve": { const i = G.review.find(x => x.id === id); mode = "change"; renderAsk(); const inp = $("#askbar input"); inp.value = `Resolve: ${i.title.replace(/[.?!]+$/, "")}. My answer: `; inp.focus(); return; }
+    case "span": F.span = +el.dataset.v; saveF(); refreshRecent(); lastHtml = ""; render(); if (popOpen) { $("#pop").innerHTML = popHtml(popOpen); } return;
+    case "recent-board": closeFloating(); F.recent = true; saveF(); return go({ t: "recent" }, { select: null });
+    case "screen": return go({ t: "screen", id });
+    case "flow": { const f = G.flows[+el.dataset.i]; return playFlow(f); }
+    case "flow-prev": return stepFlow(flow.i - 1);
+    case "flow-next": return stepFlow(flow.i + 1);
+    case "flow-stop": return stopFlow();
+    case "answer": pastOpen = false; return openAnswer(normAsk(asks[+el.dataset.i]));
+    case "followup": { const q = el.dataset.q; if (busy) return; return ask(q); }
+    case "back-map": return go(prevView || { t: "overview" }, { out: true });
+    case "undo": try { await post("api/map/undo", {}); extraChanged = new Set(); changeRes = null; panelMode = null; await poll(true); lastHtml = ""; render(); toast("Change undone"); } catch (err) { toast(err.message); } return;
+    case "change-x": changeRes = null; panelMode = null; return renderPanel();
+    case "ctx-x": ctxIds = ctxIds.filter(x => x !== id); return renderAsk();
+    case "mode": mode = el.dataset.m; return renderAsk();
+  }
+}
+document.addEventListener("click", e => {
+  const mi = e.target.closest("[data-mi]"); if (mi) { const m = $("#menu"); menuAct(mi.dataset.mi); return; }
+  const b = e.target.closest("[data-act]"); if (b) { e.preventDefault(); act(b.dataset.act, b); return; }
+  if (!$("#pop").hidden && !e.target.closest("#pop")) closeFloating();
+  if (!$("#menu").hidden && !e.target.closest("#menu")) closeFloating();
+  if (pastOpen && !e.target.closest("#askbar")) { pastOpen = false; renderAsk(); }
+});
+document.addEventListener("change", e => {
+  const t = e.target;
+  if (t.dataset.kind) { t.checked ? F.kinds.add(t.dataset.kind) : F.kinds.delete(t.dataset.kind); }
+  else if (t.dataset.f) { F[t.dataset.f] = t.checked; SI = null; }
+  else return;
+  saveF(); lastHtml = ""; render({ fit: t.dataset.f === "tools" || t.dataset.f === "tech", anim: true });
+});
+document.addEventListener("submit", e => {
+  if (e.target.id === "askbar") { e.preventDefault(); ask(e.target.q.value.trim()); }
+  if (e.target.id === "flowform") { e.preventDefault(); requestFlow(e.target.q.value.trim()); }
+});
+async function requestFlow(q) {
+  if (!q || flowBusy) return;
+  flowBusy = Date.now(); flowErr = ""; flowQ = q; $("#pop").innerHTML = popHtml("flows");
+  const tm = setInterval(() => { const el = $("#flowt"); if (el) el.textContent = Math.round((Date.now() - flowBusy) / 1000) + "s"; }, 1000);
+  try { const r = await post("api/map/flow", { q }); clearInterval(tm); flowBusy = 0; const f = r.flow || r; if (!G.flows.some(x => x.id === f.id)) G.flows.push({ ...f, requested: true }); flowQ = ""; playFlow(f); }
+  catch (err) { flowErr = err.message; }
+  clearInterval(tm); flowBusy = 0; if (popOpen === "flows") $("#pop").innerHTML = popHtml("flows");
+}
+$("#askbar").addEventListener("focusin", e => { if (e.target.name === "q" && asks.length && !pastOpen && !e.target.value) { pastOpen = true; renderAsk(); } });
+$("#askbar").addEventListener("input", e => { if (e.target.name === "q" && pastOpen && e.target.value) { pastOpen = false; const v = e.target.value; renderAsk(); const i = $("#askbar input"); i.value = v; i.focus(); } });
+
+// ---------------------------------------------------------------- canvas input: select, open, pan, zoom, hover
+const ptrs = new Map(); let drag = null, pinch = null, suppress = false;
+vp.addEventListener("pointerdown", e => {
+  if (e.target.closest(".zoombar, .dock, #banner, .emptyst")) return;
+  if (e.pointerType === "mouse" && e.button !== 0) return;
+  ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  tween = null;
+  if (ptrs.size === 1) drag = { x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y, moved: false, id: e.pointerId };
+  else if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), k: cam.k, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, cx: cam.x, cy: cam.y }; drag = null; }
+});
+vp.addEventListener("pointermove", e => {
+  if (!ptrs.has(e.pointerId)) return onHover(e);
+  ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pinch && ptrs.size === 2) {
+    const [a, b] = [...ptrs.values()], r = vp.getBoundingClientRect(), d = Math.hypot(a.x - b.x, a.y - b.y), mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    const k = Math.max(.12, Math.min(2.5, pinch.k * d / pinch.d)), px = pinch.mx - r.left, py = pinch.my - r.top;
+    cam.k = k; cam.x = px - (px - pinch.cx) * (k / pinch.k) + (mx - pinch.mx); cam.y = py - (py - pinch.cy) * (k / pinch.k) + (my - pinch.my); schedule(); suppress = true; return;
+  }
+  if (!drag) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  if (!drag.moved && Math.hypot(dx, dy) > 5) { drag.moved = true; vp.classList.add("panning"); try { vp.setPointerCapture(e.pointerId); } catch (_) {} hideTip(); }
+  if (drag.moved) { cam.x = drag.cx + dx; cam.y = drag.cy + dy; schedule(); }
+});
+const endPtr = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; if (drag && drag.id === e.pointerId) { if (drag.moved) suppress = true; drag = null; vp.classList.remove("panning"); } };
+vp.addEventListener("pointerup", endPtr); vp.addEventListener("pointercancel", endPtr);
+vp.addEventListener("click", e => {
+  if (suppress) { suppress = false; return; }
+  if (e.target.closest(".zoombar, .dock, #banner, .emptyst")) return;
+  const c = e.target.closest(".card"), g = e.target.closest(".e");
+  if (c && c.dataset.id) { selectCard(c.dataset.id); return; }
+  if (g) { edgeSel = SC.edges[+g.dataset.e]; sel = null; panelMode = "edge"; openPanel(); applySel(); renderPanel(); return; }
+  if (sel || edgeSel || (panelMode && panelMode !== "health")) { sel = null; edgeSel = null; if (panelMode === "edge") panelMode = null; applySel(); renderPanel(); }
+});
+function selectCard(id) {
+  sel = id; edgeSel = null; if (panelMode === "edge" || panelMode === "health" && phone()) panelMode = null;
+  if (phone()) openPanel();
+  applySel(); renderPanel();
+}
+vp.addEventListener("dblclick", e => { const c = e.target.closest(".card"); if (c?.dataset.id) { e.preventDefault(); open(c.dataset.id); } else if (!e.target.closest(".zoombar, .dock")) { const r = vp.getBoundingClientRect(); zoomAt(e.clientX - r.left, e.clientY - r.top, 1.5); } });
+vp.addEventListener("wheel", e => {
+  if (e.target.closest(".dock, .past")) return;
+  e.preventDefault(); hideTip();
+  const r = vp.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
+  const mouse = e.deltaMode === 1 || (!e.deltaX && Math.abs(e.deltaY) >= 40 && Number.isInteger(e.deltaY));
+  if (e.ctrlKey || e.metaKey || mouse) zoomAt(px, py, Math.exp(-e.deltaY * (e.ctrlKey ? .012 : .0018) * (e.deltaMode === 1 ? 30 : 1)));
+  else { tween = null; cam.x -= e.deltaX; cam.y -= e.deltaY; schedule(); }
+}, { passive: false });
+vp.addEventListener("contextmenu", e => {
+  if (e.target.closest(".dock, .zoombar")) return;
+  e.preventDefault();
+  const c = e.target.closest(".card"), g = e.target.closest(".e");
+  if (c?.dataset.id) { selectCard(c.dataset.id); return showMenu(e.clientX, e.clientY, cardMenu(c.dataset.id)); }
+  if (g) return showMenu(e.clientX, e.clientY, [...(RO ? [] : [["edge-ask|" + g.dataset.e, "Ask about this connection"]]), ["edge-details|" + g.dataset.e, "Show details"]]);
+  showMenu(e.clientX, e.clientY, [...(RO ? [] : [["bg-ask", "Ask about this view"]]), ...(view.t !== "overview" ? [["up", "Up one level", "⌫"], ["overview", "Back to overview"]] : []), ["fit", "Fit to screen", "F"], ["search", "Search", "/"]]);
+});
+world.addEventListener("focusin", e => { const c = e.target.closest(".card"); if (c?.dataset.id && sel !== c.dataset.id && !drag) { sel = c.dataset.id; applySel(); renderPanel(); } });
+// tooltip
+let tipT = 0, tipFor = null;
+const tip = $("#tip");
+function hideTip() { clearTimeout(tipT); tip.hidden = true; tipFor = null; }
+function onHover(e) {
+  const c = e.target.closest?.(".card"), g = !c && e.target.closest?.(".e"), key = c ? c.dataset.id : g ? "e" + g.dataset.e : null;
+  if (key === tipFor) { if (!tip.hidden) place(e); return; }
+  hideTip(); if (!key) return; tipFor = key;
+  tipT = setTimeout(() => {
+    let h;
+    if (c && c.dataset.id) { const d = info(c.dataset.id); h = `<b>${esc(d.method ? d.method + " " + d.path : d.title)}</b>${(d.tip || []).filter(Boolean).map(x => `<div class="m">${esc(x)}</div>`).join("")}`; }
+    else if (g) { const ed = SC.edges[+g.dataset.e]; if (!ed) return; const nm = x => x === FRAME ? title(view.id) : title(x);
+      const parts = [ed.imports ? plural(ed.imports, "import") : "", ed.eps.size ? `${plural(ed.eps.size, "web request")}: ${[...ed.eps].slice(0, 4).map(shortEp).join(", ")}${ed.eps.size > 4 ? "…" : ""}` : "", ...[...ed.labels], ...[...ed.kinds].filter(k => !["imports", "request"].includes(k)).map(k => (KINDS.find(x => x[0] === k) || [k, k])[1].toLowerCase())];
+      h = `<b>${esc(nm(ed.from))} → ${esc(nm(ed.to))}</b>${parts.filter(Boolean).map(x => `<div class="m">${esc(x)}</div>`).join("")}`; }
+    if (!h) return; tip.innerHTML = h; tip.hidden = false; place(e);
+  }, c ? 400 : 180);
+}
+function place(e) { const w = tip.offsetWidth, h = tip.offsetHeight; tip.style.left = Math.min(e.clientX + 14, innerWidth - w - 8) + "px"; tip.style.top = Math.min(e.clientY + 16, innerHeight - h - 8) + "px"; }
+vp.addEventListener("pointerleave", hideTip);
+
+// panel resize
+(() => {
+  const grip = $("#grip"); const w = +store.get("pw"); if (w) document.documentElement.style.setProperty("--pw", w + "px");
+  if (store.get("panel") === "0") { $("#panel").classList.add("closed"); $("#panel").dataset.user = "closed"; }
+  grip.addEventListener("pointerdown", e => {
+    e.preventDefault(); grip.setPointerCapture(e.pointerId); grip.classList.add("on");
+    const mv = ev => { const nw = Math.max(280, Math.min(innerWidth * .6, innerWidth - ev.clientX)); document.documentElement.style.setProperty("--pw", nw + "px"); store.set("pw", Math.round(nw)); };
+    const upf = () => { grip.classList.remove("on"); grip.removeEventListener("pointermove", mv); grip.removeEventListener("pointerup", upf); };
+    grip.addEventListener("pointermove", mv); grip.addEventListener("pointerup", upf);
+  });
+})();
+
+// keyboard
+document.addEventListener("keydown", e => {
+  const typing = e.target.closest?.("input, textarea, select, [contenteditable]");
+  if (e.key === "Escape") {
+    if (dlg.open) return; // the dialog closes itself
+    if (!$("#menu").hidden || !$("#pop").hidden) { closeFloating(); return; }
+    if (pastOpen) { pastOpen = false; renderAsk(); return; }
+    if (typing) { e.target.blur(); return; }
+    if (flow) { stopFlow(); return; }
+    if (dismissing) { dismissing = null; renderPanel(); return; }
+    if (sel || edgeSel || panelMode) { sel = null; edgeSel = null; panelMode = null; applySel(); renderPanel(); renderChrome(); if (phone()) $("#panel").classList.add("closed"); return; }
+    if (Object.keys(marks).length && view.t !== "answer") { marks = {}; lastHtml = ""; render(); }
+    return;
+  }
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); if (G) openSearch(); return; }
+  if (typing || dlg.open || e.metaKey || e.ctrlKey || !G) return;
+  if (flow && (e.key === "ArrowRight" || e.key === "ArrowLeft")) { e.preventDefault(); stepFlow(flow.i + (e.key === "ArrowRight" ? 1 : -1)); return; }
+  const k = e.key;
+  if (k === "/") { e.preventDefault(); openSearch(); }
+  else if (k === "f" || k === "F") fit(true, true);
+  else if (k === "+" || k === "=") zoomBtn(1.25);
+  else if (k === "-" || k === "_") zoomBtn(.8);
+  else if (k === "p" || k === "P") togglePanel();
+  else if (k === "?") helpDialog();
+  else if (k === "Enter") { const c = e.target.closest?.(".card"); const id = c?.dataset.id || sel; if (id) { e.preventDefault(); open(id); } }
+  else if (k === " " && e.target.closest?.(".card")) { e.preventDefault(); selectCard(e.target.closest(".card").dataset.id); openPanel(); }
+  else if (k === "Backspace" || (k === "ArrowLeft" && e.altKey)) { e.preventDefault(); up(); }
+});
+addEventListener("resize", () => { if (phone() !== wasPhone) { wasPhone = phone(); renderPanel(); } });
+let wasPhone = phone();
+
+// ---------------------------------------------------------------- data loading and polling
+async function getText(p) { const r = await fetch(p, { cache: "no-store" }); if (!r.ok) throw new Error(r.status); return r.text(); }
+function parseHist(t) { const by = new Map(); (Array.isArray(t) ? t : String(t || "").split("\n")).forEach(l => { try { const e = typeof l === "string" ? (l.trim() ? JSON.parse(l) : null) : l; if (e?.id) by.set(e.id, e); } catch (_) {} }); return [...by.values()]; }
+let pollN = 0, loaded = false;
+async function poll(force) {
+  if (X) return;
+  const slow = force || pollN++ % 4 === 0;
+  const names = ["map/graph.json", "progress.json", "history.jsonl", ...(slow ? ["map/notes.json", "map/asks.json"] : [])];
+  const res = await Promise.all(names.map(n => getText(n).catch(() => "")));
+  let gChanged = false, other = false;
+  names.forEach((n, i) => {
+    const t = res[i]; if (raw[n] === t) return; raw[n] = t;
+    try {
+      if (n === "map/graph.json") { G = t ? normalize(JSON.parse(t)) : null; gChanged = true; }
+      else if (n === "progress.json") { prog = t ? JSON.parse(t) : { sessions: {} }; other = true; }
+      else if (n === "history.jsonl") { hist = parseHist(t); other = true; }
+      else if (n === "map/notes.json") { notes = t ? JSON.parse(t) : {}; other = true; }
+      else if (n === "map/asks.json") { const a = t ? JSON.parse(t) : []; asks = (Array.isArray(a) ? a : []).map(normAsk); other = true; }
+    } catch (_) { if (n === "map/graph.json") { G = null; gChanged = true; } }
+  });
+  if (gChanged) onGraph();
+  else if (other && G) { const sig = JSON.stringify([Object.keys(R).sort(), [...EDIT].sort()]); refreshRecent(); const sig2 = JSON.stringify([Object.keys(R).sort(), [...EDIT].sort()]); render({}); if (sig !== sig2 && view.t === "recent") fit(); }
+  else if (other && !G) render();
+}
+function onGraph() {
+  $(".emptyst")?.remove();
+  dismissedLocal = {}; SI = null;
+  if (G) { buildIndex(); G.flows.forEach(f => f.steps = f.steps || []); }
+  refreshRecent();
+  const first = !loaded; loaded = true;
+  if (G && view.t !== "overview" && view.t !== "answer" && view.t !== "recent" && !exists(view.id)) view = { t: "overview" };
+  if (sel && !exists(sel)) sel = null;
+  lastHtml = ""; render({ fit: first });
+  if (first && G) afterFirst();
+}
+function afterFirst() {
+  if (location.hash.startsWith("#select=")) return deepLink();
+  const key = "toured:" + (G.project || "") + ":" + (G.root || "");
+  if (!store.get(key) && !X) { store.set(key, "1"); setTimeout(tour, 500); }
+}
+function deepLink() {
+  const m = location.hash.match(/^#select=(.+)$/); if (!m || !G) return;
+  const id = decodeURIComponent(m[1]); if (!exists(id)) { toast("That isn't on the map any more."); return; }
+  if (flow) flow = null;
+  openPanel(); panelMode = null; reveal(id);
+}
+addEventListener("hashchange", deepLink);
+addEventListener("storage", e => { if (e.key === "theme") setTheme(e.newValue || "system", true); });
+
+// theme
+function setTheme(t, noStore) {
+  if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
+  if (!noStore) try { localStorage.setItem("theme", t); } catch (_) {}
+  document.querySelectorAll("[data-theme-set]").forEach(b => b.setAttribute("aria-pressed", b.dataset.themeSet === t));
+}
+document.querySelectorAll("[data-theme-set]").forEach(b => b.onclick = () => setTheme(b.dataset.themeSet));
+let th = "system"; try { th = localStorage.getItem("theme") || "system"; } catch (_) {}
+setTheme(th, true);
+
+// boot
+document.querySelectorAll(".zoombar button").forEach((b, i) => b.innerHTML = ic(["plus", "minus", "fit"][i]));
+applyCam();
+(async () => {
+  if (X) {
+    G = X.graph ? normalize(X.graph) : null; notes = X.notes || {}; hist = parseHist(X.history || []); asks = [];
+    onGraph(); return;
+  }
+  try { const r = await fetch("api/ping", { cache: "no-store" }); if (r.status === 404) RO = true; } catch (_) {}
+  await poll(true);
+  if (!G) render();
+  setInterval(() => { if (!document.hidden) poll(); }, 4000);
+})();
+</script>
+</body>
+</html>

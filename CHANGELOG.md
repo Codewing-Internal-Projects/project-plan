@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.2.0 (2026-11-10)
+
+- **Interactive map:** a new page in the Map tab (and full-window at `/map.html`): pan and zoom, drill from the whole app into a part, a folder and a file, with **Used by / Inside / Uses** columns, a resizable details panel, search, right-click menus, keyboard shortcuts, filters for kinds of connections and technical detail, light and dark, and a phone layout with pinch and a bottom sheet.
+- **Every project gets a map:** a free folder map at the first session; the scan reruns when sessions stop.
+- **Scanner:** several repos in one folder; router and mount prefixes (Express, Fastify, Koa, Hono, Flask, FastAPI, Django, Laravel, Go, Axum, Actix); file-routed frameworks (Next.js, SvelteKit, Remix, Nuxt, Astro); NestJS, Spring, Firebase Functions, route tables; WordPress `admin_post_*`; who may call each endpoint; request helpers and API clients; **screens** for 10 front-end frameworks plus WordPress admin pages, shortcodes and blocks; unused files; descriptions follow renamed endpoints; `map path A B`.
+- **Health check:** secrets in browser-exposed env vars, Supabase tables without row level security and open policies, Firebase rules, CORS with credentials, public reads, misplaced auth middleware, unused files; **Show on map**, **Fix with Claude**, **Not a problem** with a reason. Fewer false alarms (own guard helpers like `requireAdmin()`, table-name SQL, test files).
+- **Ask:** answers come as an answer board with numbered steps, notes on each piece and follow-up questions; **Ask about this** on any card or connection; falls back to Codex when Claude Code isn't installed.
+- **Flows and tour:** written by Claude with the map, or requested from the board in plain words and traced through the code.
+- **Blueprints:** plan an app from a PRD (`map blueprint`, `map planned`), with a design review, **Change** with Undo and **Build this with Claude**; `map update --from-code` switches to the real code.
+- **Recent work and live activity:** green parts and files for today's or this week's requests, a recent-work board, an "editing now" marker for running sessions, and **Impact** (what depends on a part or file).
+- **Export and notes:** the map as one HTML file (flows, notes, recent work and health optional; no code, no folder paths); notes pinned to files.
+- **Hub:** each project's map health and an **Open map** link.
+
 ## 1.1.0 (2026-11-10)
 
 - **Map view:** the project as parts (screens, server, data, outside services, tools) with files, endpoints and connections. It comes from a free scan (imports, PHP class references, endpoints, requests matched to endpoints) plus a description Claude writes on request (`hook.py map worksheet` → `.progress/map/architecture.json` → `map described`). It rescans by itself when a session stops and flags parts whose files changed since they were described.

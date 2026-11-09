@@ -34,7 +34,7 @@ The user watches every Claude session in this project live at http://localhost:{
 
 ### Project map
 
-`.progress/map/` maps the code into parts (screens, server, data, outside services) with their files, endpoints and connections; the board shows it under Map. Before searching the code from scratch, try `python3 ~/.claude/project-plan/hook.py map find <words>`, `... map show <part|file|endpoint>` and `... map overview`. When the user asks to make or update the map, run `... map worksheet` and follow it. The free rescan runs by itself; describing parts is only on request.
+`.progress/map/` maps the code into parts (screens, server, data, outside services) with their files, endpoints and connections; the board shows it under Map. Before searching the code from scratch, try `python3 ~/.claude/project-plan/hook.py map find <words>`, `... map show <part|file|endpoint>` and `... map overview`. When the user asks to make or update the map, run `... map worksheet` and follow it. The free rescan runs by itself; describing parts is only on request. To plan an app that isn't built yet from a PRD or spec, run `... map blueprint <PRD path>` and follow it. `... map export [file]` writes the map as one HTML file to send to anyone.
 
 ### Proposals, board requests and the listener
 
