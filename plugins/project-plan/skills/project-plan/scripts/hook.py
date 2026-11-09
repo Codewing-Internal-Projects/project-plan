@@ -32,7 +32,7 @@ try:
     IS_PLUGIN, APP_VERSION = _meta.get("name") == "project-plan", str(_meta.get("version") or "")
 except (OSError, ValueError):
     IS_PLUGIN, APP_VERSION = False, ""
-REPO, MARKET = "Codewing-Internal-Projects/project-plan", "codewing"  # where updates come from
+REPO = "Codewing-Internal-Projects/project-plan"  # where updates come from
 VERSION = 9  # bump when the server changes, so running boards restart with the new code
 
 # $ per million tokens: (model id fragment, input, output, cache read). Cache writes cost 1.25x input (5 min) or 2x (1 h).
@@ -361,7 +361,7 @@ def check_update():
 
 def update_text(u):
     return (f"project-plan {u['latest']} is available (this machine has {u['current']}). Update with "
-            f"`claude plugin marketplace update {MARKET}` then `claude plugin update project-plan@{MARKET}`, and restart Claude Code.")
+            "`claude plugin marketplace update` then `claude plugin update project-plan`, and restart Claude Code.")
 
 
 def plugin_enabled():

@@ -4,7 +4,7 @@
 
 ### See what Claude Code is doing, answer it from your browser, and keep a record of everything it did.
 
-![Version 1.2.0](https://img.shields.io/badge/version-1.2.0-2f6fed) ![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-1c1c1a) ![Runs locally](https://img.shields.io/badge/runs-locally-1b8a4b) ![No dependencies](https://img.shields.io/badge/dependencies-none-7151d0)
+![Version 1.2.1](https://img.shields.io/badge/version-1.2.1-2f6fed) ![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-1c1c1a) ![Runs locally](https://img.shields.io/badge/runs-locally-1b8a4b) ![No dependencies](https://img.shields.io/badge/dependencies-none-7151d0)
 
 <img src="docs/images/live.png" alt="The project board: sessions on the left, the selected session's plan, progress and activity on the right" width="100%">
 
@@ -101,7 +101,7 @@ Copy these two lines into your terminal:
 
 ```bash
 claude plugin marketplace add Codewing-Internal-Projects/project-plan
-claude plugin install project-plan@codewing
+claude plugin install project-plan
 ```
 
 <details>
@@ -111,7 +111,7 @@ Type these in a Claude Code session instead:
 
 ```
 /plugin marketplace add Codewing-Internal-Projects/project-plan
-/plugin install project-plan@codewing
+/plugin install project-plan
 ```
 </details>
 
@@ -397,11 +397,24 @@ Not noticeably. Each hook takes a few milliseconds, and in projects without a bo
 You don't have to watch for updates. **Once a day, Claude checks whether a newer version exists and tells you**, and the board shows a notice too. To update, run:
 
 ```bash
-claude plugin marketplace update codewing
-claude plugin update project-plan@codewing
+claude plugin marketplace update
+claude plugin update project-plan
 ```
 
 Then restart Claude Code. Your boards restart with the new version on their own. To check right away: `python3 ~/.claude/project-plan/hook.py check-update`.
+
+<details>
+<summary><b>Installed before 1.2.1?</b> Switch to the new install name once</summary>
+
+Versions up to 1.2.0 were installed under an older marketplace name. Run these once, then restart Claude Code; boards and history stay as they are:
+
+```bash
+claude plugin uninstall project-plan@codewing
+claude plugin marketplace remove codewing
+claude plugin marketplace add Codewing-Internal-Projects/project-plan
+claude plugin install project-plan
+```
+</details>
 
 <details>
 <summary><b>Moving from the old hand-installed version</b> (<code>~/.claude/skills/project-plan</code>)</summary>
@@ -420,7 +433,7 @@ Do it in this order. If you delete the folder first, that project's old hooks re
 1. In each project, say *"remove the board"* to Claude, or delete the project's `.progress/` folder.
 2. Remove the plugin:
    ```bash
-   claude plugin uninstall project-plan@codewing
+   claude plugin uninstall project-plan
    ```
 3. If a board is still running, stop it with `lsof -ti :<port> | xargs kill`. The hub uses port 4320.
 
@@ -447,7 +460,7 @@ Do it in this order. If you delete the folder first, that project's old hooks re
 <summary>Repository layout, testing and releasing</summary>
 
 ```
-.claude-plugin/marketplace.json          the "codewing" marketplace (lists the plugin)
+.claude-plugin/marketplace.json          the marketplace (named "project-plan"; lists the plugin)
 plugins/project-plan/
   .claude-plugin/plugin.json             plugin name and version (the version the update check compares)
   hooks/hooks.json                       the hooks; they run hook.py, which does nothing outside board projects

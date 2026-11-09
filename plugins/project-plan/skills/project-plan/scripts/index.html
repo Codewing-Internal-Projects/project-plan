@@ -1392,7 +1392,7 @@ async function hubCheck() {
   if (SNAP) return;
   try { const j = await (await fetch("api/ping")).json(); hubOpen = !!j.hub; $("hublink").hidden = !j.hub_url; if (j.hub_url) $("hublink").href = j.hub_url;
     $("updbanner").hidden = !j.update;
-    if (j.update) $("updbanner").innerHTML = `<b>project-plan ${esc(j.update.latest)} is available</b> (you have ${esc(j.update.current)}). In a terminal: <code>claude plugin marketplace update codewing</code> then <code>claude plugin update project-plan@codewing</code>, and restart Claude Code.`; } catch (e) {}
+    if (j.update) $("updbanner").innerHTML = `<b>project-plan ${esc(j.update.latest)} is available</b> (you have ${esc(j.update.current)}). In a terminal: <code>claude plugin marketplace update</code> then <code>claude plugin update project-plan</code>, and restart Claude Code.`; } catch (e) {}
 }
 hubCheck(); setInterval(hubCheck, 10000);
 

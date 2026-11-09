@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.1 (2026-11-10)
+
+- **Simpler install name:** the marketplace is now called `project-plan`, so it's `claude plugin install project-plan`, `claude plugin update project-plan` and `claude plugin marketplace update`, with no `@…` suffix. If you installed 1.2.0 or earlier, switch once (see Updating in the README).
+
 ## 1.2.0 (2026-11-10)
 
 - **Interactive map:** a new page in the Map tab (and full-window at `/map.html`): pan and zoom, drill from the whole app into a part, a folder and a file, with **Used by / Inside / Uses** columns, a resizable details panel, search, right-click menus, keyboard shortcuts, filters for kinds of connections and technical detail, light and dark, and a phone layout with pinch and a bottom sheet.

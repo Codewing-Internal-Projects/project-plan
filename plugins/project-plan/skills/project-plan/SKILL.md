@@ -7,7 +7,7 @@ description: Sets up a live project board for the current project, a local web p
 
 A board at `http://localhost:<port>` for one project. Hooks write `.progress/`; a small local server (stdlib Python, `hook.py serve`) serves the page and accepts the user's answers. Nothing runs in the cloud, and there are no dependencies beyond `python3`.
 
-Everything lives in this skill folder (the base directory shown when the skill loads; below, `<skill>`) and is shared by all projects. It normally comes from the **project-plan plugin** (Codewing marketplace), whose hooks track every project that has a `.progress/` folder and stay silent everywhere else.
+Everything lives in this skill folder (the base directory shown when the skill loads; below, `<skill>`) and is shared by all projects. It normally comes from the **project-plan plugin** (installed with `claude plugin install project-plan`), whose hooks track every project that has a `.progress/` folder and stay silent everywhere else.
 - `scripts/setup.py` installs into or removes the board from a project.
 - `scripts/hook.py` is the hook, the CLI Claude uses (plans, proposals, listener, phone, snapshot) and the server.
 - `scripts/hub.html` is the all-projects hub (`hook.py hub`, port 4320).
@@ -128,7 +128,7 @@ The board's **Map** tab shows `map.html` (also full-window at `/map.html`): the 
 
 ## Updates
 
-With the plugin, the session start hook checks GitHub once a day (through `gh`, so it uses the user's GitHub login) and, if a newer version is published, tells you; mention it to the user in one line. The board shows the same notice. To update: `claude plugin marketplace update codewing`, then `claude plugin update project-plan@codewing`, and restart Claude Code. `$H check-update` checks right now.
+With the plugin, the session start hook checks GitHub once a day (through `gh`, so it uses the user's GitHub login) and, if a newer version is published, tells you; mention it to the user in one line. The board shows the same notice. To update: `claude plugin marketplace update`, then `claude plugin update project-plan`, and restart Claude Code. `$H check-update` checks right now.
 
 ## Troubleshooting
 
