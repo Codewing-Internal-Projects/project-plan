@@ -1,0 +1,16 @@
+{
+  "name": "codewing",
+  "owner": { "name": "Codewing", "url": "https://github.com/Codewing-Internal-Projects" },
+  "description": "Codewing's internal Claude Code plugins.",
+  "plugins": [
+    {
+      "name": "project-plan",
+      "source": "./plugins/project-plan",
+      "description": "A live project board for Claude Code: watch every session's plan and progress, answer Claude's proposals, approve requests, and review history, cost and checks in your browser.",
+      "version": "1.0.0",
+      "author": { "name": "Codewing" },
+      "repository": "https://github.com/Codewing-Internal-Projects/project-plan",
+      "keywords": ["project board", "progress", "dashboard", "proposals", "hooks"]
+    }
+  ]
+}

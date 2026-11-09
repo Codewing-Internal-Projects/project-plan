@@ -1,0 +1,8 @@
+{
+  "name": "project-plan",
+  "version": "1.0.0",
+  "description": "A live project board for Claude Code: watch every session's plan and progress, answer Claude's proposals, approve requests, and review history, cost and checks in your browser.",
+  "author": { "name": "Codewing" },
+  "repository": "https://github.com/Codewing-Internal-Projects/project-plan",
+  "keywords": ["project board", "progress", "dashboard", "proposals", "hooks"]
+}

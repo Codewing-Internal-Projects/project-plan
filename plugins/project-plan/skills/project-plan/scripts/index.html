@@ -1,0 +1,1301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project board</title>
+<link rel="icon" id="favicon" href="data:,">
+<script>try { const t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}</script>
+<style>
+  /* One token list for both themes: light-dark() follows color-scheme, which the theme switcher sets. */
+  :root { color-scheme:light dark;
+    --bg:light-dark(#f5f5f2, #111110); --card:light-dark(#fff, #1b1b19); --sunk:light-dark(#f0f0eb, #242421); --fg:light-dark(#1c1c1a, #ededea); --muted:light-dark(#66665f, #9d9d96); --line:light-dark(#e3e3dd, #2d2d2a);
+    --accent:light-dark(#2f6fed, #7aa5ff); --on-accent:light-dark(#fff, #0d1a33); --accent-bg:light-dark(#eaf0fe, #1c2640);
+    --done:light-dark(#1b8a4b, #3ec27a); --done-bg:light-dark(#e6f5ec, #15281d); --warn:light-dark(#a86a06, #e0a33a); --warn-bg:light-dark(#fdf3e1, #2d2311);
+    --bad:light-dark(#d03f3f, #ef6b6b); --bad-bg:light-dark(#fdecec, #331a1a); --agent:light-dark(#7151d0, #a98bff); --agent-bg:light-dark(#efeafc, #241c3c);
+    --on-bad:light-dark(#fff, #2a0d0d); --shadow:0 1px 2px light-dark(rgb(20 20 10 / .06), transparent); --head:light-dark(rgb(245 245 242 / .85), rgb(17 17 16 / .85)); }
+  :root[data-theme="light"] { color-scheme:light; }
+  :root[data-theme="dark"] { color-scheme:dark; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 system-ui, -apple-system, sans-serif; -webkit-font-smoothing:antialiased; }
+  main { max-width:1440px; margin:0 auto; padding:0 16px 64px; }
+  button, input, textarea, select { font:inherit; color:inherit; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; position:sticky; top:0; z-index:5; padding:14px 0 12px; margin-bottom:4px; background:var(--head); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
+  .brand { display:flex; gap:10px; align-items:center; min-width:0; }
+  .logo { width:30px; height:30px; border-radius:9px; background:var(--fg); color:var(--bg); display:grid; place-items:center; font-weight:700; font-size:15px; flex:none; }
+  h1 { font-size:17px; margin:0; letter-spacing:-.01em; line-height:1.2; }
+  @media (max-width:700px) { header { position:static; backdrop-filter:none; } }
+  .tools { min-width:0; max-width:100%; }
+  .week { overflow-x:auto; }
+  @media (max-width:700px) { .seg button { padding:6px 9px; } }
+  a.btn { color:inherit; text-decoration:none; }
+  .theme button { padding:6px 9px; font-size:14px; line-height:1; }
+  .n { color:var(--muted); font-size:13px; }
+  .tools { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .btn { border:1px solid var(--line); background:var(--card); border-radius:10px; padding:6px 12px; font-size:13px; cursor:pointer; }
+  .btn:disabled { opacity:.6; cursor:default; }
+  .btn.on { color:var(--done); border-color:var(--done); }
+  .btn { transition:background .15s, border-color .15s; }
+  .btn:not(:disabled):hover { border-color:var(--muted); }
+  .btn.primary { background:var(--accent); border-color:var(--accent); color:var(--on-accent); font-weight:600; }
+  .btn.primary:not(:disabled):hover { filter:brightness(1.08); border-color:var(--accent); }
+  .btn.ghost { border-color:transparent; background:none; color:var(--muted); }
+  .seg { display:inline-flex; border:1px solid var(--line); border-radius:10px; overflow:hidden; background:var(--card); max-width:100%; overflow-x:auto; }
+  .seg button { border:0; background:none; color:var(--muted); font-size:13px; padding:6px 13px; cursor:pointer; white-space:nowrap; }
+  .seg button[aria-pressed="true"] { background:var(--fg); color:var(--bg); }
+  .badge { display:inline-block; min-width:18px; padding:0 5px; margin-left:6px; border-radius:99px; background:var(--bad); color:var(--on-bad); font-size:11px; font-weight:700; text-align:center; }
+  .bar { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-top:18px; }
+  .bar h2 { font-size:15px; margin:0; }
+  .banner { margin-top:14px; padding:8px 14px; border-radius:12px; background:var(--warn-bg); color:var(--fg); font-size:13px; }
+
+  .stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; margin:14px 0 0; }
+  .stat { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px 16px; box-shadow:var(--shadow); }
+  .stat b { display:block; font-size:22px; font-variant-numeric:tabular-nums; letter-spacing:-.02em; }
+  .stat span { color:var(--muted); font-size:12px; }
+  .stat.alert { border-color:var(--bad); background:var(--bad-bg); }
+  .stat.alert b { color:var(--bad); }
+
+  .attention { margin-top:14px; display:grid; gap:8px; }
+  .att { display:grid; grid-template-columns:22px 1fr auto; gap:10px; align-items:start; border-radius:12px; padding:10px 14px; border:1px solid; cursor:pointer; text-align:left; width:100%; }
+  .att.needs { background:var(--bad-bg); border-color:var(--bad); }
+  .att.conflict, .att.check, .att.ctx { background:var(--warn-bg); border-color:var(--warn); }
+  .att.input { background:var(--accent-bg); border-color:var(--accent); }
+  .att b { display:block; }
+  .att span { overflow-wrap:anywhere; }
+  .att .ic { font-weight:700; text-align:center; }
+  .att.needs .ic { color:var(--bad); }
+  .att.conflict .ic, .att.check .ic, .att.ctx .ic { color:var(--warn); }
+  .att.input .ic { color:var(--accent); }
+
+  .layout { display:grid; grid-template-columns:minmax(0, 400px) minmax(0, 1fr); gap:16px; margin-top:16px; align-items:start; }
+  .layout.wide { grid-template-columns:minmax(0, 1.15fr) minmax(0, 1fr); }
+  @media (max-width:1100px) { .layout, .layout.wide { grid-template-columns:1fr; } }
+  .list { background:var(--card); border:1px solid var(--line); border-radius:18px; overflow:hidden; box-shadow:var(--shadow); }
+  .row { display:block; width:100%; text-align:left; background:none; border:0; border-top:1px solid var(--line); padding:12px 16px; cursor:pointer; }
+  div.row { cursor:default; }
+  .row:first-child { border-top:0; }
+  button.row:hover { background:var(--sunk); }
+  .row[aria-current="true"] { background:var(--accent-bg); box-shadow:inset 3px 0 0 var(--accent); }
+  .row-top { display:flex; gap:8px; align-items:baseline; }
+  .row-title { font-weight:600; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .row-now { color:var(--muted); font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .row-meta { display:flex; gap:8px; align-items:center; font-size:12px; color:var(--muted); flex-wrap:wrap; }
+  .mini, .meter { display:inline-flex; width:64px; height:5px; border-radius:99px; background:var(--line); overflow:hidden; vertical-align:middle; }
+  .mini i, .meter i, .progress i, .ctxbar i { display:block; height:100%; transition:width .4s; }
+  .meter i, .ctxbar i { background:var(--muted); }
+  .meter.hot i, .ctxbar.hot i { background:var(--warn); }
+  .d { background:var(--done); } .p { background:var(--accent); }
+
+  /* session list: a narrow sidebar, the detail panel gets the room */
+  .layout.sessions-layout { grid-template-columns:minmax(300px, 360px) minmax(0, 1fr); }
+  .slist { position:sticky; top:76px; max-height:calc(100vh - 92px); overflow:auto; }
+  .srow { display:grid; gap:4px; padding:12px 14px; }
+  .srow.flag { box-shadow:inset 3px 0 0 var(--bad); }
+  .srow-top { display:flex; align-items:center; gap:8px; }
+  .srow-top .n { font-size:12px; margin-left:auto; }
+  .srow-top .cost { font-size:12px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .srow-title { font-weight:600; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; }
+  .srow-meta { display:flex; gap:14px; align-items:center; font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .srow-meta .mini, .srow-meta .meter { width:56px; margin-right:4px; }
+  .srow-tags { display:flex; flex-wrap:wrap; gap:4px; }
+  @media (max-width:1100px) { .layout.sessions-layout { grid-template-columns:1fr; } .slist { position:static; max-height:none; } }
+  @media (max-width:700px) { .hide-sm { display:none; } }
+
+  .pill { display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:1px 9px; border-radius:99px; border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+  .pill i { width:7px; height:7px; border-radius:50%; background:currentColor; }
+  .pill.working { color:var(--accent); border-color:var(--accent); }
+  .pill.working i { animation:pulse 1.4s ease-in-out infinite; }
+  .pill.idle { color:var(--warn); border-color:var(--warn); }
+  .pill.needs { color:var(--on-bad); background:var(--bad); border-color:var(--bad); }
+  .pill.quiet { color:var(--bad); border-color:var(--bad); }
+  .pill.active { color:var(--done); border-color:var(--done); }
+  .tag { font-size:11px; border-radius:6px; padding:0 6px; white-space:nowrap; }
+  .tag.ok { color:var(--done); background:var(--done-bg); }
+  .tag.bad { color:var(--bad); background:var(--bad-bg); }
+  .tag.warn { color:var(--warn); background:var(--warn-bg); }
+  .tag.info { color:var(--accent); background:var(--accent-bg); }
+  .tag.agent { color:var(--agent); background:var(--agent-bg); }
+
+  .detail { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:18px 20px; min-width:0; container-type:inline-size; box-shadow:var(--shadow); }
+  .dh { display:flex; gap:10px 14px; align-items:center; flex-wrap:wrap; }
+  .dh h2 { font-size:18px; margin:0; flex:1 1 260px; min-width:0; overflow-wrap:anywhere; letter-spacing:-.01em; }
+  .now { display:flex; gap:10px; align-items:flex-start; background:var(--accent-bg); border-radius:12px; padding:10px 14px; margin-top:14px; }
+  .now.wait { background:var(--sunk); } .now.needs { background:var(--bad-bg); color:var(--fg); }
+  .now small { display:block; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+  .now.needs small { color:var(--bad); }
+  .now p { margin:0; overflow-wrap:anywhere; }
+  .usage { display:grid; grid-template-columns:120px 1fr; gap:2px 12px; align-items:center; margin-top:12px; font-size:13px; }
+  .usage .n { grid-column:2; }
+  .ctxbar { height:8px; border-radius:99px; background:var(--line); overflow:hidden; }
+  .usage.hot { color:var(--warn); }
+  .progress { margin:16px 0 4px; display:flex; height:8px; border-radius:99px; overflow:hidden; background:var(--line); }
+  .legend { display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--muted); }
+  .legend b { color:var(--fg); font-weight:600; }
+  .checkbar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:12px; padding:8px 12px; border-radius:10px; font-size:13px; }
+  .checkbar.ok { background:var(--done-bg); } .checkbar.bad { background:var(--bad-bg); }
+  .checkbar b { font-weight:600; }
+  .cols { display:grid; grid-template-columns:1fr; gap:4px 20px; margin-top:6px; }
+  @container (min-width:720px) { .cols { grid-template-columns:minmax(0, 3fr) minmax(0, 2fr); } }
+  h3 { font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin:18px 0 6px; font-weight:600; }
+  ol, ul { list-style:none; margin:0; padding:0; }
+
+  .task { display:grid; grid-template-columns:24px 1fr auto; gap:10px; padding:9px 0; border-top:1px solid var(--line); }
+  .task:first-child { border-top:0; }
+  .dot { width:20px; height:20px; border-radius:50%; border:2px solid var(--line); margin-top:1px; display:grid; place-items:center; font-size:11px; color:#fff; }
+  .task.in_progress { background:var(--accent-bg); margin:0 -10px; padding:9px 10px; border-radius:10px; border-top-color:transparent; }
+  .task.in_progress + .task { border-top-color:transparent; }
+  .in_progress .dot { border-color:var(--accent); border-top-color:transparent; animation:spin 1s linear infinite; }
+  .done .dot { background:var(--done); border-color:var(--done); }
+  .done .dot::after { content:"✓"; }
+  .blocked .dot { background:var(--bad); border-color:var(--bad); }
+  .blocked .dot::after { content:"!"; }
+  .t { font-weight:500; overflow-wrap:anywhere; }
+  .done .t { color:var(--muted); text-decoration:line-through; text-decoration-color:var(--line); }
+  .in_progress .t { font-weight:600; }
+  .sum { color:var(--muted); font-size:13px; overflow-wrap:anywhere; }
+  .in_progress .sum b { color:var(--accent); font-weight:500; }
+  .dur { font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; padding-top:2px; }
+  .agents .task { padding-left:calc(var(--d, 0) * 22px); }
+  .agents .task.in_progress { background:var(--agent-bg); margin:0; padding:9px 0 9px calc(var(--d, 0) * 22px); }
+  .agents .in_progress .dot { border-color:var(--agent); border-top-color:transparent; }
+  .agents .in_progress .sum b { color:var(--agent); }
+
+  .drift { margin-top:10px; font-size:13px; }
+  .vs { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:8px; }
+  .vs h4 { margin:0 0 4px; font-size:12px; color:var(--muted); font-weight:600; }
+  .vs li { padding:2px 0; overflow-wrap:anywhere; }
+  .vs .dropped { color:var(--muted); text-decoration:line-through; }
+  .vs .mk { display:inline-block; width:16px; color:var(--muted); }
+  .vs .done .mk { color:var(--done); } .vs .in_progress .mk { color:var(--accent); } .vs .dropped .mk, .vs .blocked .mk { color:var(--bad); }
+
+  .log li { display:grid; grid-template-columns:18px 1fr auto; gap:8px; padding:5px 0; font-size:13px; }
+  .log .ic { text-align:center; color:var(--muted); }
+  .log .you { font-weight:500; }
+  .log .you .ic, .log .plan .ic { color:var(--accent); }
+  .log .agent .ic { color:var(--agent); }
+  .log .done .ic { color:var(--done); }
+  .log .stop .ic { color:var(--warn); }
+  .log .error, .log .needs { color:var(--bad); }
+  .log .error .ic, .log .needs .ic { color:var(--bad); }
+  .log span { overflow-wrap:anywhere; min-width:0; }
+  .log time { color:var(--muted); font:11px ui-monospace, monospace; padding-top:2px; }
+
+  .files li { display:grid; grid-template-columns:1fr auto; gap:10px; padding:4px 0; font:12px ui-monospace, monospace; border-top:1px solid var(--line); }
+  .files li:first-child { border-top:0; }
+  .files .path { overflow-wrap:anywhere; }
+  .files .c { white-space:nowrap; }
+  .add { color:var(--done); } .rem { color:var(--bad); }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:16px; padding-top:14px; border-top:1px solid var(--line); }
+  .chip { font-size:12px; background:var(--sunk); border-radius:8px; padding:2px 8px; color:var(--muted); }
+  .reply { padding:10px 14px; border-left:3px solid var(--line); color:var(--muted); font-size:13px; overflow-wrap:anywhere; white-space:pre-wrap; }
+  .empty { text-align:center; padding:40px 16px; color:var(--muted); }
+  .earlier li { display:grid; grid-template-columns:1fr auto; gap:10px; padding:6px 0; border-top:1px solid var(--line); font-size:13px; }
+  .earlier li:first-child { border-top:0; }
+  .earlier span { overflow-wrap:anywhere; }
+
+  /* today */
+  .tgrid { display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:16px; margin-top:16px; align-items:start; }
+  .tlist li { display:grid; grid-template-columns:18px 1fr auto; gap:8px; padding:5px 0; border-top:1px solid var(--line); font-size:13px; }
+  .tlist li:first-child { border-top:0; }
+  .tlist span { overflow-wrap:anywhere; min-width:0; }
+  .tlist li.grp { display:block; border-top:0; padding:12px 0 2px; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tlist li.grp:first-child { padding-top:0; }
+  .tlist .ok { color:var(--done); } .tlist .op { color:var(--accent); } .tlist .bl { color:var(--bad); }
+
+  /* timeline */
+  .tl { overflow-x:auto; }
+  .tl-inner { min-width:640px; }
+  .tl-axis, .lane { display:grid; grid-template-columns:180px 1fr; gap:10px; }
+  .tl-axis { font:11px ui-monospace, monospace; color:var(--muted); }
+  .ticks, .track { position:relative; }
+  .ticks { height:18px; border-bottom:1px solid var(--line); }
+  .ticks span { position:absolute; transform:translateX(-50%); white-space:nowrap; }
+  .lane { border-bottom:1px solid var(--line); padding:6px 0; }
+  .lane-h { font-size:13px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding-top:2px; }
+  .lane-h small { display:block; font-weight:400; color:var(--muted); font-size:11px; }
+  .track { min-height:26px; }
+  .tb { position:absolute; height:12px; border-radius:4px; min-width:3px; }
+  .tb.tl-round { background:var(--sunk); height:100%; top:0; border-radius:6px; }
+  .tb.tl-task { background:var(--done); }
+  .tb.tl-task.tl-now { background:var(--accent); }
+  .tb.tl-task.tl-stall { background:repeating-linear-gradient(45deg, var(--bad), var(--bad) 4px, var(--bad-bg) 4px, var(--bad-bg) 8px); }
+  .tb.tl-agent { background:var(--agent); height:6px; }
+  .nowline { position:absolute; top:0; bottom:0; width:0; border-left:1px dashed var(--bad); }
+  .tl-legend { display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--muted); margin-top:10px; }
+  .tl-legend i { display:inline-block; width:14px; height:8px; border-radius:3px; margin-right:5px; vertical-align:middle; }
+
+  /* proposals */
+  .lead { font-size:15px; margin:12px 0 0; overflow-wrap:anywhere; }
+  .md { margin-top:8px; overflow-wrap:anywhere; }
+  .md h4 { font-size:14px; margin:14px 0 4px; }
+  .md p { margin:6px 0; }
+  .md ul { list-style:disc; padding-left:20px; margin:6px 0; }
+  .md code { font:12px ui-monospace, monospace; background:var(--sunk); padding:1px 5px; border-radius:5px; }
+  .md pre { background:var(--sunk); padding:10px 12px; border-radius:10px; overflow:auto; }
+  .md pre code { background:none; padding:0; }
+  .preview { width:100%; height:460px; border:1px solid var(--line); border-radius:12px; background:#fff; resize:vertical; display:block; }
+  .steps { counter-reset:s; }
+  .steps li { counter-increment:s; display:grid; grid-template-columns:24px 1fr; gap:8px; padding:6px 0; border-top:1px solid var(--line); }
+  .steps li:first-child { border-top:0; }
+  .steps li::before { content:counter(s); width:20px; height:20px; border-radius:50%; background:var(--sunk); color:var(--muted); font-size:11px; display:grid; place-items:center; margin-top:1px; }
+  .respond, .reqform { margin-top:18px; padding-top:16px; border-top:1px solid var(--line); display:grid; gap:14px; }
+  .reqform { border-top:0; margin-top:8px; padding-top:0; }
+  fieldset { border:0; margin:0; padding:0; min-width:0; }
+  legend { font-weight:600; padding:0; margin-bottom:6px; }
+  .opt { display:grid; grid-template-columns:20px 1fr; gap:8px; align-items:start; padding:8px 10px; border:1px solid var(--line); border-radius:10px; margin-top:6px; cursor:pointer; }
+  .opt:has(input:checked) { border-color:var(--accent); background:var(--accent-bg); }
+  .opt input { margin:3px 0 0; accent-color:var(--accent); }
+  .opt small { display:block; color:var(--muted); font-size:12px; }
+  .field { display:grid; gap:4px; }
+  .field > span { font-weight:600; }
+  textarea, select, input[type=search], input[type=text] { width:100%; border:1px solid var(--line); border-radius:10px; padding:8px 10px; background:var(--card); }
+  textarea { resize:vertical; min-height:44px; }
+  textarea:focus, select:focus, input:focus-visible, button:focus-visible, tr:focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+  .actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .formmsg { font-size:13px; color:var(--bad); }
+  .answer { margin-top:18px; padding:12px 14px; border-radius:12px; background:var(--sunk); }
+  .answer.approve { background:var(--done-bg); } .answer.revise { background:var(--warn-bg); }
+  .answer ul { margin:6px 0 0; } .answer li { padding:2px 0; overflow-wrap:anywhere; }
+  .answer p { margin:6px 0 0; overflow-wrap:anywhere; }
+  .side h3 { margin:18px 4px 6px; }
+
+  /* history */
+  .htools { display:flex; gap:10px; align-items:center; margin-top:16px; flex-wrap:wrap; }
+  .htools input { max-width:420px; }
+  .day { font-size:12px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); font-weight:600; margin:22px 0 8px; }
+  .hcard { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px 16px; margin-top:8px; box-shadow:var(--shadow); }
+  .hhead { display:flex; gap:8px; align-items:center; flex-wrap:wrap; font-size:12px; color:var(--muted); }
+  .hhead time { font:12px ui-monospace, monospace; }
+  .hprompt { margin:6px 0 4px; font-weight:600; overflow-wrap:anywhere; }
+  .hdone li { display:grid; grid-template-columns:16px 1fr auto; gap:8px; padding:3px 0; font-size:13px; }
+  .hdone .ok { color:var(--done); }
+  .hdone span { overflow-wrap:anywhere; }
+  details { margin-top:6px; font-size:13px; }
+  summary { cursor:pointer; color:var(--muted); }
+  .linkish { background:none; border:0; padding:0; color:var(--accent); cursor:pointer; font-size:13px; }
+
+  dialog { border:1px solid var(--line); border-radius:18px; background:var(--card); color:var(--fg); padding:20px; width:min(580px, calc(100vw - 32px)); }
+  dialog::backdrop { background:rgb(0 0 0 / .35); }
+  dialog h2 { margin:0 0 12px; font-size:18px; }
+  .copyrow { display:flex; gap:8px; }
+  .copyrow input { font:12px ui-monospace, monospace; }
+
+  .two { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  input[type=number] { width:100%; border:1px solid var(--line); border-radius:10px; padding:8px 10px; background:var(--card); }
+  table.keys { border-collapse:collapse; width:100%; font-size:13px; }
+  .keys td { padding:6px 4px; border-top:1px solid var(--line); vertical-align:top; } .keys tr:first-child td { border-top:0; } .keys td:first-child { white-space:nowrap; width:110px; }
+  kbd { font:12px ui-monospace, monospace; border:1px solid var(--line); border-bottom-width:2px; border-radius:6px; padding:0 6px; background:var(--sunk); }
+  .permit { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:8px; }
+  .permit .btn.deny { color:var(--bad); border-color:var(--bad); }
+  div.att { cursor:default; }
+  .difbtn { background:none; border:0; padding:0; text-align:left; cursor:pointer; color:inherit; font:inherit; overflow-wrap:anywhere; }
+  .difbtn:hover { color:var(--accent); text-decoration:underline; }
+  .files li.diffrow { display:block; padding:0 0 8px; border-top:0; }
+  pre.diff { margin:4px 0 0; max-height:420px; overflow:auto; background:var(--sunk); border-radius:10px; padding:8px 0; font:12px/1.45 ui-monospace, monospace; }
+  pre.diff span { display:block; padding:0 12px; white-space:pre; min-width:max-content; }
+  pre.diff .a { background:var(--done-bg); color:var(--done); } pre.diff .r { background:var(--bad-bg); color:var(--bad); } pre.diff .h { color:var(--accent); } pre.diff .m { color:var(--muted); }
+  .hpin { background:none; border:0; cursor:pointer; font-size:15px; line-height:1; color:var(--muted); padding:0 2px; margin-left:auto; }
+  .hpin[aria-pressed="true"] { color:var(--warn); }
+  .hcard.pinned { border-color:var(--warn); }
+  .hnote { margin:8px 0 2px; padding:8px 12px; border-radius:10px; background:var(--warn-bg); font-size:13px; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .noteform { display:grid; gap:6px; margin-top:8px; }
+  .week td, .week th { padding:7px 8px; border-top:1px solid var(--line); font-size:13px; text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .week th { border-top:0; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); font-weight:600; }
+  .week td:first-child, .week th:first-child { text-align:left; }
+  .week table { width:100%; border-collapse:collapse; }
+  .week .wbar { display:inline-block; height:6px; border-radius:99px; background:var(--done); vertical-align:middle; margin-right:6px; }
+  .rename { font-size:14px; color:var(--muted); vertical-align:2px; }
+  .uncommitted { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:2px 0 8px; font-size:13px; }
+  .gtag { font:600 10px ui-monospace, monospace; border-radius:4px; padding:0 4px; margin-right:6px; color:var(--warn); background:var(--warn-bg); }
+  .runs { display:inline-flex; gap:2px; vertical-align:middle; }
+  .runs i { width:7px; height:14px; border-radius:2px; background:var(--done); }
+  .runs i.f { background:var(--bad); }
+  .chk li { display:grid; grid-template-columns:1fr auto; gap:4px 10px; padding:7px 0; border-top:1px solid var(--line); font-size:13px; }
+  .chk li:first-child { border-top:0; }
+  #palette { padding:0; width:min(640px, calc(100vw - 32px)); margin-top:12vh; }
+  #palq { border:0; border-bottom:1px solid var(--line); border-radius:0; padding:14px 16px; font-size:15px; background:var(--card); }
+  #palq:focus { outline:none; }
+  #pallist { max-height:min(420px, 60vh); overflow:auto; padding:6px; }
+  #pallist li { display:grid; grid-template-columns:1fr auto; gap:10px; padding:8px 10px; border-radius:8px; cursor:pointer; font-size:13px; }
+  #pallist li span:first-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #pallist li[aria-selected="true"] { background:var(--accent-bg); }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  @keyframes pulse { 50% { opacity:.25; } }
+  @media (prefers-reduced-motion: reduce) { .in_progress .dot, .pill.working i { animation:none; } .in_progress .dot { border-top-color:var(--accent); } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="brand"><span class="logo" aria-hidden="true">✓</span><div><h1>Project board</h1><div class="n" id="meta">Loading…</div></div></div>
+    <div class="tools">
+      <div class="seg" role="group" aria-label="View"><button type="button" data-view="live">Live</button><button type="button" data-view="today">Today</button><button type="button" data-view="week">Week</button><button type="button" data-view="timeline">Timeline</button><button type="button" data-view="proposals">Proposals<span id="pbadge"></span></button><button type="button" data-view="history">History</button></div>
+      <button class="btn primary live-only" id="newbtn" type="button">New request</button>
+      <a class="btn live-only" id="hublink" href="#" target="_blank" rel="noopener" hidden title="Every project with a board, in one tab">All projects ↗</a>
+      <button class="btn live-only" id="setbtn" type="button" title="Alerts, sound, budget, phone access">Settings</button>
+      <button class="btn ghost" id="keysbtn" type="button" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">?</button>
+      <div class="seg theme" role="group" aria-label="Theme"><button type="button" data-theme-set="system" title="Match the system" aria-label="System theme">◐</button><button type="button" data-theme-set="light" title="Light" aria-label="Light theme">☀</button><button type="button" data-theme-set="dark" title="Dark" aria-label="Dark theme">☾</button></div>
+    </div>
+  </header>
+  <div class="banner" id="snapbanner" hidden></div>
+  <div class="banner live-only" id="updbanner" hidden></div>
+
+  <div id="v-live">
+    <div class="stats" id="stats"></div>
+    <div class="attention" id="attention"></div>
+    <div class="bar"><h2>Sessions</h2><div class="seg" role="group" aria-label="Filter sessions"><button type="button" data-f="live">Running</button><button type="button" data-f="all">All</button></div></div>
+    <div class="layout sessions-layout" style="margin-top:10px">
+      <nav class="list slist" id="list" aria-label="Sessions"></nav>
+      <section class="detail" id="detail" aria-live="polite"></section>
+    </div>
+  </div>
+
+  <div id="v-today" hidden>
+    <div class="bar"><h2 id="todayh">Today</h2><button class="btn" id="standup" type="button">Copy as standup</button></div>
+    <div class="stats" id="tstats"></div>
+    <div class="tgrid" id="tgrid"></div>
+  </div>
+
+  <div id="v-week" hidden>
+    <div class="bar"><h2 id="weekh">Last 7 days</h2><button class="btn" id="weekcopy" type="button">Copy as Markdown</button></div>
+    <div class="stats" id="wstats"></div>
+    <div class="tgrid" id="wgrid"></div>
+  </div>
+
+  <div id="v-timeline" hidden>
+    <div class="bar"><h2>Timeline</h2><div class="seg" role="group" aria-label="Time span"><button type="button" data-span="2">2 h</button><button type="button" data-span="8">8 h</button><button type="button" data-span="24">24 h</button><button type="button" data-span="168">7 d</button></div></div>
+    <section class="detail tl" id="tl" style="margin-top:12px"></section>
+  </div>
+
+  <div id="v-proposals" hidden>
+    <div class="layout">
+      <div class="side">
+        <nav class="list" id="plist" aria-label="Proposals"></nav>
+        <h3 class="live-only">Your requests</h3>
+        <div class="list live-only" id="rlist"></div>
+      </div>
+      <section class="detail" id="pdetail"></section>
+    </div>
+  </div>
+
+  <div id="v-history" hidden>
+    <div class="htools"><input type="search" id="hq" placeholder="Search requests, tasks and files" aria-label="Search history"><button class="btn" id="hpin" type="button" aria-pressed="false">★ Pinned only</button><span class="n" id="hcount"></span></div>
+    <div id="hlist"></div>
+  </div>
+</main>
+
+<dialog id="newreq" aria-labelledby="newreq-h">
+  <form class="reqform" id="reqform" method="dialog">
+    <h2 id="newreq-h">New request for Claude</h2>
+    <fieldset>
+      <legend>What do you want?</legend>
+      <label class="opt"><input type="radio" name="kind" value="brainstorm" checked><span><b>Brainstorm an idea</b><small>Claude explores it and comes back with a proposal and questions for you.</small></span></label>
+      <label class="opt"><input type="radio" name="kind" value="suggest"><span><b>Suggest features</b><small>Claude looks at the project and proposes features for you to pick from.</small></span></label>
+      <label class="opt"><input type="radio" name="kind" value="task"><span><b>Do a task</b><small>Claude plans it and starts working.</small></span></label>
+    </fieldset>
+    <label class="field"><span>Request</span><textarea name="text" rows="4" required placeholder="What should Claude think about or do?"></textarea></label>
+    <label class="field"><span>Additional instructions</span><textarea name="instructions" rows="2" placeholder="Constraints, things to avoid, files to look at…"></textarea></label>
+    <label class="field"><span>Send to</span><select name="session" id="reqsess"></select></label>
+    <p class="n" id="reqnote" style="margin:0"></p>
+    <div class="actions"><button class="btn primary" value="send">Send to Claude</button><button class="btn" value="cancel" formnovalidate>Cancel</button><span class="formmsg" id="reqmsg" role="status"></span></div>
+  </form>
+</dialog>
+
+<dialog id="settings" aria-labelledby="set-h">
+  <h2 id="set-h">Settings</h2>
+  <form id="setform" class="reqform">
+    <fieldset><legend>Alerts</legend>
+      <div class="actions"><button class="btn" id="alerts" type="button">Turn on alerts</button><span class="n">Desktop notifications when a session needs you, finishes, or a proposal is waiting.</span></div>
+      <label class="opt" style="margin-top:10px"><input type="checkbox" id="soundon"><span><b>Play a sound</b><small>A soft chime when a session needs your approval or a proposal is waiting. Only in this browser.</small></span></label>
+    </fieldset>
+    <fieldset><legend>Limits</legend>
+      <div class="two">
+        <label class="field"><span>Daily budget ($)</span><input type="number" name="budget_day" min="0" step="1" placeholder="No limit"></label>
+        <label class="field"><span>Context limit (%)</span><input type="number" name="ctx_limit" min="0" max="100" step="5" placeholder="80"></label>
+      </div>
+      <p class="n" style="margin:6px 0 0">Past a limit, the board flags it and Claude is told once to wrap up. Cost is at API list prices. Leave empty for no limit.</p>
+    </fieldset>
+    <fieldset><legend>Phone alerts when you're away</legend>
+      <p class="n" style="margin:0 0 8px">Install the free <b>ntfy</b> app on your phone and subscribe to the topic below. When the board isn't open on this computer, “needs you”, “done” and new proposals are sent there. Anyone who knows the topic can read the alerts (session titles and what Claude asks), so keep it hard to guess.</p>
+      <div class="two">
+        <label class="field"><span>Topic</span><input type="text" name="ntfy_topic" placeholder="Off" autocomplete="off" spellcheck="false"></label>
+        <label class="field"><span>Server</span><input type="text" name="ntfy_server" placeholder="https://ntfy.sh" autocomplete="off" spellcheck="false"></label>
+      </div>
+      <div class="actions" style="margin-top:8px"><button class="btn" type="button" id="ntfygen">Make a private topic</button><button class="btn" type="button" id="ntfytest">Send a test</button></div>
+    </fieldset>
+    <fieldset><legend>History</legend>
+      <label class="field"><span>Keep history for (days)</span><input type="number" name="keep_days" min="0" step="1" placeholder="Forever" style="max-width:160px"></label>
+    </fieldset>
+    <fieldset><legend>Phone access</legend><button class="btn" id="phonebtn" type="button">Open on your phone…</button></fieldset>
+    <div class="actions"><button class="btn primary" type="submit">Save</button><button class="btn" type="button" onclick="this.closest('dialog').close()">Close</button><span class="formmsg" id="setmsg" role="status"></span></div>
+  </form>
+</dialog>
+
+<dialog id="palette" aria-label="Go to anything">
+  <input type="search" id="palq" placeholder="Jump to a session, proposal, request or file, or run an action…" aria-label="Search" autocomplete="off">
+  <ul id="pallist" role="listbox"></ul>
+</dialog>
+
+<dialog id="keys" aria-labelledby="keys-h">
+  <h2 id="keys-h">Keyboard shortcuts</h2>
+  <table class="keys"><tbody>
+    <tr><td><kbd>1</kbd>–<kbd>6</kbd></td><td>Live, Today, Week, Timeline, Proposals, History</td></tr>
+    <tr><td><kbd>j</kbd> <kbd>k</kbd></td><td>Next / previous session (or proposal)</td></tr>
+    <tr><td><kbd>a</kbd> <kbd>x</kbd></td><td>Allow / deny the selected session's waiting request</td></tr>
+    <tr><td><kbd>⌘</kbd> <kbd>K</kbd></td><td>Go to anything: sessions, proposals, history, files, actions</td></tr>
+    <tr><td><kbd>n</kbd></td><td>New request</td></tr>
+    <tr><td><kbd>/</kbd></td><td>Search history</td></tr>
+    <tr><td><kbd>t</kbd></td><td>Switch theme: system, light, dark</td></tr>
+    <tr><td><kbd>?</kbd></td><td>This list</td></tr>
+  </tbody></table>
+  <div class="actions" style="margin-top:16px"><button class="btn" type="button" onclick="this.closest('dialog').close()">Close</button></div>
+</dialog>
+
+<dialog id="phone" aria-labelledby="phone-h">
+  <h2 id="phone-h">Open the board on your phone</h2>
+  <div id="phonebody"></div>
+  <div class="actions" style="margin-top:16px"><button class="btn" type="button" onclick="this.closest('dialog').close()">Close</button></div>
+</dialog>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const secs = (a, b = Date.now()) => Math.max(0, Math.round((new Date(b) - new Date(a)) / 1000));
+const dur = s => s < 60 ? s + "s" : s < 3600 ? Math.round(s / 60) + "m" : s < 86400 ? (s / 3600).toFixed(1).replace(".0", "") + "h" : Math.round(s / 86400) + "d";
+const ago = iso => iso ? dur(secs(iso)) + " ago" : "never";
+const hhmm = iso => new Date(iso).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+const dayKey = d => { const x = new Date(d); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`; };
+const money = c => "$" + (c >= 100 ? c.toFixed(0) : (c || 0).toFixed(2));
+const toks = n => n >= 1e6 ? (n / 1e6).toFixed(1).replace(".0", "") + "M" : n >= 1e3 ? Math.round(n / 1e3) + "k" : String(n || 0);
+const LIVE = ["working", "active", "idle"], OPEN = ["pending", "in_progress", "blocked"];
+const ICON = {you:"›", edit:"✎", run:"$", read:"◫", search:"⌕", agent:"◎", plan:"☰", done:"✓", stop:"■", web:"↗", session:"●", tool:"·", info:"·", error:"✗", needs:"!"};
+const LABEL = {needs:"needs you", idle:"your turn", working:"working", quiet:"quiet", active:"started", ended:"ended"};
+const PSTATE = {awaiting:["needs","needs your input"], approved:["working","approved"], revise:["idle","revising"], building:["working","building"], done:["active","done"], dismissed:["ended","dismissed"]};
+const KIND = {brainstorm:"Brainstorm", suggest:"Suggest features", task:"Task"};
+const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+const SNAP = window.SNAPSHOT || null;  // a read-only copy made by `hook.py snapshot`
+const VIEWS = ["live", "today", "week", "timeline", "proposals", "history"];
+
+let filter = store.get("filter") || "live", view = store.get("view") || "live", span = +(store.get("span") || 8);
+let selected = null, selProp = store.get("prop") || null;
+const h0 = location.hash.slice(1);
+if (VIEWS.includes(h0)) view = h0; else if (h0) { selected = decodeURIComponent(h0); view = "live"; }
+if (!VIEWS.includes(view)) view = "live";
+let data = {}, board = { proposals: {}, requests: [], listeners: {} }, hist = [];
+let lastP = "", lastB = "", lastH = "", lastDraw = 0, prev = null, prevProps = null, propSig = "", histSig = "";
+const selVer = {};
+let drafts = {}; try { drafts = JSON.parse(store.get("drafts") || "{}"); } catch (e) {}
+
+const live = s => LIVE.includes(s.status);
+const state = s => s.needs && live(s) ? "needs" : s.status === "working" && secs(s.updated) > 300 ? "quiet" : s.status;
+const files = s => (s.files || []).map(f => typeof f === "string" ? { path: f, add: 0, del: 0 } : f);
+const counts = tasks => { const c = { done: 0, in_progress: 0, blocked: 0, pending: 0 }; tasks.forEach(t => c[t.status] = (c[t.status] || 0) + 1); return c; };
+const RANK = { needs: 0, quiet: 1, working: 2, idle: 3, active: 4, ended: 5 };
+const listening = sid => { const l = (board.listeners || {})[sid]; return !SNAP && !!l && secs(l.at) < 75; };
+const sessions = () => Object.values(data.sessions || {});
+const sessTitle = sid => (data.sessions || {})[sid]?.title || "a session";
+const props = () => Object.values(board.proposals || {});
+const awaiting = () => props().filter(p => p.status === "awaiting");
+const ctxPct = s => s.usage?.ctx && s.usage.ctx_max ? Math.min(100, Math.round(s.usage.ctx / s.usage.ctx_max * 100)) : null;
+const cfg = () => board.settings || {}, ctxLimit = () => cfg().ctx_limit || 80;
+const canPermit = s => !SNAP && live(s) && s.needs?.until && new Date(s.needs.until) > Date.now();
+const permitBlock = s => canPermit(s) ? `<div class="permit"><button type="button" class="btn primary" data-permit="allow" data-sid="${esc(s.id)}" data-nid="${esc(s.needs.id)}">Allow</button><button type="button" class="btn deny" data-permit="deny" data-sid="${esc(s.id)}" data-nid="${esc(s.needs.id)}">Deny</button><span class="n" data-until="${esc(s.needs.until)}"></span></div>`
+  : s.needs && live(s) ? `<p class="n" style="margin:6px 0 0">Answer it in the terminal${SNAP ? "" : " (the board can answer only while it's open when the request arrives)"}.</p>` : "";
+const spentOn = day => sessions().reduce((a, s) => a + (s.usage?.days?.[day] || 0), 0);
+
+// Tiny markdown: headings, lists, code blocks, `code`, **bold**, *italic*, paragraphs.
+function md(src) {
+  const inline = s => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/(^|[^*])\*([^*\s][^*]*)\*/g, "$1<i>$2</i>");
+  const out = []; let list = null, code = null;
+  const close = () => { if (list) { out.push(`<ul>${list.join("")}</ul>`); list = null; } };
+  for (const line of String(src || "").split("\n")) {
+    if (code !== null) { if (/^\s*```/.test(line)) { out.push(`<pre><code>${esc(code)}</code></pre>`); code = null; } else code += line + "\n"; continue; }
+    let m;
+    if (/^\s*```/.test(line)) { close(); code = ""; }
+    else if ((m = line.match(/^#{1,6}\s+(.*)/))) { close(); out.push(`<h4>${inline(m[1])}</h4>`); }
+    else if ((m = line.match(/^\s*(?:[-*]|\d+[.)])\s+(.*)/))) { (list = list || []).push(`<li>${inline(m[1])}</li>`); }
+    else if (!line.trim()) close();
+    else { close(); out.push(`<p>${inline(line)}</p>`); }
+  }
+  close(); if (code !== null) out.push(`<pre><code>${esc(code)}</code></pre>`);
+  return out.join("");
+}
+
+// ---------------------------------------------------------------- live view
+
+function conflicts(all) {  // files edited in the last 3 hours by more than one running session
+  const by = {};
+  all.filter(live).forEach(s => files(s).forEach(f => { if (!f.at || secs(f.at) < 10800) (by[f.path] = by[f.path] || new Set()).add(s.id); }));
+  return Object.fromEntries(Object.entries(by).filter(([, ids]) => ids.size > 1).map(([p, ids]) => [p, [...ids]]));
+}
+const checkStale = s => s.check && files(s).some(f => f.at && f.at > s.check.at);  // a check older than the last edit proves nothing
+
+function nowText(s) {
+  const st = state(s), cur = (s.tasks || []).find(t => t.status === "in_progress");
+  if (st === "needs") return "Approve: " + s.needs.what;
+  if (st === "idle") return cur ? "Paused on: " + cur.title : "Finished its last reply";
+  if (st === "ended") return "Session ended";
+  const agents = (s.agents || []).filter(a => a.status === "running");
+  if (agents.length && !cur) return `Waiting on ${agents.length} agent${agents.length > 1 ? "s" : ""}: ${agents[0].desc}`;
+  return cur ? (cur.active || cur.title) : (s.log || []).at(-1)?.text || "Starting";
+}
+
+function checkTag(c, stale) {
+  if (!c) return "";
+  if (!c.ok) return `<span class="tag bad">✗ ${esc(c.name)}</span>`;
+  return stale ? `<span class="tag warn">${esc(c.name)} · edited since</span>` : `<span class="tag ok">✓ ${esc(c.name)}</span>`;
+}
+
+function row(s, clash) {
+  const tasks = s.tasks || [], c = counts(tasks), n = tasks.length || 1, st = state(s), pct = ctxPct(s);
+  const clashes = files(s).filter(f => clash[f.path]).length, agents = (s.agents || []).filter(a => a.status === "running").length;
+  const tags = [st === "needs" ? `<span class="tag bad">! approve</span>` : "", checkTag(s.check, checkStale(s)), agents ? `<span class="tag agent">${agents} agent${agents > 1 ? "s" : ""}</span>` : "",
+    live(s) && listening(s.id) ? `<span class="tag info" title="Answers you send from the board reach it straight away">listening</span>` : "",
+    clashes ? `<span class="tag warn">⚠ ${clashes} shared</span>` : "", s.errors ? `<span class="tag bad">${s.errors} failed</span>` : ""].join("");
+  return `<button type="button" class="row srow${st === "needs" ? " flag" : ""}" data-id="${esc(s.id)}" aria-current="${s.id === selected}">
+    <div class="srow-top"><span class="pill ${st}"><i></i>${LABEL[st] || st}</span><span class="n">${ago(s.updated)}</span>${s.usage?.cost ? `<span class="cost">${money(s.usage.cost)}</span>` : ""}</div>
+    <div class="srow-title">${esc(s.title || "New session")}</div>
+    <div class="row-now">${esc(nowText(s))}</div>
+    <div class="srow-meta">${tasks.length ? `<span title="Plan: ${c.done} of ${tasks.length} done"><span class="mini"><i class="d" style="width:${c.done / n * 100}%"></i><i class="p" style="width:${c.in_progress / n * 100}%"></i></span> ${c.done}/${tasks.length}</span>` : `<span>no plan</span>`}
+      ${pct === null ? "" : `<span title="${toks(s.usage.ctx)} of ${toks(s.usage.ctx_max)} tokens of context"><span class="meter ${pct >= ctxLimit() ? "hot" : ""}"><i style="width:${pct}%"></i></span> ${pct}%</span>`}</div>
+    ${tags ? `<div class="srow-tags">${tags}</div>` : ""}
+  </button>`;
+}
+
+function usageBlock(s) {
+  const u = s.usage; if (!u) return "";
+  const pct = ctxPct(s), hot = pct >= ctxLimit(), today = u.days?.[dayKey(Date.now())] || 0;
+  return `<div class="usage ${hot ? "hot" : ""}"><div class="ctxbar ${hot ? "hot" : ""}"><i style="width:${pct || 0}%"></i></div>
+    <span><b>${pct ?? "–"}%</b> of context used${u.ctx_max ? ` (${toks(u.ctx)} of ${toks(u.ctx_max)})` : ""}${hot ? " · it gets compacted soon" : ""}</span>
+    <span class="n">${toks(u.in + u.cr + u.cw)} tokens in · ${toks(u.out)} out · ${money(u.cost)} at API rates${today ? ` · ${money(today)} today` : ""}${u.model ? ` · ${esc(u.model)}` : ""}</span></div>`;
+}
+
+const MARK = { done: "✓", in_progress: "◐", pending: "○", blocked: "!", dropped: "✗" };
+function driftBlock(plan0, tasks) {
+  if (!plan0?.length || !tasks.length) return "";
+  const titles = new Set(tasks.map(t => t.title)), added = tasks.filter(t => t.added), dropped = plan0.filter(p => !titles.has(p));
+  if (!added.length && !dropped.length) return `<p class="n drift">Stayed on plan: every task was in the original plan.</p>`;
+  const st = Object.fromEntries(tasks.map(t => [t.title, t.status]));
+  return `<details class="drift"><summary>Plan changed: ${plan0.length} planned${added.length ? ` · <b>+${added.length}</b> added later` : ""}${dropped.length ? ` · <b>−${dropped.length}</b> dropped` : ""} · compare</summary>
+    <div class="vs"><div><h4>Original plan</h4><ol>${plan0.map(p => { const k = titles.has(p) ? st[p] : "dropped"; return `<li class="${esc(k)}"><span class="mk">${MARK[k] || "○"}</span>${esc(p)}</li>`; }).join("")}</ol></div>
+    <div><h4>What actually happened</h4><ol>${tasks.map(t => `<li class="${esc(t.status)}"><span class="mk">${MARK[t.status] || "○"}</span>${esc(t.title)}${t.added ? ` <span class="tag info">added</span>` : ""}</li>`).join("")}</ol></div></div></details>`;
+}
+
+function agentsBlock(s) {
+  const as = s.agents || []; if (!as.length) return "";
+  const cls = { running: "in_progress", done: "done", failed: "blocked" };
+  const isTop = a => !a.parent || !as.some(b => b.agent_id && b.agent_id === a.parent);
+  const item = (a, depth) => `<li class="task ${cls[a.status] || ""}" style="--d:${depth}"><span class="dot"></span>
+      <div><div class="t">${esc(a.desc)} <span class="tag agent">${esc(a.type)}${a.bg ? " · background" : ""}</span></div>
+      <div class="sum">${a.status === "running" ? (a.last ? `<b>Now:</b> ${esc(a.last)}` : "Starting…") : a.status === "failed" ? "Failed" : esc(a.reply || "")}</div></div>
+      <span class="dur">${dur(secs(a.started, a.finished || Date.now()))}${a.tools ? ` · ${a.tools} tools` : ""}${a.cost ? ` · ${money(a.cost)}` : ""}</span></li>`
+    + (a.agent_id ? as.filter(k => k.parent === a.agent_id).map(k => item(k, depth + 1)).join("") : "");
+  const running = as.filter(a => a.status === "running").length;
+  return `<h3>Helper agents · ${as.length}${running ? `, ${running} running` : ""}</h3><ol class="agents">${as.filter(isTop).slice().reverse().map(a => item(a, 0)).join("")}</ol>`;
+}
+
+function detail(s, clash, all) {
+  if (!s) return `<div class="empty">Pick a session to see its plan and activity.</div>`;
+  const tasks = s.tasks || [], c = counts(tasks), n = tasks.length || 1, st = state(s), x = s.stats || {}, fl = files(s).slice().reverse();
+  const title = id => (all.find(o => o.id === id) || {}).title || "another session";
+  const nowCls = st === "needs" ? "needs" : st === "idle" || st === "ended" ? "wait" : "";
+  const nowLabel = { needs: canPermit(s) ? "Needs your approval" : "Needs your approval in the terminal", idle: "Waiting for you", quiet: "No activity for " + dur(secs(s.updated)), ended: "Ended" }[st] || "Now";
+
+  const plan = tasks.length ? `<ol>${tasks.map((t, i) => {
+    const time = t.status === "done" && t.started && t.finished ? dur(secs(t.started, t.finished))
+               : t.status === "in_progress" && t.started ? dur(secs(t.started)) + " so far" : "";
+    const sub = t.status === "in_progress" && t.active && t.active !== t.title ? `<b>${esc(t.active)}</b>${t.summary ? " · " : ""}` : "";
+    return `<li class="task ${esc(t.status)}"><span class="dot"></span><div><div class="t">${i + 1}. ${esc(t.title)}${t.added ? ` <span class="tag info" title="Added after work on the plan had started">added later</span>` : ""}</div>${sub || t.summary ? `<div class="sum">${sub}${esc(t.summary || "")}</div>` : ""}</div><span class="dur">${time}</span></li>`;
+  }).join("")}</ol>${driftBlock(s.plan0, tasks)}` : `<p class="n">No plan yet. It appears here once the session writes its task list.</p>`;
+
+  const chips = [
+    s.prompts && `${s.prompts} prompt${s.prompts > 1 ? "s" : ""}`, x.edits && `${x.edits} edits`, x.commands && `${x.commands} commands`,
+    x.reads && `${x.reads} reads`, x.searches && `${x.searches} searches`, x.agents && `${x.agents} agents`, s.errors && `${s.errors} failed`, x.tools && `${x.tools} tool calls`,
+  ].filter(Boolean).map(v => `<span class="chip">${v}</span>`).join("");
+  const added = fl.reduce((a, f) => a + (f.add || 0), 0), removed = fl.reduce((a, f) => a + (f.del || 0), 0);
+  const earlier = hist.filter(e => e.session === s.id && e.id !== s.round?.id).slice(0, 8);
+  const myProps = props().filter(p => p.session === s.id && p.status !== "done" && p.status !== "dismissed");
+
+  return `<div class="dh"><h2>${esc(s.title || "New session")}${SNAP ? "" : ` <button type="button" class="linkish rename" data-rename="${esc(s.id)}" title="Rename this session" aria-label="Rename this session">✎</button>`}</h2><span class="pill ${st}"><i></i>${LABEL[st] || st}</span></div>
+    <div class="n">${s.project ? esc(s.project) + " · " : ""}ran ${dur(secs(s.started, live(s) ? Date.now() : s.updated))} · updated ${ago(s.updated)}${s.model ? ` · ${esc(s.model)}` : ""}${live(s) && !SNAP ? (listening(s.id) ? " · listening to the board" : " · not listening to the board") : ""}</div>
+    <div class="now ${nowCls}"><div><small>${nowLabel}</small><p>${esc(nowText(s))}</p>${st === "needs" ? permitBlock(s) : ""}</div></div>
+    ${usageBlock(s)}
+    ${myProps.map(p => `<button type="button" class="att input" style="margin-top:10px" data-pid="${esc(p.id)}"><span class="ic">?</span><span><b>${esc(p.title)}</b>Proposal · ${PSTATE[p.status]?.[1] || esc(p.status)}</span><span class="n">${ago(p.updated)}</span></button>`).join("")}
+    ${tasks.length ? `<div class="progress"><i class="d" style="width:${c.done / n * 100}%"></i><i class="p" style="width:${c.in_progress / n * 100}%"></i></div>
+      <div class="legend"><span><b>${c.done}</b> done</span><span><b>${c.in_progress}</b> in progress</span><span><b>${c.pending}</b> left</span>${c.blocked ? `<span><b>${c.blocked}</b> blocked</span>` : ""}</div>` : ""}
+    ${s.check ? `<div class="checkbar ${s.check.ok && !checkStale(s) ? "ok" : "bad"}"><b>${s.check.ok ? "✓" : "✗"} ${esc(s.check.name)}</b><span>${s.check.ok ? "passed" : "failed"} ${ago(s.check.at)}${checkStale(s) ? ", but files changed since: run it again before calling it done" : ""}</span>${s.check.detail ? `<span class="n">${esc(s.check.detail)}</span>` : ""}</div>` : ""}
+    <div class="cols">
+      <div><h3>Plan</h3>${plan}${agentsBlock(s)}</div>
+      <div><h3>Activity</h3><ul class="log">${(s.log || []).slice(-18).reverse().map(l => `<li class="${esc(l.kind || "info")}"><span class="ic">${ICON[l.kind] || "·"}</span><span>${esc(l.text)}</span><time>${hhmm(l.at)}</time></li>`).join("")}</ul></div>
+    </div>
+    ${s.reply && s.status !== "working" ? `<h3>Last reply</h3><div class="reply">${esc(s.reply)}</div>` : ""}
+    ${fl.length ? `<h3>Files changed · ${fl.length} <span class="add">+${added}</span> <span class="rem">−${removed}</span></h3>${uncommittedBlock(s, fl)}
+      <ul class="files">${fl.map(f => `<li><span class="path">${clash[f.path] ? `<span class="tag warn" title="Also edited by ${esc(clash[f.path].filter(id => id !== s.id).map(title).join(", "))}">⚠ shared</span> ` : ""}${gitTag(f.path)}${SNAP || f.path.startsWith("…") ? esc(f.path) : `<button type="button" class="difbtn" data-diff="${esc(f.path)}" aria-expanded="${!!diffs[f.path]}" title="Show the uncommitted changes (git diff)">${esc(f.path)}</button>`}</span><span class="c"><span class="add">+${f.add || 0}</span> <span class="rem">−${f.del || 0}</span></span></li>${diffs[f.path] ? `<li class="diffrow">${diffHtml(diffs[f.path])}</li>` : ""}`).join("")}</ul>` : ""}
+    ${earlier.length ? `<h3>Earlier in this session</h3><ul class="earlier">${earlier.map(e => `<li><span>${esc(e.prompt)}</span><span class="n">${(e.done || []).length} done · ${(e.files || []).length} files · ${hhmm(e.started)}</span></li>`).join("")}</ul>
+      <button type="button" class="linkish" data-view="history" data-q="${esc(s.title || "")}">See all in History →</button>` : ""}
+    ${chips ? `<div class="chips">${chips}</div>` : ""}`;
+}
+
+function attention(all, clash) {
+  const items = [];
+  awaiting().forEach(p => items.push({ attr: `data-pid="${esc(p.id)}"`, cls: "input", ic: "?", head: `Claude wants your input: ${esc(p.title)}`, body: esc(p.versions.at(-1).summary || ""), when: ago(p.updated) }));
+  all.filter(s => state(s) === "needs").forEach(s => items.push({ attr: `data-id="${esc(s.id)}"`, cls: "needs", ic: "!", head: `${esc(s.title || "Session")} needs your approval`, body: esc(s.needs.what) + permitBlock(s), when: ago(s.needs.at), div: canPermit(s) }));
+  const spent = spentOn(dayKey(Date.now()));
+  if (cfg().budget_day && spent >= cfg().budget_day) items.push({ attr: `data-view="today"`, cls: "check", ic: "$", head: `Daily budget used: ${money(spent)} of ${money(cfg().budget_day)}`, body: "Claude has been told to finish the current task and keep the rest tight. Raise the limit in Settings.", when: "" });
+  Object.entries(clash).forEach(([p, ids]) => items.push({ attr: `data-id="${esc(ids[0])}"`, cls: "conflict", ic: "⚠", head: `${ids.length} sessions are editing the same file`, body: `<code>${esc(p)}</code> · ${ids.map(id => esc((all.find(s => s.id === id) || {}).title || "session")).join(" and ")}`, when: "" }));
+  all.filter(s => live(s) && s.check && !s.check.ok).forEach(s => items.push({ attr: `data-id="${esc(s.id)}"`, cls: "check", ic: "✗", head: `${esc(s.check.name)} is failing in ${esc(s.title || "a session")}`, body: esc(s.check.detail || ""), when: ago(s.check.at) }));
+  all.filter(s => live(s) && ctxPct(s) >= ctxLimit()).forEach(s => items.push({ attr: `data-id="${esc(s.id)}"`, cls: "ctx", ic: "◔", head: `${esc(s.title || "A session")} has used ${ctxPct(s)}% of its context`, body: "It gets compacted soon, and older detail is summarised away. Wrap up the current task or start a fresh session.", when: "" }));
+  return items.map(i => i.div ? `<div class="att ${i.cls}"><span class="ic">${i.ic}</span><span><b>${i.head}</b>${i.body}</span><span class="n">${i.when}</span></div>`
+    : `<button type="button" class="att ${i.cls}" ${i.attr}><span class="ic">${i.ic}</span><span><b>${i.head}</b>${i.body}</span><span class="n">${i.when}</span></button>`).join("");
+}
+
+function drawLive(all) {
+  const running = all.filter(live), clash = conflicts(all);
+  if (filter === "live" && selected && all.some(s => s.id === selected && !live(s))) filter = "all";  // a link to an ended session
+  const list = all.filter(s => filter === "all" || live(s)).sort((a, b) => (RANK[state(a)] - RANK[state(b)]) || (b.updated > a.updated ? 1 : -1));
+  if (!list.find(s => s.id === selected)) selected = list[0]?.id || null;
+  const tasks = running.flatMap(s => s.tasks || []), needs = running.filter(s => state(s) === "needs").length + awaiting().length;
+  $("stats").innerHTML = [
+    [`${running.filter(s => s.status === "working").length} / ${running.length}`, "sessions working", false],
+    [needs, "need you", needs > 0],
+    [`${tasks.filter(t => t.status === "done").length} / ${tasks.length}`, "tasks done", false],
+    [new Set(running.flatMap(s => files(s).map(f => f.path))).size, "files changed", false],
+    [money(spentOn(dayKey(Date.now()))), cfg().budget_day ? `spent today of ${money(cfg().budget_day)} budget` : "spent today (API rates)", cfg().budget_day && spentOn(dayKey(Date.now())) >= cfg().budget_day],
+  ].map(([v, l, alert]) => `<div class="stat${alert ? " alert" : ""}"><b>${v}</b><span>${l}</span></div>`).join("");
+  $("attention").innerHTML = attention(all, clash);
+  $("list").innerHTML = list.map(s => row(s, clash)).join("")
+    || `<div class="empty">${filter === "live" && all.length ? "No sessions running. Switch to All to see past ones." : "No sessions yet. Start Claude Code in this project."}</div>`;
+  $("detail").innerHTML = detail(all.find(s => s.id === selected), clash, all);
+  loadGit();
+  document.querySelectorAll("[data-f]").forEach(b => b.setAttribute("aria-pressed", b.dataset.f === filter));
+}
+
+// ---------------------------------------------------------------- today
+
+function todayData() {
+  const day = dayKey(Date.now()), isToday = iso => iso && dayKey(iso) === day, all = sessions();
+  const shipped = new Map(), touched = new Map();
+  const ship = (t, sid, title) => { if (t.status !== "done" && !t.finished) return; if (!isToday(t.finished)) return; shipped.set(sid + "|" + t.title + "|" + t.finished, { ...t, session: title }); };
+  hist.filter(e => isToday(e.ended || e.started)).forEach(e => {
+    (e.done || []).forEach(t => ship({ ...t, status: "done" }, e.session, e.title));
+    (e.files || []).forEach(f => { const o = touched.get(f.path) || { add: 0, del: 0 }; touched.set(f.path, { add: o.add + f.add, del: o.del + f.del }); });
+  });
+  all.forEach(s => {
+    (s.tasks || []).filter(t => t.status === "done").forEach(t => ship(t, s.id, s.title));
+    if (s.round && isToday(s.round.started) && !hist.some(e => e.id === s.round.id))
+      Object.entries(s.round.files || {}).forEach(([p, [a, d]]) => { const o = touched.get(p) || { add: 0, del: 0 }; touched.set(p, { add: o.add + a, del: o.del + d }); });
+  });
+  const open = all.filter(live).flatMap(s => (s.tasks || []).filter(t => OPEN.includes(t.status)).map(t => ({ ...t, session: s.title })));
+  const blockers = [
+    ...all.filter(live).flatMap(s => (s.tasks || []).filter(t => t.status === "blocked").map(t => `Blocked: ${t.title} (${s.title || "session"})`)),
+    ...all.filter(s => live(s) && s.check && !s.check.ok).map(s => `${s.check.name} is failing in ${s.title || "a session"}`),
+    ...all.filter(s => state(s) === "needs").map(s => `${s.title || "A session"} is waiting for approval`),
+    ...awaiting().map(p => `Proposal waiting for your answer: ${p.title}`),
+  ];
+  const requests = hist.filter(e => isToday(e.started)).length;
+  return { day, shipped: [...shipped.values()].sort((a, b) => a.finished > b.finished ? 1 : -1), open, blockers, touched, requests, cost: spentOn(day) };
+}
+
+function drawToday() {
+  const t = todayData();
+  $("todayh").textContent = "Today · " + new Date().toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" });
+  const add = [...t.touched.values()].reduce((a, f) => a + f.add, 0), del = [...t.touched.values()].reduce((a, f) => a + f.del, 0);
+  $("tstats").innerHTML = [[t.shipped.length, "tasks shipped"], [t.open.length, "still open"], [t.requests, "requests"], [t.touched.size, `files touched (+${add} −${del})`], [money(t.cost), "spent (API rates)"]]
+    .map(([v, l]) => `<div class="stat"><b>${v}</b><span>${esc(l)}</span></div>`).join("");
+  const grp = (x, p) => p && p.session === x.session ? "" : `<li class="grp" title="${esc(x.session || "")}">${esc(x.session || "Session")}</li>`;
+  const li = (ic, cls, text, right) => `<li><span class="${cls}">${ic}</span><span>${text}</span><span class="n">${right || ""}</span></li>`;
+  $("tgrid").innerHTML = `
+    <section class="detail"><h3 style="margin-top:0">Shipped</h3>${t.shipped.length ? `<ul class="tlist">${t.shipped.map((x, i, a) => grp(x, a[i - 1]) + li("✓", "ok", `<b>${esc(x.title)}</b>${x.summary ? ` <span class="n">${esc(x.summary)}</span>` : ""}`, hhmm(x.finished))).join("")}</ul>` : `<p class="n">Nothing finished yet today.</p>`}</section>
+    <section class="detail"><h3 style="margin-top:0">Still open</h3>${t.open.length ? `<ul class="tlist">${t.open.map((x, i, a) => grp(x, a[i - 1]) + li(x.status === "in_progress" ? "◐" : x.status === "blocked" ? "!" : "○", x.status === "blocked" ? "bl" : "op", esc(x.title))).join("")}</ul>` : `<p class="n">No open tasks in running sessions.</p>`}
+      <h3>Blockers</h3>${t.blockers.length ? `<ul class="tlist">${t.blockers.map(b => li("!", "bl", esc(b))).join("")}</ul>` : `<p class="n">None.</p>`}</section>
+    ${checksBlock()}
+    <section class="detail"><h3 style="margin-top:0">Files touched</h3>${t.touched.size ? `<ul class="files">${[...t.touched].sort().map(([p, f]) => `<li><span class="path">${esc(p)}</span><span class="c"><span class="add">+${f.add}</span> <span class="rem">−${f.del}</span></span></li>`).join("")}</ul>` : `<p class="n">No edits today.</p>`}</section>`;
+}
+
+function standupText() {
+  const t = todayData(), out = [`Standup · ${new Date().toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" })}`, "", "Done:"];
+  out.push(...(t.shipped.length ? t.shipped.map(x => `- ${x.title}${x.summary ? ` (${x.summary})` : ""}`) : ["- Nothing finished yet"]));
+  out.push("", "Next / in progress:", ...(t.open.length ? t.open.map(x => `- ${x.title}${x.status === "in_progress" ? " (in progress)" : ""}`) : ["- Nothing open"]));
+  out.push("", "Blockers:", ...(t.blockers.length ? t.blockers.map(b => "- " + b) : ["- None"]));
+  out.push("", `${t.touched.size} files touched across ${t.requests} requests.`);
+  return out.join("\n");
+}
+
+async function copyText(text, btn) {
+  try { await navigator.clipboard.writeText(text); }
+  catch (e) { const ta = document.createElement("textarea"); ta.value = text; document.body.append(ta); ta.select(); document.execCommand("copy"); ta.remove(); }  // http on a phone has no clipboard API
+  const old = btn.textContent; btn.textContent = "Copied"; setTimeout(() => btn.textContent = old, 1500);
+}
+$("standup").onclick = e => copyText(standupText(), e.currentTarget);
+
+// ---------------------------------------------------------------- timeline
+
+function drawTimeline() {
+  const end = Date.now(), start = end - span * 3600e3, pos = t => (Math.max(start, Math.min(end, new Date(t).getTime())) - start) / (end - start) * 100;
+  const lanes = new Map(), lane = (id, title) => { if (!lanes.has(id)) lanes.set(id, { id, title, rounds: [], tasks: new Map(), agents: [], last: 0 }); const l = lanes.get(id); l.title = l.title || title; return l; };
+  const inSpan = (a, b) => new Date(b || end).getTime() >= start && new Date(a).getTime() <= end;
+  hist.forEach(e => {
+    if (!inSpan(e.started, e.ended)) return;
+    const l = lane(e.session, e.title); l.rounds.push([e.started, e.ended || e.started, e.prompt]);
+    (e.done || []).forEach(t => t.started && t.finished && l.tasks.set(t.title + t.started, { ...t, status: "done" }));
+    (e.agents || []).forEach(a => a.started && l.agents.push(a));
+  });
+  sessions().forEach(s => {
+    const l = lane(s.id, s.title), stop = live(s) && s.status === "working" ? end : s.updated, quiet = state(s) === "quiet";
+    if (s.round && inSpan(s.round.started, stop)) l.rounds.push([s.round.started, stop, s.round.prompt]);
+    (s.tasks || []).forEach(t => t.started && inSpan(t.started, t.finished || stop) && l.tasks.set(t.title + t.started, { ...t, stall: t.status === "in_progress" && quiet, finished: t.finished || (t.status === "in_progress" ? stop : t.started) }));
+    (s.agents || []).forEach(a => { if (!l.agents.some(b => b.started === a.started && b.desc === a.desc)) l.agents.push(a); });
+  });
+  const shown = [...lanes.values()].filter(l => l.rounds.length || l.tasks.size || l.agents.some(a => inSpan(a.started, a.finished)))
+    .map(l => ({ ...l, last: Math.max(0, ...l.rounds.map(r => new Date(r[1]).getTime())) })).sort((a, b) => b.last - a.last);
+  // tick every 15m / 1h / 3h / 1d, depending on span
+  const step = span <= 2 ? 900e3 : span <= 8 ? 3600e3 : span <= 24 ? 3 * 3600e3 : 86400e3, ticks = [];
+  for (let t = Math.ceil(start / step) * step; t <= end; t += step) ticks.push(t);
+  const label = t => span > 24 ? new Date(t).toLocaleDateString([], { weekday: "short", day: "numeric" }) : hhmm(t);
+  const bar = (cls, a, b, top, tip) => { const l = pos(a), w = Math.max(pos(b) - l, 0.3); return `<div class="tb ${cls}" style="left:${l}%;width:${w}%;top:${top}px" title="${esc(tip)}"></div>`; };
+  const rows = items => {  // pack overlapping bars onto separate rows
+    const ends = []; return items.sort((a, b) => a.a - b.a).map(x => { let r = ends.findIndex(e => e <= x.a); if (r < 0) r = ends.length; ends[r] = x.b; return { ...x, row: r }; });
+  };
+  $("tl").innerHTML = shown.length ? `<div class="tl-inner">
+    <div class="tl-axis"><span></span><div class="ticks">${ticks.map(t => `<span style="left:${pos(t)}%">${label(t)}</span>`).join("")}</div></div>
+    ${shown.map(l => {
+      const ts = rows([...l.tasks.values()].map(t => ({ t, a: new Date(t.started).getTime(), b: new Date(t.finished).getTime() })));
+      const as = rows(l.agents.filter(a => inSpan(a.started, a.finished)).map(a => ({ t: a, a: new Date(a.started).getTime(), b: a.finished ? new Date(a.finished).getTime() : end })));
+      const taskRows = Math.max(1, ...ts.map(x => x.row + 1)), agentTop = 4 + taskRows * 16, h = agentTop + (as.length ? Math.max(...as.map(x => x.row + 1)) * 9 : 0) + 4;
+      const busy = [...l.tasks.values()].reduce((a, t) => a + Math.max(0, Math.min(end, new Date(t.finished).getTime()) - Math.max(start, new Date(t.started).getTime())), 0);
+      return `<div class="lane"><div class="lane-h" title="${esc(l.title)}">${esc(l.title || "Session")}<small>${dur(Math.round(busy / 1000))} on tasks · ${l.tasks.size} task${l.tasks.size === 1 ? "" : "s"}${l.agents.length ? ` · ${l.agents.length} agents` : ""}</small></div>
+        <div class="track" style="height:${h}px">
+          ${l.rounds.map(([a, b, p]) => bar("tl-round", a, b, 0, `Request: ${p || ""}\n${hhmm(a)}–${hhmm(b)}`)).join("")}
+          ${ts.map(({ t, a, b, row }) => bar(`tl-task ${t.stall ? "tl-stall" : t.status === "in_progress" ? "tl-now" : ""}`, a, b, 4 + row * 16, `${t.title}\n${hhmm(a)}–${hhmm(b)} · ${dur(Math.round((b - a) / 1000))}${t.stall ? " · no activity for a while" : ""}`)).join("")}
+          ${as.map(({ t, a, b, row }) => bar("tl-agent", a, b, agentTop + row * 9, `Agent: ${t.desc} (${t.type})\n${dur(Math.round((b - a) / 1000))} · ${t.status}`)).join("")}
+          <div class="nowline" style="left:${pos(end)}%"></div>
+        </div></div>`;
+    }).join("")}
+    <div class="tl-legend"><span><i style="background:var(--sunk);border:1px solid var(--line)"></i>working on a request</span><span><i style="background:var(--done)"></i>task done</span><span><i style="background:var(--accent)"></i>task in progress</span><span><i style="background:var(--bad)"></i>stalled: no activity for 5+ min</span><span><i style="background:var(--agent)"></i>helper agent</span><span>Gaps are time spent waiting for you or idle. Hover a bar for details.</span></div>
+  </div>` : `<div class="empty">Nothing ran in the last ${span > 24 ? "7 days" : span + " hours"}. Tasks show up here once they start.</div>`;
+  document.querySelectorAll("[data-span]").forEach(b => b.setAttribute("aria-pressed", +b.dataset.span === span));
+}
+
+// ---------------------------------------------------------------- proposals view
+
+function defaults(v) {
+  const answers = {};
+  (v.questions || []).forEach(q => {
+    const rec = q.options.filter(o => o.recommended).map(o => o.label);
+    answers[q.id] = q.type === "many" ? rec : q.type === "one" ? (rec[0] || "") : "";
+  });
+  return { answers, instructions: "" };
+}
+
+function question(q, a) {
+  if (q.type === "text") return `<fieldset><legend>${esc(q.text)}</legend><textarea name="${esc(q.id)}" rows="2">${esc(a || "")}</textarea></fieldset>`;
+  const many = q.type === "many", picked = many ? (a || []) : [a];
+  return `<fieldset><legend>${esc(q.text)}${many ? ` <span class="n">· pick any</span>` : ""}</legend>${q.options.map(o => `
+    <label class="opt"><input type="${many ? "checkbox" : "radio"}" name="${esc(q.id)}" value="${esc(o.label)}" ${picked.includes(o.label) ? "checked" : ""}>
+    <span><b>${esc(o.label)}</b>${o.recommended ? ` <span class="tag ok">recommended</span>` : ""}${o.detail ? `<small>${esc(o.detail)}</small>` : ""}</span></label>`).join("")}</fieldset>`;
+}
+
+function respondForm(p, v) {
+  if (SNAP) return `<p class="n">Waiting for an answer. Answer it on the live board.</p>`;
+  const key = p.id + ":" + v.n, dr = drafts[key] || defaults(v);
+  return `<form class="respond" data-key="${esc(key)}" data-prop="${esc(p.id)}" data-ver="${v.n}">
+    ${(v.questions || []).map(q => question(q, dr.answers[q.id])).join("")}
+    <label class="field"><span>Additional instructions</span><textarea name="__instructions" rows="3" placeholder="Anything Claude should know, change or avoid…">${esc(dr.instructions || "")}</textarea></label>
+    <div class="actions"><button class="btn primary" value="approve">Approve and build</button><button class="btn" value="revise">Ask for changes</button><button class="btn ghost" value="dismiss">Not now</button><span class="formmsg" role="status"></span></div>
+    <p class="n" style="margin:0">${listening(p.session) ? "Claude is listening and starts as soon as you submit." : "This session isn't listening right now. Claude picks up your answer when it next finishes a reply or when you type in its terminal."}</p>
+  </form>`;
+}
+
+function answered(p, v, latest) {
+  const r = v.response, qs = Object.fromEntries((v.questions || []).map(q => [q.id, q]));
+  const lines = Object.entries(r.answers || {}).filter(([k, a]) => qs[k] && (Array.isArray(a) ? a.length : a))
+    .map(([k, a]) => `<li><span class="n">${esc(qs[k].text)}</span> → ${esc(Array.isArray(a) ? a.join(", ") : a)}</li>`).join("");
+  const delivery = v !== latest ? `Claude revised it as v${latest.n}.`
+    : p.delivered ? `Claude received it ${ago(p.delivered)}.`
+    : listening(p.session) ? "Sending to Claude…" : "Waiting for Claude. It picks this up when it next finishes a reply or when you type in its terminal.";
+  return `<div class="answer ${esc(r.decision)}"><b>${{ approve: "You approved this", revise: "You asked for changes", dismiss: "You dismissed this" }[r.decision]}</b> <span class="n">${ago(r.at)}</span>
+    ${lines ? `<ul>${lines}</ul>` : ""}${r.instructions ? `<p><span class="n">Additional instructions:</span> ${esc(r.instructions)}</p>` : ""}
+    <p class="n">${delivery}</p></div>`;
+}
+
+function pdetail(p) {
+  if (!p) return `<div class="empty">No proposals yet.<br>Ask Claude to brainstorm or suggest features, in the terminal or with <b>New request</b>, and its proposal shows up here for you to answer.</div>`;
+  const latest = p.versions.at(-1), v = p.versions.find(x => x.n === selVer[p.id]) || latest, [cls, lab] = PSTATE[p.status] || ["", p.status];
+  return `<div class="dh"><h2>${esc(p.title)}</h2><span class="pill ${cls}"><i></i>${esc(lab)}</span></div>
+    <div class="n">${esc(p.kind)} · from ${esc(p.session_title || sessTitle(p.session))} · v${latest.n} · ${ago(p.updated)}</div>
+    ${p.versions.length > 1 ? `<div class="seg" role="group" aria-label="Versions" style="margin-top:12px">${p.versions.map(x => `<button type="button" data-ver="${x.n}" aria-pressed="${x === v}">v${x.n}</button>`).join("")}</div>` : ""}
+    ${v.summary ? `<p class="lead">${esc(v.summary)}</p>` : ""}
+    ${v.body ? `<div class="md">${md(v.body)}</div>` : ""}
+    ${v.preview && !SNAP ? `<h3>Preview</h3><iframe class="preview" sandbox="allow-scripts" src="${esc(v.preview)}" title="Preview of ${esc(p.title)}" loading="lazy"></iframe><a class="n" href="${esc(v.preview)}" target="_blank" rel="noopener">Open full size ↗</a>` : ""}
+    ${v.tasks?.length ? `<h3>What Claude will do if you approve</h3><ol class="steps">${v.tasks.map(t => `<li><div><div class="t">${esc(t.title)}</div>${t.summary ? `<div class="sum">${esc(t.summary)}</div>` : ""}</div></li>`).join("")}</ol>` : ""}
+    ${p.status === "awaiting" && v === latest ? respondForm(p, v) : v.response ? answered(p, v, latest) : `<p class="n">${v === latest ? "" : `Superseded by v${latest.n}.`}</p>`}`;
+}
+
+function drawProposals() {
+  const ps = props().sort((a, b) => ((b.status === "awaiting") - (a.status === "awaiting")) || (b.updated > a.updated ? 1 : -1));
+  if (!ps.find(p => p.id === selProp)) selProp = ps[0]?.id || null;
+  $("plist").innerHTML = ps.map(p => { const [cls, lab] = PSTATE[p.status] || ["", p.status]; return `<button type="button" class="row" data-pid="${esc(p.id)}" aria-current="${p.id === selProp}">
+    <div class="row-top"><span class="row-title">${esc(p.title)}</span><span class="pill ${cls}"><i></i>${esc(lab)}</span></div>
+    <div class="row-meta" style="margin-top:4px"><span>${esc(p.kind)}</span><span>v${p.versions.length}</span><span>${esc(p.session_title || sessTitle(p.session))}</span><span style="margin-left:auto">${ago(p.updated)}</span></div></button>`; }).join("")
+    || `<div class="empty">Nothing to answer yet.</div>`;
+  const reqs = (board.requests || []).slice().reverse().slice(0, 12);
+  $("rlist").innerHTML = reqs.map(r => `<div class="row"><div class="row-top"><span class="row-title">${esc(r.text)}</span><span class="tag ${r.claimed_by ? "ok" : "warn"}">${r.claimed_by ? "picked up" : "waiting"}</span></div>
+    <div class="row-meta" style="margin-top:4px"><span>${KIND[r.kind] || esc(r.kind)}</span><span>${r.claimed_by ? "by " + esc(r.claimed_title || sessTitle(r.claimed_by)) + " " + ago(r.claimed_at) : "sent " + ago(r.at)}</span></div></div>`).join("")
+    || `<div class="empty" style="padding:20px">Requests you send with <b>New request</b> show here.</div>`;
+  const p = (board.proposals || {})[selProp];
+  // Re-render only when this proposal changes, so a half-filled form isn't wiped by polling.
+  const sig = JSON.stringify([p, selVer[selProp], p && listening(p.session)]);
+  if (sig !== propSig) { propSig = sig; $("pdetail").innerHTML = pdetail(p); }
+}
+
+function readForm(form) {
+  const fd = new FormData(form), p = board.proposals[form.dataset.prop], v = p.versions.find(x => x.n === +form.dataset.ver), answers = {};
+  (v.questions || []).forEach(q => answers[q.id] = q.type === "many" ? fd.getAll(q.id) : (fd.get(q.id) || ""));
+  return { answers, instructions: fd.get("__instructions") || "" };
+}
+
+async function post(path, body) {
+  const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || (r.status === 404 || r.status === 501 ? "The board server is out of date. Start a new Claude session in this project, or rerun /project-plan." : "Couldn't send (" + r.status + ")."));
+  return j;
+}
+
+document.addEventListener("input", e => {
+  const form = e.target.closest("form.respond"); if (!form) return;
+  drafts[form.dataset.key] = readForm(form); store.set("drafts", JSON.stringify(drafts));
+});
+
+document.addEventListener("submit", async e => {
+  const form = e.target.closest("form.respond"); if (!form) return;
+  e.preventDefault();
+  const decision = e.submitter?.value || "approve", msg = form.querySelector(".formmsg"), d = readForm(form);
+  if (decision === "revise" && !d.instructions.trim()) { msg.textContent = "Say what to change in Additional instructions."; form.querySelector("[name=__instructions]").focus(); return; }
+  form.querySelectorAll("button").forEach(b => b.disabled = true); msg.textContent = "";
+  try {
+    await post("api/respond", { proposal: form.dataset.prop, version: +form.dataset.ver, decision, ...d });
+    delete drafts[form.dataset.key]; store.set("drafts", JSON.stringify(drafts));
+    propSig = ""; await tick(true);
+  } catch (err) { msg.textContent = err.message; form.querySelectorAll("button").forEach(b => b.disabled = false); if (/changed/.test(err.message)) { propSig = ""; tick(true); } }
+});
+
+// ---------------------------------------------------------------- history view
+
+function parseHist(text) {
+  const by = new Map();
+  text.split("\n").forEach(l => { if (!l.trim()) return; try { const e = JSON.parse(l); by.set(e.id, e); } catch (err) {} });  // last line per id wins
+  return [...by.values()].sort((a, b) => (b.ended || b.started) > (a.ended || a.started) ? 1 : -1);
+}
+
+function hcard(e) {
+  const fl = e.files || [], add = fl.reduce((a, f) => a + f.add, 0), del = fl.reduce((a, f) => a + f.del, 0);
+  const done = e.done || [], addedLater = done.filter(t => t.added).length, dropped = e.dropped || [];
+  const nt = (board.notes || {})[e.id] || {};
+  const note = noteEdit === e.id ? `<form class="noteform" data-hid="${esc(e.id)}"><textarea name="note" rows="3" placeholder="Why this mattered, follow-ups, links…">${esc(nt.note || "")}</textarea><div class="actions"><button class="btn primary" value="save">Save note</button><button class="btn" value="cancel">Cancel</button></div></form>`
+    : nt.note ? `<div class="hnote">${esc(nt.note)}</div>${SNAP ? "" : `<button type="button" class="linkish" data-hnote="${esc(e.id)}">Edit note</button>`}`
+    : SNAP ? "" : `<button type="button" class="linkish" data-hnote="${esc(e.id)}">Add note</button>`;
+  return `<article class="hcard${nt.pin ? " pinned" : ""}">
+    <div class="hhead">${SNAP ? "" : `<button type="button" class="hpin" data-hpin="${esc(e.id)}" aria-pressed="${!!nt.pin}" title="${nt.pin ? "Unpin" : "Pin"}" aria-label="${nt.pin ? "Unpin" : "Pin"} this request">★</button>`}<time>${hhmm(e.started)}–${hhmm(e.ended || e.started)}</time><span>${esc(e.title || "Session")}</span>${e.source === "board" ? `<span class="tag info">from the board</span>` : ""}${checkTag(e.check)}${e.errors ? `<span class="tag bad">${e.errors} failed</span>` : ""}${e.cost ? `<span class="tag">${money(e.cost)}</span>` : ""}${(e.agents || []).length ? `<span class="tag agent">${e.agents.length} agent${e.agents.length > 1 ? "s" : ""}</span>` : ""}</div>
+    <p class="hprompt">${esc(e.prompt || "(no prompt)")}</p>
+    ${done.length ? `<ol class="hdone">${done.map(t => `<li><span class="ok">✓</span><span><b>${esc(t.title)}</b>${t.added ? ` <span class="tag info">added later</span>` : ""}${t.summary ? ` <span class="n">${esc(t.summary)}</span>` : ""}</span><span class="dur">${t.started && t.finished ? dur(secs(t.started, t.finished)) : ""}</span></li>`).join("")}</ol>`
+      : `<p class="n" style="margin:0">${fl.length || e.tools ? "No tasks marked done." : "Answered without changes."}</p>`}
+    ${addedLater || dropped.length ? `<p class="n" style="margin:4px 0 0">Plan drift: ${(e.planned || []).length} planned${addedLater ? `, +${addedLater} added later` : ""}${dropped.length ? `, dropped: ${esc(dropped.join(" · "))}` : ""}</p>` : ""}
+    ${e.open?.length ? `<p class="n" style="margin:4px 0 0">Still open: ${esc(e.open.join(" · "))}</p>` : ""}
+    ${(e.proposals || []).map(id => board.proposals?.[id]).filter(Boolean).map(p => `<button type="button" class="linkish" data-pid="${esc(p.id)}">Proposal: ${esc(p.title)} (${PSTATE[p.status]?.[1] || esc(p.status)}) →</button>`).join(" ")}
+    ${fl.length ? `<details><summary>${fl.length} file${fl.length > 1 ? "s" : ""} changed <span class="add">+${add}</span> <span class="rem">−${del}</span></summary><ul class="files">${fl.map(f => `<li><span class="path">${esc(f.path)}</span><span class="c"><span class="add">+${f.add}</span> <span class="rem">−${f.del}</span></span></li>`).join("")}</ul></details>` : ""}
+    ${e.reply ? `<details><summary>Claude's reply</summary><div class="reply">${esc(e.reply)}</div></details>` : ""}
+    ${note}
+  </article>`;
+}
+
+function drawHistory() {
+  const q = $("hq").value.trim().toLowerCase();
+  const sig = lastH + "|" + q + JSON.stringify(board.notes || {}) + noteEdit + pinOnly; if (sig === histSig) return; histSig = sig;
+  $("hpin").setAttribute("aria-pressed", pinOnly);  // keeps open <details> open between polls
+  const hay = e => [e.prompt, e.title, e.reply, board.notes?.[e.id]?.note, ...(e.done || []).map(t => t.title + " " + t.summary), ...(e.files || []).map(f => f.path)].join(" ").toLowerCase();
+  const list = hist.filter(e => (!q || hay(e).includes(q)) && (!pinOnly || board.notes?.[e.id]?.pin));
+  $("hcount").textContent = `${list.length} request${list.length === 1 ? "" : "s"} · ${list.reduce((a, e) => a + (e.done || []).length, 0)} tasks done · ${money(list.reduce((a, e) => a + (e.cost || 0), 0))}`;
+  let day = "";
+  $("hlist").innerHTML = list.slice(0, 200).map(e => {
+    const d = new Date(e.started).toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" });
+    const head = d !== day ? `<div class="day">${esc(d)}</div>` : ""; day = d;
+    return head + hcard(e);
+  }).join("") || `<div class="empty">${pinOnly ? "Nothing pinned yet. Use ★ on a request to keep it here." : q ? "Nothing matches." : "No history yet. Each request you give Claude lands here once it finishes, with the tasks done and files changed."}</div>`;
+}
+$("hq").addEventListener("input", drawHistory);
+
+// ---------------------------------------------------------------- shell
+
+function draw() {
+  const all = sessions(), wait = awaiting().length;
+  const needs = all.filter(s => state(s) === "needs").length + wait;
+  document.title = (needs ? `(${needs}) ` : "") + "Project board";
+  $("meta").textContent = SNAP ? `${all[0]?.project || "Project"} · snapshot from ${new Date(SNAP.at).toLocaleString()}` : `${all[0]?.project || "Project"} · updated ${ago(data.updated)}`;
+  $("pbadge").innerHTML = wait ? `<span class="badge">${wait}</span>` : "";
+  VIEWS.forEach(v => $("v-" + v).hidden = v !== view);
+  document.querySelectorAll("[data-view]").forEach(b => b.closest(".seg") && b.setAttribute("aria-pressed", b.dataset.view === view));
+  ({ live: () => drawLive(all), today: drawToday, week: drawWeek, timeline: drawTimeline, proposals: drawProposals, history: drawHistory })[view]();
+  notify(all);
+  countdown();
+}
+
+// Browser alerts: approval requests, finished replies, and proposals waiting for your input.
+function notify(all) {
+  if (SNAP) return;
+  const snap = Object.fromEntries(all.map(s => [s.id, { st: state(s), needsAt: s.needs?.at }]));
+  const ps = new Set(awaiting().map(p => p.id + ":" + p.versions.length));
+  if (prev && !hubOpen && "Notification" in window && Notification.permission === "granted") {  // the hub speaks for every project while it's open
+    all.forEach(s => {
+      const p = prev[s.id] || {}, now = snap[s.id];
+      if (now.st === "needs" && now.needsAt !== p.needsAt) new Notification("Needs your approval", { body: `${s.title || "Session"}: ${s.needs.what}`, tag: s.id });
+      else if (now.st === "idle" && p.st && p.st !== "idle") new Notification("Your turn", { body: `${s.title || "Session"} finished its reply`, tag: s.id });
+    });
+    awaiting().forEach(p => { if (!prevProps.has(p.id + ":" + p.versions.length)) new Notification("Claude wants your input", { body: p.title, tag: p.id }); });
+  }
+  const fresh = prev && (all.some(s => snap[s.id].st === "needs" && snap[s.id].needsAt !== prev[s.id]?.needsAt) || [...ps].some(k => !prevProps.has(k)));
+  if (fresh && !hubOpen) chime();
+  badge(all.filter(s => state(s) === "needs").length + awaiting().length);
+  prev = snap; prevProps = ps;
+}
+
+addEventListener("hashchange", () => {  // links, back/forward, and edited URLs
+  const h = location.hash.slice(1);
+  if (VIEWS.includes(h)) { if (h !== view) setView(h); }
+  else if (h && decodeURIComponent(h) !== selected) select(decodeURIComponent(h));
+});
+
+function setView(v) { view = v; store.set("view", v); history.replaceState(null, "", v === "live" ? (selected ? "#" + encodeURIComponent(selected) : "#") : "#" + v); propSig = histSig = ""; draw(); window.scrollTo({ top: 0 }); }
+
+function select(id) {
+  selected = id; view = "live"; store.set("view", view); history.replaceState(null, "", "#" + encodeURIComponent(id)); draw();
+  if (matchMedia("(max-width:1100px)").matches) $("detail").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-rename],[data-commit],[data-permit],[data-diff],[data-hpin],[data-hnote],[data-view],[data-pid],[data-ver],[data-id],[data-f],[data-span]");
+  if (!t || t.closest("form")) return;
+  if (t.dataset.rename) { const cur = (data.sessions || {})[t.dataset.rename]; const name = prompt("Rename this session (leave empty for the automatic title)", cur?.name || cur?.title || ""); if (name !== null) post("api/rename", { session: t.dataset.rename, name }).then(() => tick(true)).catch(err => alert(err.message)); }
+  else if (t.dataset.commit) askCommit(t.dataset.commit, t);
+  else if (t.dataset.permit) permit(t.dataset.sid, t.dataset.nid, t.dataset.permit, t);
+  else if (t.dataset.diff !== undefined) toggleDiff(t.dataset.diff);
+  else if (t.dataset.hpin) post("api/note", { id: t.dataset.hpin, pin: t.getAttribute("aria-pressed") !== "true" }).then(() => tick(true)).catch(err => alert(err.message));
+  else if (t.dataset.hnote) { noteEdit = t.dataset.hnote; drawHistory(); document.querySelector(".noteform textarea")?.focus(); }
+  else if (t.dataset.view) { if (t.dataset.q !== undefined) $("hq").value = t.dataset.q; setView(t.dataset.view); }
+  else if (t.dataset.pid) { selProp = t.dataset.pid; store.set("prop", selProp); setView("proposals"); if (matchMedia("(max-width:1100px)").matches) $("pdetail").scrollIntoView({ block: "start" }); }
+  else if (t.dataset.ver) { selVer[selProp] = +t.dataset.ver; draw(); }
+  else if (t.dataset.id) select(t.dataset.id);
+  else if (t.dataset.f) { filter = t.dataset.f; store.set("filter", filter); draw(); }
+  else if (t.dataset.span) { span = +t.dataset.span; store.set("span", span); draw(); }
+});
+
+// New request dialog
+$("newbtn").onclick = () => {
+  const running = sessions().filter(live), any = running.some(s => listening(s.id));
+  $("reqsess").innerHTML = `<option value="">Any session that's listening</option>` + running.map(s => `<option value="${esc(s.id)}">${esc(s.title || "New session")} · ${listening(s.id) ? "listening" : "not listening"}</option>`).join("");
+  $("reqnote").textContent = any ? "" : "No session is listening right now. Your request waits until a Claude session in this project picks it up: when one starts, finishes a reply, or you type in it.";
+  $("reqmsg").textContent = "";
+  $("newreq").showModal();
+};
+$("reqform").addEventListener("submit", async e => {
+  if (e.submitter?.value === "cancel") return;
+  e.preventDefault();
+  const f = new FormData(e.target), btn = e.submitter;
+  btn.disabled = true; $("reqmsg").textContent = "";
+  try {
+    await post("api/request", { kind: f.get("kind"), text: f.get("text"), instructions: f.get("instructions"), session: f.get("session") });
+    e.target.reset(); $("newreq").close(); setView("proposals"); tick(true);
+  } catch (err) { $("reqmsg").textContent = err.message; }
+  btn.disabled = false;
+});
+
+// Phone dialog: the link (with its key) is only given to this computer.
+$("phonebtn").onclick = async () => {
+  const body = $("phonebody");
+  body.innerHTML = `<p class="n">Checking…</p>`; $("phone").showModal();
+  let j = {}; try { j = await (await fetch("api/lan")).json(); } catch (e) {}
+  body.innerHTML = j.on && j.url
+    ? `<p>Phone access is <b>on</b>. Open this link on a phone on the same Wi-Fi. After the first visit the key is kept as a cookie.</p>
+       <div class="copyrow"><input type="text" readonly value="${esc(j.url)}" aria-label="Phone link"><button class="btn" type="button" id="copyphone">Copy</button></div>
+       <p class="n">Anyone on your network with this link can read the board and send Claude requests. To turn it off, ask Claude to “turn off phone access for the board”.</p>`
+    : j.on ? `<p>Phone access is on. Open the board from this computer to see the link.</p>`
+    : `<p>Phone access is <b>off</b>: the board only answers this computer.</p>
+       <p>To turn it on, ask Claude: <b>“turn on phone access for the board”</b>. It opens the board on your Wi-Fi behind a private key and gives you the link.</p>
+       <p class="n">Away from your Wi-Fi? Ask Claude to <b>“publish a snapshot of the board”</b>: a read-only copy as a private claude.ai page you can open anywhere.</p>`;
+  const c = $("copyphone"); if (c) c.onclick = () => copyText(j.url, c);
+};
+
+function alertsButton() {
+  const b = $("alerts");
+  if (!("Notification" in window)) { b.hidden = true; return; }
+  const on = Notification.permission === "granted";
+  b.textContent = on ? "Alerts on" : Notification.permission === "denied" ? "Alerts blocked in browser" : "Turn on alerts";
+  b.classList.toggle("on", on); b.disabled = on || Notification.permission === "denied";
+}
+$("alerts").onclick = () => Notification.requestPermission().then(alertsButton);
+
+// ---------------------------------------------------------------- names, git, checks, palette, push
+
+const named = d => { Object.values(d.sessions || {}).forEach(s => { if (s.name) s.title = s.name; }); return d; };  // your rename wins over the auto title
+
+let git = { files: {} }, gitAt = 0;
+async function loadGit() {
+  if (SNAP || Date.now() - gitAt < 8000) return; gitAt = Date.now();
+  try { const r = await fetch("api/git"); if (r.ok) { const j = await r.json(); if (JSON.stringify(j) !== JSON.stringify(git)) { git = j; draw(); } } } catch (e) {}
+}
+const GIT = { M: "modified", A: "added", D: "deleted", R: "renamed", "??": "new" };
+const gitTag = path => git.files?.[path] ? `<span class="gtag" title="Not committed yet (${GIT[git.files[path]] || git.files[path]})">${esc(git.files[path] === "??" ? "new" : git.files[path])}</span>` : "";
+function uncommittedBlock(s, fl) {
+  if (SNAP || !git.repo) return "";
+  const open = fl.filter(f => git.files[f.path]);
+  if (!open.length) return `<div class="uncommitted n">All committed.</div>`;
+  return `<div class="uncommitted"><span class="tag warn">${open.length} not committed</span>${live(s) ? `<button type="button" class="btn" data-commit="${esc(s.id)}">Ask Claude to commit</button>` : ""}</div>`;
+}
+async function askCommit(sid, btn) {
+  const s = (data.sessions || {})[sid], fl = files(s).filter(f => git.files[f.path]).map(f => f.path);
+  if (!confirm(`Ask Claude to commit ${fl.length} file${fl.length > 1 ? "s" : ""}?\n\n${fl.join("\n")}`)) return;
+  btn.disabled = true;
+  try {
+    await post("api/request", { kind: "task", session: sid, instructions: "Commit only these files, nothing else. Don't push.",
+      text: `Commit the uncommitted work from this session with a clear, conventional commit message that says what changed and why:\n${fl.map(p => "- " + p).join("\n")}` });
+    btn.textContent = "Sent to Claude";
+  } catch (err) { alert(err.message); btn.disabled = false; }
+}
+
+function checksBlock() {
+  const by = new Map();
+  const seen = new Set(), add = r => { const k = r.name + r.at; if (!r.name || seen.has(k)) return; seen.add(k); if (!by.has(r.name)) by.set(r.name, []); by.get(r.name).push(r); };
+  sessions().forEach(s => { (s.runs || []).forEach(r => add({ ...r, sid: s.id })); if (s.check) add({ ...s.check, sid: s.id }); });
+  hist.forEach(e => e.check && add({ ...e.check, sid: e.session }));  // older requests only kept their last check
+  if (!by.size) return "";
+  const rows = [...by].map(([name, runs]) => {
+    runs.sort((a, b) => a.at > b.at ? 1 : -1);
+    const last = runs.slice(-20), pass = runs.filter(r => r.ok).length;
+    const flaky = runs.some((r, i) => i && !runs[i - 1].ok && r.ok && runs[i - 1].sid === r.sid && runs[i - 1].edit === r.edit);  // failed, then passed with no edit between
+    return `<li><span><b>${esc(name)}</b> ${flaky ? `<span class="tag warn" title="It failed, then passed with no file edited in between">flaky</span>` : ""}<br><span class="n">${Math.round(pass / runs.length * 100)}% pass · ${runs.length} run${runs.length > 1 ? "s" : ""} · last ${ago(runs.at(-1).at)}</span></span>
+      <span class="runs" title="Oldest to newest">${last.map(r => `<i class="${r.ok ? "" : "f"}" title="${r.ok ? "passed" : "failed"} ${esc(hhmm(r.at))}"></i>`).join("")}</span></li>`;
+  });
+  return `<section class="detail"><h3 style="margin-top:0">Checks</h3><ul class="chk">${rows.join("")}</ul></section>`;
+}
+
+// Command palette (⌘K / Ctrl+K)
+let palItems = [], palSel = 0;
+function palSource() {
+  const go = (label, kind, run) => ({ label, kind, run });
+  const out = [
+    ...VIEWS.map((v, i) => go(`Go to ${v[0].toUpperCase() + v.slice(1)}`, `view · ${i + 1}`, () => setView(v))),
+    ...(SNAP ? [] : [go("New request", "action · n", () => $("newbtn").click()), go("Settings", "action", () => $("setbtn").click())]),
+    go("Theme: match the system", "action", () => setTheme("system")), go("Theme: light", "action", () => setTheme("light")), go("Theme: dark", "action", () => setTheme("dark")),
+    go("Keyboard shortcuts", "action · ?", () => $("keys").showModal()),
+    ...sessions().map(s => go(s.title || "New session", `session · ${LABEL[state(s)] || state(s)}`, () => select(s.id))),
+    ...props().map(p => go(p.title, `proposal · ${PSTATE[p.status]?.[1] || p.status}`, () => { selProp = p.id; store.set("prop", p.id); setView("proposals"); })),
+    ...hist.slice(0, 150).map(e => go(e.prompt || "(no prompt)", `request · ${new Date(e.started).toLocaleDateString([], { day: "numeric", month: "short" })}`, () => { $("hq").value = (e.prompt || "").slice(0, 60); setView("history"); })),
+  ];
+  const fset = new Map(); sessions().forEach(s => files(s).forEach(f => fset.set(f.path, s.id)));
+  fset.forEach((sid, path) => out.push(go(path, "file", () => { select(sid); if (!path.startsWith("…") && !diffs[path]) toggleDiff(path); })));
+  return out;
+}
+function palDraw() {
+  const words = $("palq").value.toLowerCase().split(/\s+/).filter(Boolean);
+  palItems = palSource().filter(i => words.every(w => (i.label + " " + i.kind).toLowerCase().includes(w))).slice(0, 40);
+  palSel = Math.min(palSel, Math.max(0, palItems.length - 1));
+  $("pallist").innerHTML = palItems.map((i, n) => `<li role="option" data-n="${n}" aria-selected="${n === palSel}"><span>${esc(i.label)}</span><span class="n">${esc(i.kind)}</span></li>`).join("") || `<li><span class="n">Nothing matches.</span></li>`;
+  $("pallist").querySelector('[aria-selected="true"]')?.scrollIntoView({ block: "nearest" });
+}
+function palOpen() { $("palq").value = ""; palSel = 0; palDraw(); $("palette").showModal(); $("palq").focus(); }
+function palRun(n) { const i = palItems[n]; if (!i) return; $("palette").close(); i.run(); }
+$("palq").addEventListener("input", () => { palSel = 0; palDraw(); });
+$("palq").addEventListener("keydown", e => {
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") { palSel = (palSel + (e.key === "ArrowDown" ? 1 : -1) + palItems.length) % Math.max(1, palItems.length); palDraw(); e.preventDefault(); }
+  else if (e.key === "Enter") { palRun(palSel); e.preventDefault(); }
+});
+$("pallist").addEventListener("click", e => { const li = e.target.closest("[data-n]"); if (li) palRun(+li.dataset.n); });
+$("palette").addEventListener("click", e => { if (e.target === $("palette")) $("palette").close(); });  // click outside
+document.addEventListener("keydown", e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); $("palette").open ? $("palette").close() : palOpen(); } });
+
+// Settings: phone push
+const saveSettings = () => { const f = $("setform"); return post("api/settings", { budget_day: f.budget_day.value, ctx_limit: f.ctx_limit.value, keep_days: f.keep_days.value, ntfy_topic: f.ntfy_topic.value.trim(), ntfy_server: f.ntfy_server.value.trim() }); };
+$("ntfygen").onclick = () => { const a = new Uint8Array(9); crypto.getRandomValues(a); $("setform").ntfy_topic.value = "board-" + [...a].map(x => x.toString(36).padStart(2, "0")).join("").slice(0, 16); };
+$("ntfytest").onclick = async e => {
+  const b = e.currentTarget; b.disabled = true; $("setmsg").textContent = "";
+  try { await saveSettings(); await post("api/pushtest", {}); b.textContent = "Sent: check your phone"; setTimeout(() => b.textContent = "Send a test", 3000); tick(true); }
+  catch (err) { $("setmsg").textContent = err.message; }
+  b.disabled = false;
+};
+
+// ---------------------------------------------------------------- permissions, diffs, week, settings, keys, sound
+
+async function permit(sid, id, decision, btn) {
+  btn.closest(".permit").querySelectorAll("button").forEach(b => b.disabled = true);
+  try { await post("api/permit", { session: sid, id, decision }); }
+  catch (err) { alert(err.message); }
+  tick(true);
+}
+const countdown = () => document.querySelectorAll("[data-until]").forEach(el => {
+  const left = Math.round((new Date(el.dataset.until) - Date.now()) / 1000);
+  el.textContent = left > 0 ? `${left}s left, then the terminal asks instead` : "Now waiting in the terminal";
+  if (left <= 0) el.closest(".permit").querySelectorAll("button").forEach(b => b.disabled = true);
+});
+setInterval(countdown, 1000);
+
+let diffs = {};
+const diffHtml = d => d.loading ? `<p class="n">Loading diff…</p>` : d.error ? `<p class="formmsg">${esc(d.error)}</p>`
+  : !d.diff ? `<p class="n">${esc(d.note)}</p>`
+  : `<pre class="diff">${d.diff.split("\n").map(l => `<span class="${/^(\+\+\+|---|diff |index |new file|deleted file|similarity|rename)/.test(l) ? "m" : l.startsWith("@@") ? "h" : l[0] === "+" ? "a" : l[0] === "-" ? "r" : ""}">${esc(l) || " "}</span>`).join("")}</pre>${d.cut ? `<p class="n">Cut off: the diff is very long.</p>` : ""}`;
+async function toggleDiff(path) {
+  if (diffs[path]) { delete diffs[path]; return draw(); }
+  diffs[path] = { loading: true }; draw();
+  try { const r = await fetch("api/diff?path=" + encodeURIComponent(path)); const j = await r.json(); diffs[path] = r.ok ? j : { error: j.error || "Couldn't load the diff." }; }
+  catch (e) { diffs[path] = { error: "The board server is out of date. Start a new Claude session in this project, or rerun /project-plan." }; }
+  if (diffs[path]) draw();
+}
+
+function weekData() {
+  const days = [...Array(7)].map((_, i) => dayKey(Date.now() - (6 - i) * 864e5)), inWeek = iso => iso && days.includes(dayKey(iso));
+  const per = Object.fromEntries(days.map(d => [d, { requests: 0, tasks: [], secs: 0, cost: 0 }])), files = new Map(), seen = new Set();
+  const ship = (t, title) => { if (!t.finished || !inWeek(t.finished)) return; const k = title + "|" + t.title + "|" + t.finished; if (seen.has(k)) return; seen.add(k);
+    const p = per[dayKey(t.finished)]; p.tasks.push({ ...t, session: title }); if (t.started) p.secs += secs(t.started, t.finished); };
+  hist.filter(e => inWeek(e.started)).forEach(e => {
+    const p = per[dayKey(e.started)]; p.requests++; p.cost += e.cost || 0;
+    (e.done || []).forEach(t => ship(t, e.title));
+    (e.files || []).forEach(f => { const o = files.get(f.path) || 0; files.set(f.path, o + (f.add || 0) + (f.del || 0)); });
+  });
+  sessions().forEach(s => (s.tasks || []).filter(t => t.status === "done").forEach(t => ship(t, s.title)));
+  days.forEach(d => per[d].cost = Math.max(per[d].cost, spentOn(d)));  // live sessions know today's exact spend
+  return { days, per, files: [...files].sort((a, b) => b[1] - a[1]).slice(0, 12) };
+}
+const dayName = d => new Date(d + "T12:00").toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" });
+function drawWeek() {
+  const w = weekData(), P = w.days.map(d => w.per[d]), sum = k => P.reduce((a, p) => a + (k === "tasks" ? p.tasks.length : p[k]), 0);
+  const most = Math.max(1, ...P.map(p => p.tasks.length));
+  $("wstats").innerHTML = [[sum("tasks"), "tasks shipped"], [sum("requests"), "requests"], [dur(sum("secs")), "on tasks"], [w.files.length, "files touched (top 12)"], [money(sum("cost")), "spent (API rates)"]]
+    .map(([v, l]) => `<div class="stat"><b>${v}</b><span>${esc(l)}</span></div>`).join("");
+  $("wgrid").innerHTML = `
+    <section class="detail week"><h3 style="margin-top:0">By day</h3><table><thead><tr><th>Day</th><th>Shipped</th><th>Requests</th><th>On tasks</th><th>Cost</th></tr></thead><tbody>
+      ${w.days.slice().reverse().map(d => { const p = w.per[d]; return `<tr><td>${esc(dayName(d))}</td><td><span class="wbar" style="width:${p.tasks.length / most * 60}px"></span>${p.tasks.length}</td><td>${p.requests}</td><td>${p.secs ? dur(p.secs) : "–"}</td><td>${p.cost ? money(p.cost) : "–"}</td></tr>`; }).join("")}
+    </tbody></table></section>
+    <section class="detail"><h3 style="margin-top:0">Shipped</h3>${sum("tasks") ? `<ul class="tlist">${w.days.slice().reverse().filter(d => w.per[d].tasks.length).map(d => `<li class="grp">${esc(dayName(d))}</li>` + w.per[d].tasks.map(t => `<li><span class="ok">✓</span><span><b>${esc(t.title)}</b>${t.summary ? ` <span class="n">${esc(t.summary)}</span>` : ""}</span><span class="n">${hhmm(t.finished)}</span></li>`).join("")).join("")}</ul>` : `<p class="n">Nothing shipped in the last 7 days.</p>`}</section>
+    <section class="detail"><h3 style="margin-top:0">Most changed files</h3>${w.files.length ? `<ul class="files">${w.files.map(([p, n]) => `<li><span class="path">${esc(p)}</span><span class="c n">${n} lines</span></li>`).join("")}</ul>` : `<p class="n">No edits recorded.</p>`}</section>`;
+}
+function weekMarkdown() {
+  const w = weekData(), out = [`# Week report · ${dayName(w.days[0])} – ${dayName(w.days[6])}`, ""];
+  const P = w.days.map(d => w.per[d]);
+  out.push(`${P.reduce((a, p) => a + p.tasks.length, 0)} tasks shipped across ${P.reduce((a, p) => a + p.requests, 0)} requests, ${dur(P.reduce((a, p) => a + p.secs, 0))} on tasks, ${money(P.reduce((a, p) => a + p.cost, 0))} at API rates.`, "");
+  out.push("| Day | Shipped | Requests | On tasks | Cost |", "|---|---:|---:|---:|---:|", ...w.days.map(d => { const p = w.per[d]; return `| ${dayName(d)} | ${p.tasks.length} | ${p.requests} | ${p.secs ? dur(p.secs) : "–"} | ${p.cost ? money(p.cost) : "–"} |`; }), "");
+  w.days.slice().reverse().filter(d => w.per[d].tasks.length).forEach(d => out.push(`## ${dayName(d)}`, ...w.per[d].tasks.map(t => `- ${t.title}${t.summary ? ` — ${t.summary}` : ""}`), ""));
+  if (w.files.length) out.push("## Most changed files", ...w.files.map(([p, n]) => `- \`${p}\` (${n} lines)`));
+  return out.join("\n");
+}
+$("weekcopy").onclick = e => copyText(weekMarkdown(), e.currentTarget);
+
+// History: pin and notes
+let noteEdit = null, pinOnly = false;
+$("hpin").onclick = () => { pinOnly = !pinOnly; drawHistory(); };
+document.addEventListener("submit", async e => {
+  const f = e.target.closest("form.noteform"); if (!f) return;
+  e.preventDefault();
+  if (e.submitter?.value !== "cancel") { try { await post("api/note", { id: f.dataset.hid, note: f.note.value }); } catch (err) { return alert(err.message); } }
+  noteEdit = null; histSig = ""; tick(true); drawHistory();
+});
+
+// Settings
+$("setbtn").onclick = () => {
+  const f = $("setform"); f.budget_day.value = cfg().budget_day || ""; f.ctx_limit.value = cfg().ctx_limit || "";
+  f.keep_days.value = cfg().keep_days || ""; f.ntfy_topic.value = cfg().ntfy_topic || ""; f.ntfy_server.value = cfg().ntfy_server || "";
+  $("soundon").checked = store.get("sound") !== "off"; $("setmsg").textContent = ""; alertsButton(); $("settings").showModal();
+};
+$("soundon").onchange = e => { store.set("sound", e.target.checked ? "on" : "off"); if (e.target.checked) chime(); };
+$("setform").addEventListener("submit", async e => {
+  e.preventDefault(); const f = e.target;
+  try { await saveSettings(); $("setmsg").textContent = ""; $("settings").close(); tick(true); }
+  catch (err) { $("setmsg").textContent = err.message; }
+});
+
+// Sound and tab badge
+let actx = null;
+function chime() {
+  if (SNAP || store.get("sound") === "off") return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    [[660, 0], [880, .14]].forEach(([f, at]) => {
+      const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime + at;
+      o.type = "sine"; o.frequency.value = f; o.connect(g); g.connect(actx.destination);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.12, t + .02); g.gain.exponentialRampToValueAtTime(.001, t + .35);
+      o.start(t); o.stop(t + .4);
+    });
+  } catch (e) {}
+}
+addEventListener("pointerdown", () => { try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume(); } catch (e) {} }, { once: true });  // browsers only allow sound after a click
+let lastBadge = -1;
+function badge(n) {
+  if (n === lastBadge) return; lastBadge = n;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect x="2" y="2" width="28" height="28" rx="8" fill="#1c1c1a"/><path d="M9 16.5l4.5 4.5L23 11" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>${n ? `<circle cx="24" cy="8" r="8" fill="#d03f3f"/><text x="24" y="12" font-size="11" font-family="system-ui,sans-serif" font-weight="700" text-anchor="middle" fill="#fff">${n > 9 ? "9+" : n}</text>` : ""}</svg>`;
+  $("favicon").href = "data:image/svg+xml," + encodeURIComponent(svg);
+}
+
+// Keyboard shortcuts
+$("keysbtn").onclick = () => $("keys").showModal();
+document.addEventListener("keydown", e => {
+  if (e.metaKey || e.ctrlKey || e.altKey || e.target.closest("input, textarea, select, [contenteditable]") || document.querySelector("dialog[open]")) return;
+  const k = e.key;
+  if (k >= "1" && k <= "6") setView(VIEWS[+k - 1]);
+  else if (k === "j" || k === "k") {
+    const step = k === "j" ? 1 : -1;
+    if (view === "proposals") { const ids = [...document.querySelectorAll("#plist [data-pid]")].map(b => b.dataset.pid); if (ids.length) { selProp = ids[(Math.max(0, ids.indexOf(selProp)) + step + ids.length) % ids.length]; store.set("prop", selProp); propSig = ""; draw(); } }
+    else { const ids = [...document.querySelectorAll("#list [data-id]")].map(r => r.dataset.id); if (ids.length) select(ids[(Math.max(0, ids.indexOf(selected)) + step + ids.length) % ids.length]); }
+  }
+  else if (k === "a" || k === "x") { const b = document.querySelector(`#detail [data-permit="${k === "a" ? "allow" : "deny"}"]`); if (b && !b.disabled) b.click(); else return; }
+  else if (k === "n" && !SNAP) $("newbtn").click();
+  else if (k === "/") { setView("history"); $("hq").focus(); }
+  else if (k === "t") { const order = ["system", "light", "dark"]; setTheme(order[(order.indexOf(store.get("theme") || "system") + 1) % 3]); }
+  else if (k === "?") $("keys").showModal();
+  else return;
+  e.preventDefault();
+});
+
+// The all-projects hub: link to it, and leave alerts to it while it's open.
+let hubOpen = false;
+async function hubCheck() {
+  if (SNAP) return;
+  try { const j = await (await fetch("api/ping")).json(); hubOpen = !!j.hub; $("hublink").hidden = !j.hub_url; if (j.hub_url) $("hublink").href = j.hub_url;
+    $("updbanner").hidden = !j.update;
+    if (j.update) $("updbanner").innerHTML = `<b>project-plan ${esc(j.update.latest)} is available</b> (you have ${esc(j.update.current)}). In a terminal: <code>claude plugin marketplace update codewing</code> then <code>claude plugin update project-plan@codewing</code>, and restart Claude Code.`; } catch (e) {}
+}
+hubCheck(); setInterval(hubCheck, 10000);
+
+// Theme: System / Light / Dark, remembered per browser. The <head> script applies it before first paint.
+function setTheme(t) {
+  if (t === "system") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
+  store.set("theme", t);
+  document.querySelectorAll("[data-theme-set]").forEach(b => b.setAttribute("aria-pressed", b.dataset.themeSet === t));
+}
+document.querySelectorAll("[data-theme-set]").forEach(b => b.onclick = () => setTheme(b.dataset.themeSet));
+setTheme(store.get("theme") || "system");
+
+// Background-task notices were once recorded as prompts; show them as one short line.
+const tidy = raw => raw.replace(/<task-notification>(?:[^"\\]|\\.)*/g, "Background task finished");
+const get = async url => { const r = await fetch(url + (url.includes("?") ? "&" : "?") + Date.now()); if (!r.ok) throw new Error(r.status); return r.text(); };
+async function tick(force) {
+  try {
+    const [p, b] = (await Promise.all([get(document.visibilityState === "visible" ? "progress.json?seen" : "progress.json"), get("board.json").catch(() => "{}")])).map(tidy);
+    let changed = force || p !== lastP || b !== lastB || Date.now() - lastDraw > 15000;
+    if (force || p !== lastP) { const h = tidy(await get("history.jsonl").catch(() => "")); if (h !== lastH) { lastH = h; hist = parseHist(h); changed = true; } }
+    if (changed) {
+      lastP = p; lastB = b; data = named(JSON.parse(p));
+      board = { proposals: {}, requests: [], listeners: {}, ...JSON.parse(b) };
+      lastDraw = Date.now(); draw();
+    }
+  } catch (e) { $("meta").textContent = "Waiting for progress.json…"; }
+}
+
+if (SNAP) {
+  data = named(JSON.parse(tidy(JSON.stringify(SNAP.progress || {})))); board = { proposals: {}, requests: [], listeners: {}, ...JSON.parse(tidy(JSON.stringify(SNAP.board || {}))) }; lastH = tidy(SNAP.history || ""); hist = parseHist(lastH);
+  document.querySelectorAll(".live-only").forEach(el => el.hidden = true);
+  $("snapbanner").hidden = false;
+  $("snapbanner").textContent = `Read-only snapshot taken ${new Date(SNAP.at).toLocaleString()}. Open the live board on your computer to answer proposals or send requests.`;
+  draw();
+} else {
+  alertsButton(); tick(true); setInterval(tick, 2000);
+}
+</script>
+</body>
+</html>

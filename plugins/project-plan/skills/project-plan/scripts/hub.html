@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>All projects</title>
+<link rel="icon" id="favicon" href="data:,">
+<script>try { const t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}</script>
+<style>
+  /* Same tokens as the project board (index.html). */
+  :root { color-scheme:light dark;
+    --bg:light-dark(#f5f5f2, #111110); --card:light-dark(#fff, #1b1b19); --sunk:light-dark(#f0f0eb, #242421); --fg:light-dark(#1c1c1a, #ededea); --muted:light-dark(#66665f, #9d9d96); --line:light-dark(#e3e3dd, #2d2d2a);
+    --accent:light-dark(#2f6fed, #7aa5ff); --on-accent:light-dark(#fff, #0d1a33); --accent-bg:light-dark(#eaf0fe, #1c2640);
+    --done:light-dark(#1b8a4b, #3ec27a); --done-bg:light-dark(#e6f5ec, #15281d); --warn:light-dark(#a86a06, #e0a33a); --warn-bg:light-dark(#fdf3e1, #2d2311);
+    --bad:light-dark(#d03f3f, #ef6b6b); --bad-bg:light-dark(#fdecec, #331a1a);
+    --on-bad:light-dark(#fff, #2a0d0d); --shadow:0 1px 2px light-dark(rgb(20 20 10 / .06), transparent); --head:light-dark(rgb(245 245 242 / .85), rgb(17 17 16 / .85)); }
+  :root[data-theme="light"] { color-scheme:light; }
+  :root[data-theme="dark"] { color-scheme:dark; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 system-ui, -apple-system, sans-serif; -webkit-font-smoothing:antialiased; }
+  main { max-width:1200px; margin:0 auto; padding:0 16px 64px; }
+  button { font:inherit; color:inherit; }
+  a { color:var(--accent); text-decoration:none; } a:hover { text-decoration:underline; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; position:sticky; top:0; z-index:5; padding:14px 0 12px; margin-bottom:4px; background:var(--head); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
+  @media (max-width:700px) { header { position:static; backdrop-filter:none; } }
+  .brand { display:flex; gap:10px; align-items:center; }
+  .logo { width:30px; height:30px; border-radius:9px; background:var(--fg); color:var(--bg); display:grid; place-items:center; font-weight:700; flex:none; }
+  h1 { font-size:17px; margin:0; line-height:1.2; }
+  .n { color:var(--muted); font-size:13px; }
+  .tools { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .btn { border:1px solid var(--line); background:var(--card); border-radius:10px; padding:6px 12px; font-size:13px; cursor:pointer; }
+  .btn:disabled { opacity:.6; cursor:default; }
+  .btn.on { color:var(--done); border-color:var(--done); }
+  .btn.primary { background:var(--accent); border-color:var(--accent); color:var(--on-accent); font-weight:600; }
+  .btn.deny { color:var(--bad); border-color:var(--bad); }
+  .seg { display:inline-flex; border:1px solid var(--line); border-radius:10px; overflow:hidden; background:var(--card); }
+  .seg button { border:0; background:none; color:var(--muted); font-size:14px; padding:6px 9px; cursor:pointer; line-height:1; }
+  .seg button[aria-pressed="true"] { background:var(--fg); color:var(--bg); }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; margin-top:14px; }
+  .stat { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px 16px; box-shadow:var(--shadow); }
+  .stat b { display:block; font-size:22px; font-variant-numeric:tabular-nums; }
+  .stat span { color:var(--muted); font-size:12px; }
+  .stat.alert { border-color:var(--bad); background:var(--bad-bg); } .stat.alert b { color:var(--bad); }
+  .att { display:grid; grid-template-columns:22px 1fr auto; gap:10px; border-radius:12px; padding:10px 14px; border:1px solid; margin-top:8px; }
+  .att.needs { background:var(--bad-bg); border-color:var(--bad); } .att.input { background:var(--accent-bg); border-color:var(--accent); }
+  .att .ic { font-weight:700; text-align:center; } .att.needs .ic { color:var(--bad); } .att.input .ic { color:var(--accent); }
+  .att b { display:block; } .att span { overflow-wrap:anywhere; min-width:0; }
+  .permit { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:8px; }
+  h2 { font-size:15px; margin:22px 0 10px; }
+  .projects { display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:12px; }
+  @media (max-width:420px) { .projects { grid-template-columns:1fr; } }
+  .proj { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px 16px; box-shadow:var(--shadow); min-width:0; }
+  .proj.hot { border-color:var(--bad); }
+  .ph { display:flex; gap:8px; align-items:baseline; }
+  .ph h3 { margin:0; font-size:15px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .path { font:11px ui-monospace, monospace; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 4px; }
+  .tag { font-size:11px; border-radius:6px; padding:1px 7px; white-space:nowrap; background:var(--sunk); color:var(--muted); }
+  .tag.ok { color:var(--done); background:var(--done-bg); } .tag.bad { color:var(--bad); background:var(--bad-bg); } .tag.info { color:var(--accent); background:var(--accent-bg); } .tag.warn { color:var(--warn); background:var(--warn-bg); }
+  .sess { list-style:none; margin:8px 0 0; padding:0; }
+  .sess li { display:grid; grid-template-columns:10px 1fr auto; gap:8px; padding:6px 0; border-top:1px solid var(--line); font-size:13px; align-items:baseline; }
+  .sess .t { display:block; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .sess .now { display:block; color:var(--muted); font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .sess span { min-width:0; }
+  .dot { width:8px; height:8px; border-radius:50%; background:var(--muted); margin-top:5px; }
+  .dot.working { background:var(--accent); animation:pulse 1.4s ease-in-out infinite; } .dot.idle { background:var(--warn); } .dot.active { background:var(--done); }
+  .down { color:var(--muted); font-size:12px; }
+  details.older { margin-top:16px; } details.older summary { cursor:pointer; color:var(--muted); }
+  details.older .projects { margin-top:10px; }
+  .empty { text-align:center; padding:48px 16px; color:var(--muted); background:var(--card); border:1px dashed var(--line); border-radius:16px; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+  @keyframes pulse { 50% { opacity:.3; } }
+  @media (prefers-reduced-motion: reduce) { .dot.working { animation:none; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="brand"><span class="logo" aria-hidden="true">✓</span><div><h1>All projects</h1><div class="n" id="meta">Loading…</div></div></div>
+    <div class="tools">
+      <button class="btn" id="alerts" type="button">Turn on alerts</button>
+      <button class="btn" id="sound" type="button" aria-pressed="true">Sound on</button>
+      <div class="seg" role="group" aria-label="Theme"><button type="button" data-theme-set="system" title="Match the system" aria-label="System theme">◐</button><button type="button" data-theme-set="light" title="Light" aria-label="Light theme">☀</button><button type="button" data-theme-set="dark" title="Dark" aria-label="Dark theme">☾</button></div>
+    </div>
+  </header>
+  <div class="stats" id="stats"></div>
+  <div id="attention" aria-live="polite"></div>
+  <h2>Projects</h2>
+  <div id="list"></div>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const secs = a => Math.max(0, Math.round((Date.now() - new Date(a)) / 1000));
+const dur = s => s < 60 ? s + "s" : s < 3600 ? Math.round(s / 60) + "m" : s < 86400 ? (s / 3600).toFixed(1).replace(".0", "") + "h" : Math.round(s / 86400) + "d";
+const ago = iso => iso ? dur(secs(iso)) + " ago" : "never";
+const money = c => "$" + (c >= 100 ? c.toFixed(0) : (c || 0).toFixed(2));
+const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+const ACTIVE_DAYS = 7;
+let projects = [], last = "", prev = null, drawn = 0;
+
+const board = (p, hash = "") => `http://localhost:${p.port}/${hash}`;
+const active = p => p.sessions.length || p.needs.length || p.proposals.length || (p.updated && secs(p.updated) < ACTIVE_DAYS * 86400);
+const canPermit = n => n.until && new Date(n.until) > Date.now();
+
+function card(p) {
+  const working = p.sessions.filter(s => s.status === "working").length, hot = p.needs.length + p.proposals.length;
+  return `<article class="proj${hot ? " hot" : ""}">
+    <div class="ph"><h3 title="${esc(p.name)}">${esc(p.name)}</h3>${p.up ? `<a href="${esc(board(p))}" target="_blank" rel="noopener">Open board ↗</a>` : `<span class="down" title="Its board server starts with the project's next Claude session">board not running</span>`}</div>
+    <div class="path" title="${esc(p.path)}">${esc(p.short || p.path)}</div>
+    <div class="chips">
+      ${hot ? `<span class="tag bad">${hot} need${hot === 1 ? "s" : ""} you</span>` : ""}
+      <span class="tag ${working ? "info" : ""}">${working} working · ${p.sessions.length} running</span>
+      ${p.open ? `<span class="tag">${p.open} open task${p.open === 1 ? "" : "s"}</span>` : ""}
+      ${p.shipped ? `<span class="tag ok">${p.shipped} shipped today</span>` : ""}
+      ${p.failing.map(c => `<span class="tag bad">✗ ${esc(c)}</span>`).join("")}
+      ${p.spend ? `<span class="tag">${money(p.spend)} today</span>` : ""}
+      <span class="tag">updated ${ago(p.updated)}</span>
+    </div>
+    ${p.sessions.length ? `<ul class="sess">${p.sessions.map(s => `<li><i class="dot ${esc(s.status)}"></i><span><a class="t" href="${esc(board(p, "#" + encodeURIComponent(s.id)))}" target="_blank" rel="noopener">${esc(s.title)}</a><span class="now">${esc(s.now)}</span></span><span class="n">${s.total ? `${s.done}/${s.total}` : ""}</span></li>`).join("")}</ul>` : ""}
+  </article>`;
+}
+
+function draw() {
+  const live = projects.filter(active), older = projects.filter(p => !active(p));
+  const needs = projects.flatMap(p => p.needs.map(n => ({ ...n, p }))), props = projects.flatMap(p => p.proposals.map(x => ({ ...x, p })));
+  const sum = f => projects.reduce((a, p) => a + f(p), 0);
+  document.title = (needs.length + props.length ? `(${needs.length + props.length}) ` : "") + "All projects";
+  $("meta").textContent = `${projects.length} project${projects.length === 1 ? "" : "s"} · updated just now`;
+  $("stats").innerHTML = [
+    [`${live.length} / ${projects.length}`, "projects active"], [`${sum(p => p.sessions.filter(s => s.status === "working").length)} / ${sum(p => p.sessions.length)}`, "sessions working"],
+    [needs.length + props.length, "need you", needs.length + props.length > 0], [sum(p => p.shipped), "tasks shipped today"], [money(sum(p => p.spend)), "spent today (API rates)"],
+  ].map(([v, l, a]) => `<div class="stat${a ? " alert" : ""}"><b>${v}</b><span>${l}</span></div>`).join("");
+  $("attention").innerHTML = [
+    ...needs.map(n => `<div class="att needs"><span class="ic">!</span><span><b>${esc(n.p.name)} · ${esc(n.title)} needs your approval</b>${esc(n.what)}
+      ${canPermit(n) ? `<div class="permit"><button class="btn primary" type="button" data-permit="allow" data-project="${esc(n.p.path)}" data-sid="${esc(n.sid)}" data-nid="${esc(n.id)}">Allow</button><button class="btn deny" type="button" data-permit="deny" data-project="${esc(n.p.path)}" data-sid="${esc(n.sid)}" data-nid="${esc(n.id)}">Deny</button><span class="n" data-until="${esc(n.until)}"></span></div>`
+        : `<div class="n" style="margin-top:4px">Answer it in that session's terminal.</div>`}</span><span class="n">${ago(n.at)}</span></div>`),
+    ...props.map(x => `<div class="att input"><span class="ic">?</span><span><b>${esc(x.p.name)} · Claude wants your input: ${esc(x.title)}</b><a href="${esc(board(x.p, "#proposals"))}" target="_blank" rel="noopener">Answer on its board ↗</a></span><span class="n">${ago(x.updated)}</span></div>`),
+  ].join("");
+  $("list").innerHTML = (live.length ? `<div class="projects">${live.map(card).join("")}</div>` : `<div class="empty">No project has had activity in the last ${ACTIVE_DAYS} days.${projects.length ? "" : " Set up a board in a project with /project-plan and it appears here."}</div>`)
+    + (older.length ? `<details class="older"${store.get("older") === "open" ? " open" : ""}><summary>${older.length} quiet project${older.length === 1 ? "" : "s"} (no activity for ${ACTIVE_DAYS}+ days)</summary><div class="projects">${older.map(card).join("")}</div></details>` : "");
+  document.querySelector("details.older")?.addEventListener("toggle", e => store.set("older", e.target.open ? "open" : ""));
+  countdown(); notify(needs, props);
+}
+
+const countdown = () => document.querySelectorAll("[data-until]").forEach(el => {
+  const left = Math.round((new Date(el.dataset.until) - Date.now()) / 1000);
+  el.textContent = left > 0 ? `${left}s left, then the terminal asks instead` : "Now waiting in the terminal";
+  if (left <= 0) el.closest(".permit").querySelectorAll("button").forEach(b => b.disabled = true);
+});
+setInterval(countdown, 1000);
+
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-permit]"); if (!b) return;
+  b.closest(".permit").querySelectorAll("button").forEach(x => x.disabled = true);
+  try {
+    const r = await fetch("api/permit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ project: b.dataset.project, session: b.dataset.sid, id: b.dataset.nid, decision: b.dataset.permit }) });
+    if (!r.ok) alert((await r.json().catch(() => ({}))).error || "Couldn't send.");
+  } catch (err) { alert(err.message); }
+  last = ""; tick();
+});
+
+// Alerts: while this tab is open, project boards stay quiet and this tab speaks for all of them.
+function alertsButton() {
+  const b = $("alerts");
+  if (!("Notification" in window)) { b.hidden = true; return; }
+  const on = Notification.permission === "granted";
+  b.textContent = on ? "Alerts on" : Notification.permission === "denied" ? "Alerts blocked in browser" : "Turn on alerts";
+  b.classList.toggle("on", on); b.disabled = on || Notification.permission === "denied";
+}
+$("alerts").onclick = () => Notification.requestPermission().then(alertsButton);
+const soundOn = () => store.get("sound") !== "off";
+function soundButton() { $("sound").textContent = soundOn() ? "Sound on" : "Sound off"; $("sound").setAttribute("aria-pressed", soundOn()); }
+$("sound").onclick = () => { store.set("sound", soundOn() ? "off" : "on"); soundButton(); if (soundOn()) chime(); };
+let actx = null;
+function chime() {
+  if (!soundOn()) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    [[660, 0], [880, .14]].forEach(([f, at]) => {
+      const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime + at;
+      o.type = "sine"; o.frequency.value = f; o.connect(g); g.connect(actx.destination);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.12, t + .02); g.gain.exponentialRampToValueAtTime(.001, t + .35);
+      o.start(t); o.stop(t + .4);
+    });
+  } catch (e) {}
+}
+addEventListener("pointerdown", () => { try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume(); } catch (e) {} }, { once: true });
+function notify(needs, props) {
+  const keys = new Set([...needs.map(n => "n" + n.p.path + n.id + n.at), ...props.map(x => "p" + x.p.path + x.id)]);
+  if (prev) {
+    const fresh = [...needs.filter(n => !prev.has("n" + n.p.path + n.id + n.at)), ...props.filter(x => !prev.has("p" + x.p.path + x.id))];
+    if (fresh.length) chime();
+    if (fresh.length && "Notification" in window && Notification.permission === "granted")
+      fresh.forEach(x => new Notification(x.what !== undefined ? `${x.p.name} needs your approval` : `${x.p.name}: Claude wants your input`, { body: x.what !== undefined ? `${x.title}: ${x.what}` : x.title, tag: x.p.path + (x.id || "") }));
+  }
+  prev = keys;
+  const n = needs.length + props.length;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect x="2" y="2" width="28" height="28" rx="8" fill="#1c1c1a"/><path d="M9 16.5l4.5 4.5L23 11" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>${n ? `<circle cx="24" cy="8" r="8" fill="#d03f3f"/><text x="24" y="12" font-size="11" font-family="system-ui,sans-serif" font-weight="700" text-anchor="middle" fill="#fff">${n > 9 ? "9+" : n}</text>` : ""}</svg>`;
+  $("favicon").href = "data:image/svg+xml," + encodeURIComponent(svg);
+}
+
+function setTheme(t) {
+  if (t === "system") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
+  store.set("theme", t);
+  document.querySelectorAll("[data-theme-set]").forEach(b => b.setAttribute("aria-pressed", b.dataset.themeSet === t));
+}
+document.querySelectorAll("[data-theme-set]").forEach(b => b.onclick = () => setTheme(b.dataset.themeSet));
+setTheme(store.get("theme") || "system");
+
+async function tick() {
+  try {
+    const r = await fetch("api/projects" + (document.visibilityState === "visible" ? "?seen" : ""), { cache: "no-store" });
+    const text = await r.text(); const j = JSON.parse(text);
+    projects = j.projects.sort((a, b) => (b.needs.length + b.proposals.length) - (a.needs.length + a.proposals.length) || (b.updated > a.updated ? 1 : -1));
+    const sig = JSON.stringify(projects);
+    if (sig !== last || Date.now() - drawn > 15000) { last = sig; drawn = Date.now(); draw(); }  // also refreshes the "ago" times
+    $("meta").textContent = `${projects.length} project${projects.length === 1 ? "" : "s"} · updated ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`;
+  } catch (e) { $("meta").textContent = "The hub server isn't answering. It starts again with your next Claude session."; }
+}
+alertsButton(); soundButton(); tick(); setInterval(tick, 2000);
+</script>
+</body>
+</html>
