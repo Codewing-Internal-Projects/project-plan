@@ -21,7 +21,7 @@ Files in .progress/: progress.json (live sessions), board.json (proposals, reque
 listeners), history.jsonl (one line per finished request), previews/ (proposal mockups),
 lan.json (phone access key, never served). All writes happen under .progress/.lock.
 """
-import contextlib, fcntl, hashlib, hmac, json, os, re, secrets, shutil, socket, subprocess, sys, time
+import contextlib, fcntl, hashlib, hmac, json, os, re, secrets, shutil, socket, subprocess, sys, threading, time
 from datetime import datetime, timezone
 
 SKILL = os.path.dirname(os.path.realpath(__file__))
@@ -33,7 +33,7 @@ try:
 except (OSError, ValueError):
     IS_PLUGIN, APP_VERSION = False, ""
 REPO, MARKET = "Codewing-Internal-Projects/project-plan", "codewing"  # where updates come from
-VERSION = 7  # bump when the server changes, so running boards restart with the new code
+VERSION = 8  # bump when the server changes, so running boards restart with the new code
 
 # $ per million tokens: (model id fragment, input, output, cache read). Cache writes cost 1.25x input (5 min) or 2x (1 h).
 # ponytail: prices as of 2026-10-06 (claude-api skill); an unknown model counts as $0, add it here when prices change
@@ -565,6 +565,48 @@ def api_diff(path):
     return 200, {"diff": out[:300_000], "cut": len(out) > 300_000, "note": "" if out else "No uncommitted changes: it's identical to the last commit."}
 
 
+MAP_LOCK = threading.Lock()
+
+
+def api_map(path, body):
+    """The Map view: rescan, dismiss a health issue, or ask a question about the code."""
+    import codemap
+    codemap.setup(ROOT, DIR)
+    if path == "/api/map/rescan":
+        with MAP_LOCK:
+            codemap.build(quiet=True)
+        return 200, {"ok": True}
+    if path == "/api/map/dismiss":
+        f = os.path.join(DIR, "map", "dismissed.json")
+        with MAP_LOCK:
+            d = read_json(f, {})
+            if body.get("on", True):
+                d[clip(body.get("id"), 200)] = now()
+            else:
+                d.pop(str(body.get("id")), None)
+            write_json(f, d)
+            codemap.build(quiet=True)
+        return 200, {"ok": True}
+    q = clip(body.get("q"), 2000)
+    if not q:
+        raise ValueError("Write a question first.")
+    if not ASK_LOCK.acquire(blocking=False):
+        return 409, {"error": "Another question is being answered; try again when it's done."}
+    try:
+        f = os.path.join(DIR, "map", "asks.json")
+        r = codemap.ask(q, read_json(f, [])[-3:] if body.get("followup") else [])
+        if r.get("error"):
+            return 502, {"error": r["error"]}
+        with MAP_LOCK:
+            write_json(f, (read_json(f, []) + [{"q": q, "a": r["answer"], "parts": r["parts"], "cost": r["cost"], "at": r["at"]}])[-20:])
+        return 200, r
+    finally:
+        ASK_LOCK.release()
+
+
+ASK_LOCK = threading.Lock()
+
+
 def board_seen():
     """A board tab (or the all-projects hub) was open and visible in the last few seconds."""
     try:
@@ -690,7 +732,8 @@ def serve():
                 return self.send(413, {"error": "Too large"})
             route = {"/api/respond": api_respond, "/api/request": api_request, "/api/permit": api_permit,
                      "/api/settings": api_settings, "/api/note": api_note,
-                     "/api/rename": api_rename, "/api/pushtest": api_pushtest}.get(self.path)
+                     "/api/rename": api_rename, "/api/pushtest": api_pushtest,
+                     **{p: functools.partial(api_map, p) for p in ("/api/map/rescan", "/api/map/dismiss", "/api/map/ask")}}.get(self.path)
             if not route:
                 return self.send(404, {"error": "Not found"})
             try:
@@ -1170,6 +1213,7 @@ def load_spec(args):
         "title": str(spec.get("title", "")).strip(), "kind": str(spec.get("kind") or "feature"),
         "summary": str(spec.get("summary", "")), "body": str(spec.get("body", "")), "questions": questions,
         "tasks": [dict(zip(("title", "summary"), split_title(str(x)))) for x in spec.get("tasks") or []], "preview": preview,
+        "map": __import__("codemap").blueprint(spec.get("map")),
     }
 
 
@@ -1188,6 +1232,8 @@ def propose(d, b, sid, spec, revise, t):
                                               "created": t, "versions": []}
     n = len(p["versions"]) + 1
     v = {"n": n, "at": t, **{k: spec[k] for k in ("summary", "body", "questions", "tasks")}}
+    if spec.get("map"):
+        v["map"] = spec["map"]
     if spec["preview"]:
         os.makedirs(os.path.join(DIR, "previews"), exist_ok=True)
         v["preview"] = f"previews/{p['id']}-v{n}.html"
@@ -1444,7 +1490,7 @@ def snapshot(out):
     """The page with all its data baked in: read-only, no server needed (for a claude.ai page or a file)."""
     with locked() as (d, b):
         snap = {"progress": d, "board": {**b, "listeners": {}, "requests": []}, "at": now(),
-                "history": open(HIST).read() if os.path.exists(HIST) else ""}
+                "history": open(HIST).read() if os.path.exists(HIST) else "", "map": read_json(os.path.join(DIR, "map", "graph.json"), None)}
     html = open(os.path.join(SKILL, "index.html")).read()
     blob = json.dumps(snap).replace("</", "<\\/")
     marker = "<script>\nconst $ ="
@@ -1467,6 +1513,10 @@ def cli(args):
         if st.get("ntfy_topic") and len(args) >= 3:
             send_push(st, args[1], args[2])
         return
+    if cmd == "map":
+        import codemap
+        codemap.setup(ROOT, DIR)
+        return codemap.cli(args[1:])
     if cmd == "snapshot":
         return snapshot(os.path.abspath(args[1]) if len(args) > 1 else os.path.join(DIR, "snapshot.html"))
     sid = os.environ.get("CLAUDE_CODE_SESSION_ID")
@@ -1507,6 +1557,8 @@ def cli(args):
 
 def main():
     args = sys.argv[1:]
+    if os.environ.get("PROJECT_PLAN_OFF") and not args:
+        return  # a helper run of claude -p (Ask the map): not a session to show on the board
     if args[:1] == ["hub"]:
         return hub()
     if args[:1] == ["check-update"]:
@@ -1538,6 +1590,9 @@ def main():
         notes = budget_notes(d, b, s) if name in ("UserPromptSubmit", "PostToolUse") else []
         n = s.get("needs") or {}
     title = s.get("name") or s.get("title") or "A session"
+    if name in ("Stop", "SessionEnd") and os.path.isdir(os.path.join(DIR, "map")):  # the free rescan; describing is on request
+        subprocess.Popen([sys.executable, os.path.abspath(__file__), "map", "update", "--if-stale"], cwd=ROOT,
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
     if n and not had_needs:
         push(f"Needs you: {title}", n.get("what", ""))
     elif name == "Stop" and not msg:

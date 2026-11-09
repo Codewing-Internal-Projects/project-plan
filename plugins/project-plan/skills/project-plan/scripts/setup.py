@@ -30,7 +30,11 @@ The user watches every Claude session in this project live at http://localhost:{
 - Keep it current: one task `in_progress` at a time, mark it completed as soon as it's done, and add or drop tasks when the plan changes. The board times each task, so don't batch status updates at the end.
 - No task list tool in this session? Use `python3 ~/.claude/project-plan/hook.py plan "Title — summary" ...` to write the plan, `... add "Title — summary"` to add a task and `... task <n> in_progress|done|blocked` to update task n (1-based).
 - Before saying work is done, make sure the latest test/check/build ran after your last edit: the board flags a passing check that is older than your edits.
-- Never edit anything in `.progress/` by hand: several sessions and the board server write it under a lock.
+- Never edit anything in `.progress/` by hand: several sessions and the board server write it under a lock. The one exception is `.progress/map/architecture.json`, the project map you write when asked.
+
+### Project map
+
+`.progress/map/` maps the code into parts (screens, server, data, outside services) with their files, endpoints and connections; the board shows it under Map. Before searching the code from scratch, try `python3 ~/.claude/project-plan/hook.py map find <words>`, `... map show <part|file|endpoint>` and `... map overview`. When the user asks to make or update the map, run `... map worksheet` and follow it. The free rescan runs by itself; describing parts is only on request.
 
 ### Proposals, board requests and the listener
 
@@ -51,7 +55,7 @@ python3 ~/.claude/project-plan/hook.py propose - <<'JSON'
  "preview": "/path/to/self-contained-mockup.html"}}
 JSON
 ```
-Everything but `title` is optional. Ask only questions whose answer changes what you build; mark your recommended option. Use `preview` (a self-contained HTML file) when a mockup shows the idea better than words. Track it with `hook.py proposal <ID> building`, then `done` when finished.
+Add `"map": {{"parts": [{{"id": "billing", "name": "Billing", "kind": "server", "summary": "…", "status": "new|changed|existing", "files": ["…"]}}], "links": [{{"from": "billing", "to": "stripe", "label": "…"}}]}}` to a proposal that adds or reshapes parts of the app: the board draws it as a blueprint (reuse map part ids for existing parts). Everything but `title` is optional. Ask only questions whose answer changes what you build; mark your recommended option. Use `preview` (a self-contained HTML file) when a mockup shows the idea better than words. Track it with `hook.py proposal <ID> building`, then `done` when finished.
 {end}"""
 
 

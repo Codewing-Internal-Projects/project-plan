@@ -4,7 +4,7 @@
 
 ### See what Claude Code is doing, answer it from your browser, and keep a record of everything it did.
 
-![Version 1.0.1](https://img.shields.io/badge/version-1.0.1-2f6fed) ![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-1c1c1a) ![Runs locally](https://img.shields.io/badge/runs-locally-1b8a4b) ![No dependencies](https://img.shields.io/badge/dependencies-none-7151d0)
+![Version 1.1.0](https://img.shields.io/badge/version-1.1.0-2f6fed) ![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-1c1c1a) ![Runs locally](https://img.shields.io/badge/runs-locally-1b8a4b) ![No dependencies](https://img.shields.io/badge/dependencies-none-7151d0)
 
 <img src="docs/images/live.png" alt="The project board: sessions on the left, the selected session's plan, progress and activity on the right" width="100%">
 
@@ -39,6 +39,7 @@ When you ask Claude Code to do something, it works in your terminal. You can't e
 | 📊 | **Standups and reports for free** | **Copy as standup** (Today) and **Copy as Markdown** (Week) produce a summary you can paste. |
 | 🧪 | **Catch "done" that isn't** | The board warns when tests passed *before* the last edit, and flags tests that pass and fail at random (*flaky*). |
 | 💸 | **Know the cost** | Estimated spend per session and per day, with an optional daily budget. |
+| 🗺️ | **A map of your code** | See the project as parts (screens, server, data, outside services), what each request changed, a health check for common mistakes, and answers to questions about the code. |
 | 🗂️ | **All projects in one tab** | A hub page lists every project with a board, and you can answer all of them from there. |
 | 🔒 | **Private by default** | It runs on your computer. Nothing is uploaded, and there's nothing to install from npm or pip. |
 
@@ -224,13 +225,34 @@ Click any file under **Files changed** to see what was added (green) and removed
 
 Every request you gave Claude, grouped by day, with the tasks done, files changed, test result, cost and Claude's reply. Search it, **★ pin** the important ones, and **add your own notes**.
 
-### 8. All your projects in one tab
+### 8. Map: how the project fits together
+
+<img src="docs/images/map.png" alt="The Map view: parts of the app in columns with connections, the selected part's details on the right" width="100%">
+
+The **Map** tab shows your project as a handful of **parts**, such as screens, server code, data and outside services like Stripe, with lines for how they connect. Click a part to see its files, endpoints, what it uses and what uses it, and **which requests changed it**. Parts changed today are green, and Live and History cards show which parts each request touched.
+
+**How to get one:** say *"make the project map"* to Claude (or press the button on the Map tab). A free scan reads the code; Claude then names and describes the parts once. After that the map **rescans by itself** whenever a session stops. When parts have new or changed files, a note offers to have Claude update the descriptions; that's the only step that costs tokens.
+
+<table>
+<tr>
+<td width="50%"><img src="docs/images/map-ask.png" alt="An answer to a question about the code, with the parts involved highlighted"></td>
+<td width="50%"><img src="docs/images/map-health.png" alt="The health check"></td>
+</tr>
+<tr>
+<td><b>Ask about the code:</b> type a question like <i>"what happens after a customer pays?"</i>. Claude reads the code (read-only) and answers with file and line references, and the parts involved light up. Each answer shows what it cost.</td>
+<td><b>Health check:</b> flags common mistakes, such as passwords or keys in the code, endpoints anyone can call, database queries built from raw input, or payment webhooks that aren't verified. <b>Ask Claude to fix</b> sends it the details; <b>Dismiss</b> hides a false alarm.</td>
+</tr>
+</table>
+
+When Claude proposes something that adds parts to the app, the proposal can include a **blueprint**: a small map where new parts are dashed blue and changed ones dashed amber.
+
+### 9. All your projects in one tab
 
 <img src="docs/images/hub.png" alt="The all-projects hub" width="100%">
 
 Open **http://localhost:4320**, or click **All projects ↗** on any board, to see every project that has a board. While this tab is open, it gives the alerts for all your projects, and you can approve requests from here too.
 
-### 9. Settings, search and more
+### 10. Settings, search and more
 
 <table>
 <tr>
@@ -291,6 +313,8 @@ Handy things to say to Claude:
 | **Hook** | A small script Claude Code runs automatically at certain moments. This is how the board gets its updates. |
 | **Check** | A test, lint or build command, such as `npm test`. |
 | **Flaky** | A check that failed and then passed with no code change in between, so it can't be trusted. |
+| **Map / part** | The Map tab's picture of your code. A part is one area of the app, like "Checkout" or "Stripe". |
+| **Health check** | Automatic checks on the map for common security and quality mistakes. |
 | **Context %** | How full Claude's working memory is. When it's full, older details get summarised. |
 
 ---
@@ -403,6 +427,8 @@ plugins/project-plan/
     setup.py                             set up or remove a board in a project; the rules text
     index.html                           the board page (copied into each project's .progress/)
     hub.html                             the all-projects hub page
+    codemap.py                           the project map: scanner, build, health check, lookups, Ask
+tests/test_codemap.py                    self-check for the map scanner (python3 tests/test_codemap.py)
 docs/images/                             README screenshots
 ```
 
@@ -410,6 +436,7 @@ docs/images/                             README screenshots
 
 ```bash
 claude plugin validate .
+python3 tests/test_codemap.py                    # the map scanner and health rules
 claude --plugin-dir ./plugins/project-plan       # loads your working copy for this session only
 ```
 

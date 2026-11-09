@@ -319,6 +319,68 @@
   #pallist li { display:grid; grid-template-columns:1fr auto; gap:10px; padding:8px 10px; border-radius:8px; cursor:pointer; font-size:13px; }
   #pallist li span:first-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   #pallist li[aria-selected="true"] { background:var(--accent-bg); }
+  /* Map */
+  .mtools { display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end; flex:1 1 auto; }
+  #mq { width:min(280px, 100%); padding:6px 10px; border:1px solid var(--line); border-radius:10px; background:var(--card); }
+  .btn[aria-pressed="true"] { border-color:var(--fg); }
+  .askbar { display:flex; gap:8px; margin-top:12px; }
+  .askbar input { flex:1; min-width:0; padding:9px 12px; border:1px solid var(--line); border-radius:12px; background:var(--card); }
+  .answer { margin-top:10px; background:var(--card); border:1px solid var(--accent); border-radius:14px; padding:12px 16px; box-shadow:var(--shadow); }
+  .answer .ah { display:flex; gap:10px; align-items:baseline; flex-wrap:wrap; }
+  .answer .ah b { flex:1; min-width:0; }
+  .maplayout { display:grid; grid-template-columns:minmax(0, 1fr) 340px; gap:16px; margin-top:14px; align-items:start; }
+  @media (max-width:1100px) { .maplayout { grid-template-columns:1fr; } }
+  .mapwrap { background:var(--card); border:1px solid var(--line); border-radius:18px; overflow:auto; box-shadow:var(--shadow); min-height:200px; }
+  .mapgrid { position:relative; display:grid; grid-template-columns:repeat(var(--cols), minmax(150px, 236px)); gap:0 48px; justify-content:space-between; padding:16px 20px 20px; }
+  .mapgrid.mmini { padding:12px; gap:0 40px; grid-template-columns:repeat(var(--cols), minmax(140px, 220px)); justify-content:start; }
+  .mcol { display:flex; flex-direction:column; gap:12px; min-width:0; }
+  .mcol h4 { margin:0; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:600; }
+  .medges { position:absolute; left:0; top:0; pointer-events:none; overflow:visible; }
+  .medges path { fill:none; stroke:var(--line); stroke-width:1.4; }
+  .medges path.strong { stroke:color-mix(in srgb, var(--muted) 55%, transparent); }
+  .medges path.hot { stroke:var(--accent); stroke-width:2; }
+  .medges path.faint { stroke:color-mix(in srgb, var(--line) 60%, transparent); }
+  .medges marker path { fill:var(--muted); stroke:none; }
+  .medges marker.hot path { fill:var(--accent); }
+  .mpart { position:relative; z-index:1; display:block; width:100%; text-align:left; background:var(--card); border:1.5px solid var(--line); border-radius:12px; padding:9px 12px; cursor:pointer; transition:border-color .15s, opacity .15s; }
+  .mpart:hover { border-color:var(--muted); }
+  .mpart b { display:block; font-size:13.5px; line-height:1.3; }
+  .mpart .s { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; color:var(--muted); font-size:12px; line-height:1.4; margin-top:2px; }
+  .mpart .m { font-size:11px; color:var(--muted); margin-top:5px; display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .mpart.ext { border-style:dashed; }
+  .mpart.touched { border-color:var(--done); background:var(--done-bg); }
+  .mpart.hl { border-color:var(--accent); background:var(--accent-bg); }
+  .mpart.sel { outline:2px solid var(--accent); outline-offset:2px; }
+  .mpart.dim { opacity:.32; }
+  .mpart .flag { position:absolute; top:-8px; right:10px; font-size:10.5px; font-weight:700; padding:0 6px; border-radius:99px; background:var(--bad); color:var(--on-bad); }
+  .mpart .flag.medium { background:var(--warn); color:var(--bg); }
+  .mpart .stale { width:7px; height:7px; border-radius:50%; background:var(--warn); display:inline-block; }
+  .mpart.bp-new { border-style:dashed; border-color:var(--accent); background:var(--accent-bg); }
+  .mpart.bp-changed { border-style:dashed; border-color:var(--warn); background:var(--warn-bg); }
+  .mpart.bp-removed { opacity:.5; text-decoration:line-through; }
+  .mpanel h3 { font-size:12px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin:18px 0 6px; }
+  .mpanel .lead { margin:6px 0 0; }
+  .mlist { list-style:none; margin:0; padding:0; }
+  .mlist > li { border-top:1px solid var(--line); padding:6px 0; font-size:13px; }
+  .mlist > li:first-child { border-top:0; }
+  .mono { font:12px ui-monospace, monospace; overflow-wrap:anywhere; }
+  .mdesc { color:var(--muted); font-size:12.5px; }
+  .mfile { background:none; border:0; padding:0; cursor:pointer; text-align:left; color:inherit; }
+  .mfile:hover { color:var(--accent); }
+  .mmore { margin:6px 0 2px 10px; padding-left:10px; border-left:2px solid var(--line); font-size:12px; color:var(--muted); display:grid; gap:3px; }
+  .chipline { display:flex; gap:6px; flex-wrap:wrap; }
+  .chipline button { font-size:12px; border:1px solid var(--line); background:var(--card); border-radius:99px; padding:2px 9px; cursor:pointer; }
+  .chipline button:hover { border-color:var(--muted); }
+  .chipline small { color:var(--muted); }
+  .issue { border-left:3px solid var(--bad); padding:6px 0 8px 12px; margin:8px 0; }
+  .issue.medium { border-color:var(--warn); }
+  .issue.low { border-color:var(--line); }
+  .issue.off { opacity:.55; }
+  .issue p { margin:3px 0; font-size:13px; }
+  .issue .actions { display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; align-items:center; }
+  .ptags { display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:6px 0 0; font-size:12px; color:var(--muted); }
+  .ptags .tag { cursor:pointer; border:0; font:inherit; font-size:11px; }
+  @media (max-width:700px) { .mtools { justify-content:flex-start; } .mapgrid { grid-template-columns:1fr; gap:18px; } .mpart { max-width:none; } .medges { display:none; } }
   @keyframes spin { to { transform:rotate(360deg); } }
   @keyframes pulse { 50% { opacity:.25; } }
   @media (prefers-reduced-motion: reduce) { .in_progress .dot, .pill.working i { animation:none; } .in_progress .dot { border-top-color:var(--accent); } }
@@ -329,7 +391,7 @@
   <header>
     <div class="brand"><span class="logo" aria-hidden="true">✓</span><div><h1>Project board</h1><div class="n" id="meta">Loading…</div></div></div>
     <div class="tools">
-      <div class="seg" role="group" aria-label="View"><button type="button" data-view="live">Live</button><button type="button" data-view="today">Today</button><button type="button" data-view="week">Week</button><button type="button" data-view="timeline">Timeline</button><button type="button" data-view="proposals">Proposals<span id="pbadge"></span></button><button type="button" data-view="history">History</button></div>
+      <div class="seg" role="group" aria-label="View"><button type="button" data-view="live">Live</button><button type="button" data-view="today">Today</button><button type="button" data-view="week">Week</button><button type="button" data-view="timeline">Timeline</button><button type="button" data-view="proposals">Proposals<span id="pbadge"></span></button><button type="button" data-view="history">History</button><button type="button" data-view="map">Map</button></div>
       <button class="btn primary live-only" id="newbtn" type="button">New request</button>
       <a class="btn live-only" id="hublink" href="#" target="_blank" rel="noopener" hidden title="Every project with a board, in one tab">All projects ↗</a>
       <button class="btn live-only" id="setbtn" type="button" title="Alerts, sound, budget, phone access">Settings</button>
@@ -381,6 +443,17 @@
   <div id="v-history" hidden>
     <div class="htools"><input type="search" id="hq" placeholder="Search requests, tasks and files" aria-label="Search history"><button class="btn" id="hpin" type="button" aria-pressed="false">★ Pinned only</button><span class="n" id="hcount"></span></div>
     <div id="hlist"></div>
+  </div>
+  <div id="v-map" hidden>
+    <div class="bar"><h2>Map</h2><span class="n" id="mapstat"></span>
+      <div class="mtools"><input type="search" id="mq" placeholder="Find a part, file, class or endpoint" aria-label="Search the map">
+        <div class="seg" role="group" aria-label="Highlight changes from"><button type="button" data-mspan="1">Today</button><button type="button" data-mspan="7">7 days</button></div>
+        <button class="btn" type="button" data-mact="tools" title="Show tests, build and tooling parts">Tools</button>
+        <button class="btn" type="button" data-mact="health" id="mhealth">Health</button>
+        <button class="btn live-only" type="button" data-mact="rescan" title="Rescan the code now (free, no tokens)">Rescan</button></div></div>
+    <form class="askbar live-only" id="askform"><input name="q" autocomplete="off" placeholder="Ask about the code: “how does checkout work?”, “what calls this endpoint?”, “where are emails sent?”" aria-label="Ask about the code"><button class="btn primary" type="submit">Ask</button></form>
+    <div id="askout"></div>
+    <div class="maplayout"><div class="mapwrap" id="mapwrap"></div><aside class="detail mpanel" id="mappanel" aria-live="polite"></aside></div>
   </div>
 </main>
 
@@ -439,7 +512,8 @@
 <dialog id="keys" aria-labelledby="keys-h">
   <h2 id="keys-h">Keyboard shortcuts</h2>
   <table class="keys"><tbody>
-    <tr><td><kbd>1</kbd>–<kbd>6</kbd></td><td>Live, Today, Week, Timeline, Proposals, History</td></tr>
+    <tr><td><kbd>1</kbd>–<kbd>7</kbd></td><td>Live, Today, Week, Timeline, Proposals, History, Map</td></tr>
+    <tr><td><kbd>m</kbd></td><td>Search the map</td></tr>
     <tr><td><kbd>j</kbd> <kbd>k</kbd></td><td>Next / previous session (or proposal)</td></tr>
     <tr><td><kbd>a</kbd> <kbd>x</kbd></td><td>Allow / deny the selected session's waiting request</td></tr>
     <tr><td><kbd>⌘</kbd> <kbd>K</kbd></td><td>Go to anything: sessions, proposals, history, files, actions</td></tr>
@@ -474,7 +548,7 @@ const PSTATE = {awaiting:["needs","needs your input"], approved:["working","appr
 const KIND = {brainstorm:"Brainstorm", suggest:"Suggest features", task:"Task"};
 const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
 const SNAP = window.SNAPSHOT || null;  // a read-only copy made by `hook.py snapshot`
-const VIEWS = ["live", "today", "week", "timeline", "proposals", "history"];
+const VIEWS = ["live", "today", "week", "timeline", "proposals", "history", "map"];
 
 let filter = store.get("filter") || "live", view = store.get("view") || "live", span = +(store.get("span") || 8);
 let selected = null, selProp = store.get("prop") || null;
@@ -629,7 +703,7 @@ function detail(s, clash, all) {
       <div><h3>Activity</h3><ul class="log">${(s.log || []).slice(-18).reverse().map(l => `<li class="${esc(l.kind || "info")}"><span class="ic">${ICON[l.kind] || "·"}</span><span>${esc(l.text)}</span><time>${hhmm(l.at)}</time></li>`).join("")}</ul></div>
     </div>
     ${s.reply && s.status !== "working" ? `<h3>Last reply</h3><div class="reply">${esc(s.reply)}</div>` : ""}
-    ${fl.length ? `<h3>Files changed · ${fl.length} <span class="add">+${added}</span> <span class="rem">−${removed}</span></h3>${uncommittedBlock(s, fl)}
+    ${fl.length ? `<h3>Files changed · ${fl.length} <span class="add">+${added}</span> <span class="rem">−${removed}</span></h3>${partTags(fl.map(f => f.path))}${uncommittedBlock(s, fl)}
       <ul class="files">${fl.map(f => `<li><span class="path">${clash[f.path] ? `<span class="tag warn" title="Also edited by ${esc(clash[f.path].filter(id => id !== s.id).map(title).join(", "))}">⚠ shared</span> ` : ""}${gitTag(f.path)}${SNAP || f.path.startsWith("…") ? esc(f.path) : `<button type="button" class="difbtn" data-diff="${esc(f.path)}" aria-expanded="${!!diffs[f.path]}" title="Show the uncommitted changes (git diff)">${esc(f.path)}</button>`}</span><span class="c"><span class="add">+${f.add || 0}</span> <span class="rem">−${f.del || 0}</span></span></li>${diffs[f.path] ? `<li class="diffrow">${diffHtml(diffs[f.path])}</li>` : ""}`).join("")}</ul>` : ""}
     ${earlier.length ? `<h3>Earlier in this session</h3><ul class="earlier">${earlier.map(e => `<li><span>${esc(e.prompt)}</span><span class="n">${(e.done || []).length} done · ${(e.files || []).length} files · ${hhmm(e.started)}</span></li>`).join("")}</ul>
       <button type="button" class="linkish" data-view="history" data-q="${esc(s.title || "")}">See all in History →</button>` : ""}
@@ -827,6 +901,7 @@ function pdetail(p) {
     ${v.summary ? `<p class="lead">${esc(v.summary)}</p>` : ""}
     ${v.body ? `<div class="md">${md(v.body)}</div>` : ""}
     ${v.preview && !SNAP ? `<h3>Preview</h3><iframe class="preview" sandbox="allow-scripts" src="${esc(v.preview)}" title="Preview of ${esc(p.title)}" loading="lazy"></iframe><a class="n" href="${esc(v.preview)}" target="_blank" rel="noopener">Open full size ↗</a>` : ""}
+    ${v.map ? `<h3>Blueprint</h3>${blueprintHtml(v.map)}` : ""}
     ${v.tasks?.length ? `<h3>What Claude will do if you approve</h3><ol class="steps">${v.tasks.map(t => `<li><div><div class="t">${esc(t.title)}</div>${t.summary ? `<div class="sum">${esc(t.summary)}</div>` : ""}</div></li>`).join("")}</ol>` : ""}
     ${p.status === "awaiting" && v === latest ? respondForm(p, v) : v.response ? answered(p, v, latest) : `<p class="n">${v === latest ? "" : `Superseded by v${latest.n}.`}</p>`}`;
 }
@@ -896,7 +971,7 @@ function hcard(e) {
     : SNAP ? "" : `<button type="button" class="linkish" data-hnote="${esc(e.id)}">Add note</button>`;
   return `<article class="hcard${nt.pin ? " pinned" : ""}">
     <div class="hhead">${SNAP ? "" : `<button type="button" class="hpin" data-hpin="${esc(e.id)}" aria-pressed="${!!nt.pin}" title="${nt.pin ? "Unpin" : "Pin"}" aria-label="${nt.pin ? "Unpin" : "Pin"} this request">★</button>`}<time>${hhmm(e.started)}–${hhmm(e.ended || e.started)}</time><span>${esc(e.title || "Session")}</span>${e.source === "board" ? `<span class="tag info">from the board</span>` : ""}${checkTag(e.check)}${e.errors ? `<span class="tag bad">${e.errors} failed</span>` : ""}${e.cost ? `<span class="tag">${money(e.cost)}</span>` : ""}${(e.agents || []).length ? `<span class="tag agent">${e.agents.length} agent${e.agents.length > 1 ? "s" : ""}</span>` : ""}</div>
-    <p class="hprompt">${esc(e.prompt || "(no prompt)")}</p>
+    <p class="hprompt">${esc(e.prompt || "(no prompt)")}</p>${partTags((e.files || []).map(f => f.path))}
     ${done.length ? `<ol class="hdone">${done.map(t => `<li><span class="ok">✓</span><span><b>${esc(t.title)}</b>${t.added ? ` <span class="tag info">added later</span>` : ""}${t.summary ? ` <span class="n">${esc(t.summary)}</span>` : ""}</span><span class="dur">${t.started && t.finished ? dur(secs(t.started, t.finished)) : ""}</span></li>`).join("")}</ol>`
       : `<p class="n" style="margin:0">${fl.length || e.tools ? "No tasks marked done." : "Answered without changes."}</p>`}
     ${addedLater || dropped.length ? `<p class="n" style="margin:4px 0 0">Plan drift: ${(e.planned || []).length} planned${addedLater ? `, +${addedLater} added later` : ""}${dropped.length ? `, dropped: ${esc(dropped.join(" · "))}` : ""}</p>` : ""}
@@ -924,6 +999,243 @@ function drawHistory() {
 }
 $("hq").addEventListener("input", drawHistory);
 
+// ---------------------------------------------------------------- map view
+
+let graph = null, graphRaw = "", graphAt = 0, asks = [], asksRaw = "", mapSig = "", mapFile = null, askParts = [], askBusy = false, askShown = null;
+let mapSel = store.get("mapsel") || null, mapSpan = +(store.get("mspan") || 1), mapTools = store.get("mtools") === "1", mapHealth = false;
+const MCOLS = [["screen", "Screens"], ["server", "Server"], ["data", "Data"], ["service", "Outside services"], ["tool", "Tools & tests"]];
+const colOf = k => k === "other" ? "server" : k;
+const partById = id => graph?.parts.find(p => p.id === id);
+const shortEp = k => k.replace(/\(\?P<(\w+)>[^)]*\)/g, "{$1}");
+const sevTag = s => `<span class="tag ${s === "high" ? "bad" : s === "medium" ? "warn" : ""}">${s}</span>`;
+
+async function loadGraph(force) {
+  if (SNAP) return;
+  if (!force && view !== "map" && Date.now() - graphAt < 20000) return;
+  graphAt = Date.now();
+  try {
+    const g = await get("map/graph.json").catch(() => "");
+    if (g !== graphRaw) { graphRaw = g; graph = g ? JSON.parse(g) : null; mapSig = histSig = propSig = ""; }
+    const a = await get("map/asks.json").catch(() => "");
+    if (a !== asksRaw) { asksRaw = a; asks = a ? JSON.parse(a) : []; mapSig = ""; }
+  } catch (e) {}
+}
+
+// Files touched by requests and running sessions, within the chosen span: path -> [{at, text, id}]
+function touches(days) {
+  const since = days === 1 ? new Date(new Date().setHours(0, 0, 0, 0)) : new Date(Date.now() - days * 864e5), by = {};
+  const add = (path, t) => (by[path] = by[path] || []).push(t);
+  hist.forEach(e => { if (new Date(e.ended || e.started) >= since) (e.files || []).forEach(f => add(f.path, { at: e.ended || e.started, text: e.prompt || e.title, id: e.id })); });
+  sessions().filter(live).forEach(s => files(s).forEach(f => { if (f.at && new Date(f.at) >= since && !(by[f.path] || []).some(x => x.live === s.id)) add(f.path, { at: f.at, text: s.title || "Running session", live: s.id }); }));
+  return by;
+}
+const partOf = path => graph?.files[path]?.part;
+function partTags(paths) {
+  if (!graph || !paths.length) return "";
+  const ids = [...new Set(paths.map(partOf).filter(Boolean))];
+  return ids.length ? `<div class="ptags">Parts: ${ids.map(id => `<button type="button" class="tag info" data-mpart="${esc(id)}">${esc(partById(id)?.name || id)}</button>`).join("")}</div>` : "";
+}
+
+// Columns left to right, parts ordered to keep connected parts level with each other.
+function layout(parts, edges) {
+  const cols = MCOLS.map(([k, label]) => ({ k, label, parts: parts.filter(p => colOf(p.kind) === k) })).filter(c => c.parts.length);
+  const pos = {};
+  const index = () => cols.forEach(c => c.parts.forEach((p, i) => pos[p.id] = i / Math.max(1, c.parts.length - 1)));
+  index();
+  for (let pass = 0; pass < 3; pass++) {
+    cols.forEach(c => {
+      const bary = p => { const n = edges.filter(e => e.from === p.id || e.to === p.id).map(e => pos[e.from === p.id ? e.to : e.from]).filter(x => x !== undefined); return n.length ? n.reduce((a, b) => a + b, 0) / n.length : pos[p.id]; };
+      c.parts.sort((a, b) => bary(a) - bary(b));
+    });
+    index();
+  }
+  return cols;
+}
+
+function mapHtml(parts, edges, o = {}) {
+  const cols = layout(parts, edges), col = {};
+  cols.forEach((c, i) => c.parts.forEach(p => col[p.id] = i));
+  return `<div class="mapgrid${o.mini ? " mmini" : ""}" style="--cols:${cols.length}" data-edges="${esc(JSON.stringify(edges.filter(e => col[e.from] !== undefined && col[e.to] !== undefined)))}"><svg class="medges" aria-hidden="true"></svg>
+    ${cols.map((c, i) => `<div class="mcol"><h4>${esc(c.label)}</h4>${c.parts.map(p => {
+      const cls = ["mpart", p.external || p.kind === "service" ? "ext" : "", ...(o.cls ? o.cls(p) : [])].filter(Boolean).join(" ");
+      return `<button type="button" class="${cls}" data-mpart="${esc(p.id)}" data-col="${i}">${o.flag ? o.flag(p) : ""}<b>${esc(p.name)}</b>${p.summary ? `<span class="s">${esc(p.summary)}</span>` : ""}${o.meta ? `<span class="m">${o.meta(p)}</span>` : ""}</button>`;
+    }).join("")}</div>`).join("")}</div>`;
+}
+
+function drawEdges() {
+  document.querySelectorAll(".mapgrid").forEach(grid => {
+    const svg = grid.querySelector(".medges");
+    if (!svg || !grid.offsetParent || getComputedStyle(svg).display === "none") return;
+    const box = grid.getBoundingClientRect(), node = id => grid.querySelector(`[data-mpart="${CSS.escape(id)}"]`);
+    svg.setAttribute("width", grid.scrollWidth); svg.setAttribute("height", grid.scrollHeight);
+    let out = `<defs><marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z"/></marker><marker id="ahh" class="hot" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z"/></marker></defs>`;
+    JSON.parse(grid.dataset.edges || "[]").forEach(e => {
+      const a = node(e.from), b = node(e.to); if (!a || !b) return;
+      const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect(), ca = +a.dataset.col, cb = +b.dataset.col;
+      const y1 = ra.top + ra.height / 2 - box.top, y2 = rb.top + rb.height / 2 - box.top;
+      let d;
+      if (cb > ca) { const x1 = ra.right - box.left, x2 = rb.left - box.left - 2, m = (x2 - x1) / 2; d = `M${x1},${y1} C${x1 + m},${y1} ${x2 - m},${y2} ${x2},${y2}`; }
+      else if (cb < ca) { const x1 = ra.left - box.left, x2 = rb.right - box.left + 2, m = (x1 - x2) / 2; d = `M${x1},${y1} C${x1 - m},${y1} ${x2 + m},${y2} ${x2},${y2}`; }
+      else { const x1 = ra.right - box.left, x2 = rb.right - box.left + 2, bx = Math.max(x1, x2) + 30; d = `M${x1},${y1} C${bx},${y1} ${bx},${y2} ${x2},${y2}`; }
+      out += `<path class="${e.cls || ""}" d="${d}" marker-end="url(#${(e.cls || "").includes("hot") ? "ahh" : "ah"})"><title>${esc(e.title || "")}</title></path>`;
+    });
+    svg.innerHTML = out;
+  });
+}
+addEventListener("resize", () => requestAnimationFrame(drawEdges));
+
+function mapMatches(q) {
+  if (!q) return null;
+  const w = q.toLowerCase().split(/\s+/).filter(Boolean), hit = s => w.every(x => s.toLowerCase().includes(x));
+  const parts = new Set(), files = [], eps = [];
+  graph.parts.forEach(p => { if (hit(`${p.id} ${p.name} ${p.summary}`)) parts.add(p.id); });
+  Object.entries(graph.files).forEach(([path, f]) => { if (hit(`${path} ${f.desc} ${(f.defs || []).join(" ")}`)) { files.push(path); if (f.part) parts.add(f.part); } });
+  Object.entries(graph.endpoints).forEach(([k, v]) => { if (hit(`${k} ${v.desc || ""}`)) { eps.push(k); if (v.part) parts.add(v.part); } });
+  return { parts, files, eps };
+}
+
+function drawMap() {
+  const q = $("mq").value.trim(), T = touches(mapSpan);
+  const sig = JSON.stringify([graph?.built, graph?.health?.issues.map(i => i.dismissed), mapSel, mapFile, q, mapSpan, mapTools, mapHealth, askParts, askShown, askBusy, asks.length, lastH.length, Object.keys(T).length, SNAP ? 1 : 0]);
+  document.querySelectorAll("[data-mspan]").forEach(b => b.setAttribute("aria-pressed", +b.dataset.mspan === mapSpan));
+  document.querySelector('[data-mact="tools"]').setAttribute("aria-pressed", mapTools);
+  $("mhealth").setAttribute("aria-pressed", mapHealth);
+  if (sig === mapSig) return; mapSig = sig;
+  if (!graph) {
+    $("mapstat").textContent = "";
+    $("mhealth").textContent = "Health";
+    $("mapwrap").innerHTML = `<div class="empty"><b>No map yet.</b><br>The map shows how this project fits together: its screens, server code, data and outside services, and what each request changed.<br>It comes from a free scan of the code, plus a short description Claude writes once.${SNAP ? "" : `<div class="actions" style="justify-content:center;margin-top:14px"><button class="btn primary" type="button" data-mact="make">Ask Claude to make the map</button><button class="btn" type="button" data-mact="rescan">Scan now (free)</button></div><p class="n" id="mapmsg"></p>`}</div>`;
+    $("mappanel").innerHTML = `<p class="n">Ask Claude to “make the project map”, in the terminal or with the button. It runs a free scan, reads the code, and writes the parts. After that the map rescans by itself whenever a session stops.</p>`;
+    $("askout").innerHTML = ""; return;
+  }
+  const h = graph.health, open = h.issues.filter(i => !i.dismissed);
+  $("mhealth").innerHTML = `Health${h.high + h.medium ? ` <span class="tag ${h.high ? "bad" : "warn"}">${h.high + h.medium}</span>` : ""}`;
+  const nfiles = Object.values(graph.files).filter(f => !f.config).length;
+  $("mapstat").textContent = `${graph.parts.length} parts · ${nfiles} files · ${Object.keys(graph.endpoints).length} endpoints · scanned ${ago(graph.scanned)}${graph.described ? " · described " + ago(graph.described) : ""}`;
+
+  // The answer to the last question asked about the code.
+  const shown = askShown === null ? null : asks[askShown];
+  $("askout").innerHTML = askBusy ? `<div class="answer"><div class="ah"><b>${esc(askBusy)}</b><span class="n">Claude is reading the code… (usually under a minute)</span></div></div>`
+    : shown ? `<div class="answer"><div class="ah"><b>${esc(shown.q)}</b><span class="n">${ago(shown.at)}${shown.cost ? " · " + money(shown.cost) : ""}</span><button type="button" class="linkish" data-mact="closeask">Close</button></div><div class="md">${md(shown.a)}</div>${shown.parts?.length ? `<div class="ptags">Involves: ${shown.parts.map(id => `<button type="button" class="tag info" data-mpart="${esc(id)}">${esc(partById(id)?.name || id)}</button>`).join("")}</div>` : ""}</div>`
+    : asks.length ? `<p class="n" style="margin:6px 0 0">Earlier: ${asks.slice(-4).reverse().map((a, i) => `<button type="button" class="linkish" data-mask="${asks.length - 1 - i}">${esc(a.q.slice(0, 70))}</button>`).join(" · ")}</p>` : "";
+
+  const m = mapMatches(q), tools = new Set(graph.parts.filter(p => p.kind === "tool").map(p => p.id));
+  const show = graph.parts.filter(p => mapTools || !tools.has(p.id) || p.id === mapSel);
+  const ids = new Set(show.map(p => p.id));
+  const touched = {}; Object.entries(T).forEach(([path, list]) => { const pid = partOf(path); if (pid) (touched[pid] = touched[pid] || []).push(...list.map(x => ({ ...x, path }))); });
+  const issuesOf = id => open.filter(i => i.parts.includes(id) && i.severity !== "low");
+  const focus = new Set([mapSel, ...askParts].filter(Boolean));
+  const edges = graph.edges.filter(e => ids.has(e.from) && ids.has(e.to)).map(e => {
+    const w = e.imports + 2 * e.calls + (e.label ? 4 : 0), hot = focus.size && (focus.has(e.from) && (focus.has(e.to) || focus.size === 1) || focus.has(e.to) && focus.size === 1);
+    const cls = hot ? "hot" : focus.size ? (w >= 4 ? "faint" : "") : w >= 4 ? "strong" : w >= 2 ? "" : "faint";
+    const title = `${partById(e.from).name} → ${partById(e.to).name}: ${[e.label, e.imports && e.imports + " imports", e.calls && e.calls + " requests"].filter(Boolean).join(", ")}`;
+    return { from: e.from, to: e.to, cls, title, w };
+  }).filter(e => (e.cls !== "faint" || focus.size || e.w >= 2) && (colOf(partById(e.from).kind) !== colOf(partById(e.to).kind) || e.cls === "hot"));  // same-column links only for the selected part
+  $("mapwrap").innerHTML = (graph.auto ? `<div class="banner" style="margin:12px 12px 0">These parts are only folders: Claude hasn't described the project yet.${SNAP ? "" : ` <button type="button" class="linkish" data-mact="make">Ask Claude to make the map</button>`}</div>` : "")
+    + (graph.stale.length && !graph.auto ? `<div class="banner" style="margin:12px 12px 0">${graph.stale.length} part${graph.stale.length > 1 ? "s have" : " has"} new or changed files since Claude last described the map.${SNAP ? "" : ` <button type="button" class="linkish" data-mact="update">Ask Claude to update the descriptions</button>`}</div>` : "")
+    + mapHtml(show, edges, {
+      cls: p => [p.id === mapSel && "sel", askParts.includes(p.id) && "hl", touched[p.id] && "touched", m && !m.parts.has(p.id) && "dim"].filter(Boolean),
+      flag: p => { const n = issuesOf(p.id); return n.length ? `<span class="flag ${n.some(i => i.severity === "high") ? "" : "medium"}" title="${n.length} health issue${n.length > 1 ? "s" : ""}">${n.length}</span>` : ""; },
+      meta: p => p.external ? "outside service" : `${p.files.length} file${p.files.length === 1 ? "" : "s"}${p.endpoints.length ? ` · ${p.endpoints.length} endpoint${p.endpoints.length > 1 ? "s" : ""}` : ""}${touched[p.id] ? ` · <span style="color:var(--done)">${new Set(touched[p.id].map(t => t.path)).size} changed</span>` : ""}${p.new.length + p.changed.length + p.removed.length ? ` <span class="stale" title="New or changed files since the last description"></span>` : ""}`,
+    });
+  $("mappanel").innerHTML = mapHealth ? healthPanel(open) : mapSel && partById(mapSel) ? partPanel(partById(mapSel), touched[mapSel] || [], m) : m ? searchPanel(m) : overviewPanel(touched, open);
+  requestAnimationFrame(drawEdges);
+}
+
+function issueHtml(i) {
+  return `<div class="issue ${i.severity}${i.dismissed ? " off" : ""}"><div>${sevTag(i.severity)} <b>${esc(i.title)}</b></div><p class="n">${esc(i.detail)}</p>
+    <ul class="mlist">${i.locations.slice(0, 6).map(l => `<li><span class="mono">${esc(l.file)}:${l.line}</span> <span class="mdesc">${esc(l.text)}</span></li>`).join("")}${i.locations.length > 6 ? `<li class="mdesc">and ${i.locations.length - 6} more</li>` : ""}</ul>
+    ${SNAP ? "" : `<div class="actions">${i.dismissed ? "" : `<button class="btn" type="button" data-mfix="${esc(i.id)}">Ask Claude to fix</button>`}<button class="btn ghost" type="button" data-mdis="${esc(i.id)}" data-on="${!i.dismissed}">${i.dismissed ? "Restore" : "Dismiss"}</button><span class="n" data-mmsg="${esc(i.id)}"></span></div>`}</div>`;
+}
+
+function healthPanel(open) {
+  const off = graph.health.issues.filter(i => i.dismissed);
+  return `<div class="dh"><h2>Health check</h2><button type="button" class="linkish" data-mact="health">Close</button></div>
+    <p class="n">Common mistakes found by pattern matching: secrets in code, endpoints anyone can call, SQL built from variables, unsafe input handling. A quick check, not an audit.</p>
+    ${open.length ? open.map(issueHtml).join("") : `<p>No open issues. ✓</p>`}
+    ${off.length ? `<details><summary class="n">${off.length} dismissed</summary>${off.map(issueHtml).join("")}</details>` : ""}`;
+}
+
+function overviewPanel(touched, open) {
+  const recent = Object.entries(touched).sort((a, b) => b[1].length - a[1].length);
+  return `<div class="dh"><h2>${esc(graph.project)}</h2></div>
+    ${graph.summary ? `<p class="lead">${esc(graph.summary)}</p>` : ""}
+    <p class="n">Click a part to see its files, endpoints, connections and the requests that changed it. Green parts changed ${mapSpan === 1 ? "today" : "in the last 7 days"}.</p>
+    ${recent.length ? `<h3>Changed ${mapSpan === 1 ? "today" : "this week"}</h3><div class="chipline">${recent.map(([id, l]) => `<button type="button" data-mpart="${esc(id)}">${esc(partById(id)?.name || id)} <small>${new Set(l.map(t => t.path)).size}</small></button>`).join("")}</div>` : ""}
+    <h3>Health</h3>${open.length ? `<ul class="mlist">${open.slice(0, 6).map(i => `<li>${sevTag(i.severity)} ${esc(i.title)}</li>`).join("")}</ul><button type="button" class="linkish" data-mact="health">Open the health check →</button>` : `<p class="n">No open issues.</p>`}
+    ${graph.unassigned.length ? `<h3>Files in no part · ${graph.unassigned.length}</h3><ul class="mlist">${graph.unassigned.slice(0, 12).map(p => `<li class="mono">${esc(p)}</li>`).join("")}</ul>` : ""}`;
+}
+
+function searchPanel(m) {
+  return `<div class="dh"><h2>Matches</h2></div>
+    ${m.files.length ? `<h3>Files · ${m.files.length}</h3><ul class="mlist">${m.files.slice(0, 40).map(p => `<li><button type="button" class="mfile mono" data-mfile="${esc(p)}">${esc(p)}</button> <span class="tag">${esc(partById(partOf(p))?.name || "no part")}</span>${graph.files[p].desc ? `<div class="mdesc">${esc(graph.files[p].desc)}</div>` : ""}</li>`).join("")}</ul>` : ""}
+    ${m.eps.length ? `<h3>Endpoints · ${m.eps.length}</h3><ul class="mlist">${m.eps.slice(0, 30).map(k => `<li><button type="button" class="mfile mono" data-mfile="${esc(graph.endpoints[k].file)}">${esc(shortEp(k))}</button>${graph.endpoints[k].desc ? `<div class="mdesc">${esc(graph.endpoints[k].desc)}</div>` : ""}</li>`).join("")}</ul>` : ""}
+    ${!m.files.length && !m.eps.length && !m.parts.size ? `<p class="n">Nothing matches. Try a class name, a path, or ask a question above.</p>` : ""}`;
+}
+
+function partPanel(p, touched, m) {
+  const ins = graph.edges.filter(e => e.to === p.id), outs = graph.edges.filter(e => e.from === p.id);
+  const chip = (id, e) => `<button type="button" data-mpart="${esc(id)}" title="${esc([e.label, e.imports && e.imports + " imports", e.calls && e.calls + " requests"].filter(Boolean).join(", "))}">${esc(partById(id)?.name || id)}${e.label ? ` <small>${esc(e.label)}</small>` : ""}</button>`;
+  const byReq = {}; touched.forEach(t => { const k = t.id || t.live; (byReq[k] = byReq[k] || { ...t, paths: new Set() }).paths.add(t.path); });
+  const changed = new Set(touched.map(t => t.path));
+  const issues = graph.health.issues.filter(i => i.parts.includes(p.id) && !i.dismissed);
+  const stale = p.new.length + p.changed.length + p.removed.length;
+  const fileLi = path => { const f = graph.files[path] || {}; const open = mapFile === path;
+    return `<li><button type="button" class="mfile mono" data-mfile="${esc(path)}" aria-expanded="${open}">${changed.has(path) ? `<span class="tag ok">changed</span> ` : ""}${esc(path)}</button>${f.desc ? `<div class="mdesc">${esc(f.desc)}</div>` : ""}
+      ${open ? `<div class="mmore">${f.lines ? `<span>${f.lines} lines</span>` : ""}${f.defs?.length ? `<span>Defines: <span class="mono">${esc(f.defs.slice(0, 16).join(", "))}</span></span>` : ""}${f.uses?.length ? `<span>Uses: ${f.uses.map(u => `<button type="button" class="mfile mono" data-mfile="${esc(u)}">${esc(u)}</button>`).join(", ")}</span>` : ""}${f.usedBy?.length ? `<span>Used by: ${f.usedBy.slice(0, 12).map(u => `<button type="button" class="mfile mono" data-mfile="${esc(u)}">${esc(u)}</button>`).join(", ")}${f.usedBy.length > 12 ? ` +${f.usedBy.length - 12}` : ""}</span>` : ""}${f.calls?.length ? `<span>Calls: <span class="mono">${esc(f.calls.map(shortEp).join(", "))}</span></span>` : ""}${f.hosts?.length ? `<span>Talks to: ${esc(f.hosts.join(", "))}</span>` : ""}${f.pkgs?.length ? `<span>Packages: ${esc(f.pkgs.join(", "))}</span>` : ""}</div>` : ""}</li>`; };
+  return `<div class="dh"><h2>${esc(p.name)}</h2><span class="tag">${esc(p.kind)}</span><button type="button" class="linkish" data-mpart="">Close</button></div>
+    ${p.summary ? `<p class="lead">${esc(p.summary)}</p>` : ""}
+    <p class="n">${p.external ? "Outside service" : `${p.files.length} files · ${p.lines.toLocaleString()} lines${p.endpoints.length ? ` · ${p.endpoints.length} endpoints` : ""}`}</p>
+    ${stale ? `<div class="banner">Since the last description: ${[p.new.length && p.new.length + " new", p.changed.length && p.changed.length + " changed", p.removed.length && p.removed.length + " removed"].filter(Boolean).join(", ")} file${stale > 1 ? "s" : ""}.${SNAP ? "" : ` <button type="button" class="linkish" data-mact="update" data-part="${esc(p.id)}">Ask Claude to update it</button>`}</div>` : ""}
+    ${Object.keys(byReq).length ? `<h3>Recent work</h3><ul class="mlist">${Object.values(byReq).sort((a, b) => b.at > a.at ? 1 : -1).slice(0, 8).map(t => `<li><button type="button" class="mfile" ${t.live ? `data-id="${esc(t.live)}"` : `data-view="history" data-q="${esc((t.text || "").slice(0, 60))}"`}>${esc((t.text || "").slice(0, 140))}</button><div class="mdesc">${t.live ? "running now" : hhmm(t.at)} · ${t.paths.size} file${t.paths.size > 1 ? "s" : ""}: <span class="mono">${esc([...t.paths].map(x => x.split("/").pop()).join(", "))}</span></div></li>`).join("")}</ul>` : ""}
+    ${issues.length ? `<h3>Health</h3>${issues.map(issueHtml).join("")}` : ""}
+    ${outs.length ? `<h3>Uses</h3><div class="chipline">${outs.map(e => chip(e.to, e)).join("")}</div>` : ""}
+    ${ins.length ? `<h3>Used by</h3><div class="chipline">${ins.map(e => chip(e.from, e)).join("")}</div>` : ""}
+    ${p.endpoints.length ? `<h3>Endpoints</h3><ul class="mlist">${p.endpoints.map(k => { const v = graph.endpoints[k]; return `<li><span class="mono">${esc(shortEp(k))}</span>${v.public ? ` <span class="tag warn">public</span>` : ""}${v.callers?.length ? ` <span class="tag" title="${esc(v.callers.join(", "))}">${v.callers.length} caller${v.callers.length > 1 ? "s" : ""}</span>` : ""}${v.desc ? `<div class="mdesc">${esc(v.desc)}</div>` : ""}<div class="mdesc mono">${esc(v.file)}:${v.line}</div></li>`; }).join("")}</ul>` : ""}
+    ${p.files.length ? `<h3>Files</h3><ul class="mlist">${p.files.map(fileLi).join("")}</ul>` : ""}`;
+}
+
+function blueprintHtml(bp) {
+  const parts = bp.parts.map(p => { const g = partById(p.id); return { ...p, name: p.name !== p.id || !g ? p.name : g.name, kind: p.kind !== "other" || !g ? p.kind : g.kind, summary: p.summary || g?.summary || "" }; });
+  return `<p class="n">Blueprint: dashed blue parts are new, dashed amber ones change, solid ones exist already.</p><div class="mapwrap">${mapHtml(parts, bp.links.map(l => ({ ...l, cls: "strong", title: l.label })), {
+    mini: true, cls: p => ["bp-" + p.status], meta: p => `${p.status}${p.files?.length ? ` · ${p.files.length} file${p.files.length > 1 ? "s" : ""}` : ""}`,
+  })}</div>${bp.links.some(l => l.label) ? `<ul class="mlist" style="margin-top:6px">${bp.links.filter(l => l.label).map(l => `<li class="mdesc">${esc(parts.find(p => p.id === l.from)?.name)} → ${esc(parts.find(p => p.id === l.to)?.name)}: ${esc(l.label)}</li>`).join("")}</ul>` : ""}`;
+}
+
+async function mapAct(act, el) {
+  const msg = t => { const m = $("mapmsg"); if (m) m.textContent = t; };
+  if (act === "tools") { mapTools = !mapTools; store.set("mtools", mapTools ? "1" : "0"); }
+  else if (act === "health") { mapHealth = !mapHealth; }
+  else if (act === "closeask") { askShown = null; askParts = []; }
+  else if (act === "rescan") { el.disabled = true; try { await post("api/map/rescan", {}); await loadGraph(true); } catch (err) { alert(err.message); } el.disabled = false; }
+  else if (act === "make" || act === "update") {
+    const text = act === "make" ? "Make the project map: run `python3 ~/.claude/project-plan/hook.py map worksheet` and follow it."
+      : `Update the project map${el.dataset.part ? ` for the ${el.dataset.part} part` : ""}: run \`python3 ~/.claude/project-plan/hook.py map worksheet${el.dataset.part ? " " + el.dataset.part : ""}\` and follow it.`;
+    try { await post("api/request", { kind: "task", text }); el.textContent = "Sent to Claude ✓"; el.disabled = true; msg("A listening Claude session picks it up; otherwise the next one you start or type in."); tick(true); return; }
+    catch (err) { alert(err.message); }
+  }
+  mapSig = ""; draw();
+}
+
+async function mapFix(id, btn) {
+  const i = graph.health.issues.find(x => x.id === id); if (!i) return;
+  const text = `Fix this issue from the board's health check: ${i.title}.\n${i.detail}\n${i.fix}\nWhere:\n${i.locations.map(l => `- ${l.file}:${l.line} ${l.text}`).join("\n")}\nIf any of these is a false alarm or intended, say so instead of changing it.`;
+  btn.disabled = true;
+  try { await post("api/request", { kind: "task", text }); const m = document.querySelector(`[data-mmsg="${CSS.escape(id)}"]`); if (m) m.textContent = "Sent to Claude ✓"; tick(true); }
+  catch (err) { alert(err.message); btn.disabled = false; }
+}
+
+$("askform").addEventListener("submit", async e => {
+  e.preventDefault();
+  const q = e.target.q.value.trim(); if (!q || askBusy) return;
+  const followup = askShown !== null;
+  askBusy = q; askShown = null; mapSig = ""; draw();
+  try { const r = await post("api/map/ask", { q, followup }); await loadGraph(true); askShown = asks.length - 1; askParts = r.parts || []; e.target.q.value = ""; }
+  catch (err) { alert(err.message); }
+  askBusy = false; mapSig = ""; draw();
+});
+$("mq").addEventListener("input", () => { mapSig = ""; draw(); });
+
 // ---------------------------------------------------------------- shell
 
 function draw() {
@@ -934,9 +1246,10 @@ function draw() {
   $("pbadge").innerHTML = wait ? `<span class="badge">${wait}</span>` : "";
   VIEWS.forEach(v => $("v-" + v).hidden = v !== view);
   document.querySelectorAll("[data-view]").forEach(b => b.closest(".seg") && b.setAttribute("aria-pressed", b.dataset.view === view));
-  ({ live: () => drawLive(all), today: drawToday, week: drawWeek, timeline: drawTimeline, proposals: drawProposals, history: drawHistory })[view]();
+  ({ live: () => drawLive(all), today: drawToday, week: drawWeek, timeline: drawTimeline, proposals: drawProposals, history: drawHistory, map: drawMap })[view]();
   notify(all);
   countdown();
+  requestAnimationFrame(drawEdges);
 }
 
 // Browser alerts: approval requests, finished replies, and proposals waiting for your input.
@@ -972,9 +1285,21 @@ function select(id) {
 }
 
 document.addEventListener("click", e => {
-  const t = e.target.closest("[data-rename],[data-commit],[data-permit],[data-diff],[data-hpin],[data-hnote],[data-view],[data-pid],[data-ver],[data-id],[data-f],[data-span]");
+  const t = e.target.closest("[data-rename],[data-commit],[data-permit],[data-diff],[data-hpin],[data-hnote],[data-view],[data-pid],[data-ver],[data-id],[data-f],[data-span],[data-mpart],[data-mfile],[data-mfix],[data-mdis],[data-mact],[data-mask],[data-mspan]");
   if (!t || t.closest("form")) return;
-  if (t.dataset.rename) { const cur = (data.sessions || {})[t.dataset.rename]; const name = prompt("Rename this session (leave empty for the automatic title)", cur?.name || cur?.title || ""); if (name !== null) post("api/rename", { session: t.dataset.rename, name }).then(() => tick(true)).catch(err => alert(err.message)); }
+  if (t.dataset.mpart !== undefined) {
+    if (t.dataset.mpart && !partById(t.dataset.mpart)) return;  // a blueprint's new part: nothing to open yet
+    mapSel = t.dataset.mpart || null; mapFile = null; mapHealth = false; store.set("mapsel", mapSel || ""); mapSig = "";
+    if (view !== "map") setView("map"); else draw();
+    if (mapSel && matchMedia("(max-width:1100px)").matches) $("mappanel").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  else if (t.dataset.mfile) { const path = t.dataset.mfile; mapSel = partOf(path) || mapSel; mapFile = mapFile === path ? null : path; mapHealth = false; store.set("mapsel", mapSel || ""); mapSig = ""; if (view !== "map") setView("map"); else draw(); }
+  else if (t.dataset.mfix) mapFix(t.dataset.mfix, t);
+  else if (t.dataset.mdis) post("api/map/dismiss", { id: t.dataset.mdis, on: t.dataset.on === "true" }).then(() => loadGraph(true)).then(() => draw()).catch(err => alert(err.message));
+  else if (t.dataset.mact) mapAct(t.dataset.mact, t);
+  else if (t.dataset.mask) { askShown = +t.dataset.mask; askParts = asks[askShown]?.parts || []; mapSig = ""; draw(); }
+  else if (t.dataset.mspan) { mapSpan = +t.dataset.mspan; store.set("mspan", mapSpan); mapSig = ""; draw(); }
+  else if (t.dataset.rename) { const cur = (data.sessions || {})[t.dataset.rename]; const name = prompt("Rename this session (leave empty for the automatic title)", cur?.name || cur?.title || ""); if (name !== null) post("api/rename", { session: t.dataset.rename, name }).then(() => tick(true)).catch(err => alert(err.message)); }
   else if (t.dataset.commit) askCommit(t.dataset.commit, t);
   else if (t.dataset.permit) permit(t.dataset.sid, t.dataset.nid, t.dataset.permit, t);
   else if (t.dataset.diff !== undefined) toggleDiff(t.dataset.diff);
@@ -1087,6 +1412,7 @@ function palSource() {
     go("Theme: match the system", "action", () => setTheme("system")), go("Theme: light", "action", () => setTheme("light")), go("Theme: dark", "action", () => setTheme("dark")),
     go("Keyboard shortcuts", "action · ?", () => $("keys").showModal()),
     ...sessions().map(s => go(s.title || "New session", `session · ${LABEL[state(s)] || state(s)}`, () => select(s.id))),
+    ...(graph?.parts || []).map(p => go(p.name, "map part", () => { mapSel = p.id; mapFile = null; store.set("mapsel", p.id); mapSig = ""; setView("map"); })),
     ...props().map(p => go(p.title, `proposal · ${PSTATE[p.status]?.[1] || p.status}`, () => { selProp = p.id; store.set("prop", p.id); setView("proposals"); })),
     ...hist.slice(0, 150).map(e => go(e.prompt || "(no prompt)", `request · ${new Date(e.started).toLocaleDateString([], { day: "numeric", month: "short" })}`, () => { $("hq").value = (e.prompt || "").slice(0, 60); setView("history"); })),
   ];
@@ -1237,7 +1563,7 @@ $("keysbtn").onclick = () => $("keys").showModal();
 document.addEventListener("keydown", e => {
   if (e.metaKey || e.ctrlKey || e.altKey || e.target.closest("input, textarea, select, [contenteditable]") || document.querySelector("dialog[open]")) return;
   const k = e.key;
-  if (k >= "1" && k <= "6") setView(VIEWS[+k - 1]);
+  if (k >= "1" && k <= "7") setView(VIEWS[+k - 1]);
   else if (k === "j" || k === "k") {
     const step = k === "j" ? 1 : -1;
     if (view === "proposals") { const ids = [...document.querySelectorAll("#plist [data-pid]")].map(b => b.dataset.pid); if (ids.length) { selProp = ids[(Math.max(0, ids.indexOf(selProp)) + step + ids.length) % ids.length]; store.set("prop", selProp); propSig = ""; draw(); } }
@@ -1246,6 +1572,8 @@ document.addEventListener("keydown", e => {
   else if (k === "a" || k === "x") { const b = document.querySelector(`#detail [data-permit="${k === "a" ? "allow" : "deny"}"]`); if (b && !b.disabled) b.click(); else return; }
   else if (k === "n" && !SNAP) $("newbtn").click();
   else if (k === "/") { setView("history"); $("hq").focus(); }
+  else if (k === "m") { setView("map"); $("mq").focus(); }
+  else if (k === "Escape" && view === "map" && (mapSel || askParts.length)) { mapSel = null; askParts = []; store.set("mapsel", ""); mapSig = ""; draw(); }
   else if (k === "t") { const order = ["system", "light", "dark"]; setTheme(order[(order.indexOf(store.get("theme") || "system") + 1) % 3]); }
   else if (k === "?") $("keys").showModal();
   else return;
@@ -1276,6 +1604,7 @@ const tidy = raw => raw.replace(/<task-notification>(?:[^"\\]|\\.)*/g, "Backgrou
 const get = async url => { const r = await fetch(url + (url.includes("?") ? "&" : "?") + Date.now()); if (!r.ok) throw new Error(r.status); return r.text(); };
 async function tick(force) {
   try {
+    await loadGraph();
     const [p, b] = (await Promise.all([get(document.visibilityState === "visible" ? "progress.json?seen" : "progress.json"), get("board.json").catch(() => "{}")])).map(tidy);
     let changed = force || p !== lastP || b !== lastB || Date.now() - lastDraw > 15000;
     if (force || p !== lastP) { const h = tidy(await get("history.jsonl").catch(() => "")); if (h !== lastH) { lastH = h; hist = parseHist(h); changed = true; } }
@@ -1288,6 +1617,7 @@ async function tick(force) {
 }
 
 if (SNAP) {
+  graph = SNAP.map || null;
   data = named(JSON.parse(tidy(JSON.stringify(SNAP.progress || {})))); board = { proposals: {}, requests: [], listeners: {}, ...JSON.parse(tidy(JSON.stringify(SNAP.board || {}))) }; lastH = tidy(SNAP.history || ""); hist = parseHist(lastH);
   document.querySelectorAll(".live-only").forEach(el => el.hidden = true);
   $("snapbanner").hidden = false;

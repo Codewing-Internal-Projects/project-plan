@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.0 (2026-11-10)
+
+- **Map view:** the project as parts (screens, server, data, outside services, tools) with files, endpoints and connections. It comes from a free scan (imports, PHP class references, endpoints, requests matched to endpoints) plus a description Claude writes on request (`hook.py map worksheet` → `.progress/map/architecture.json` → `map described`). It rescans by itself when a session stops and flags parts whose files changed since they were described.
+- **Recent work on the map:** parts touched by today's (or this week's) requests are highlighted; each part lists the requests that changed it, and Live and History cards show the parts a request touched.
+- **Health check:** secrets in code, committed `.env` files, REST routes without a permission check, public endpoints that change data, SQL built from variables, unsafe input handling, `eval`, unverified Stripe webhooks, open CORS, very large files, localhost URLs. Each comes with **Ask Claude to fix** and **Dismiss**.
+- **Ask the map:** questions about the code from the board, answered by `claude -p` with read-only tools, with file and line references and the parts involved highlighted.
+- **Map lookups for Claude:** `hook.py map overview | find | show`, mentioned in the rules.
+- **Blueprints:** proposals can include a planned map, drawn on the proposal with new and changed parts marked.
+
 ## 1.0.1 (2026-11-10)
 
 - **Fix:** the History card header no longer gets pushed to the right edge by the ★ pin button.
