@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1 (2026-11-10)
+
+- **Fix:** the History card header no longer gets pushed to the right edge by the ★ pin button.
+- **README:** rewritten for first-time users, with screenshots of every view, diagrams of how the board and proposals work, a step-by-step setup, team guidelines, a glossary and an FAQ.
+
 ## 1.0.0 (2026-11-10)
 
 First release as a Claude Code plugin in the `codewing` marketplace.
