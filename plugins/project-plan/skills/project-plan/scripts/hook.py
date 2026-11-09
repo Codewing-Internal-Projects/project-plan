@@ -1563,7 +1563,7 @@ def main():
         return hub()
     if args[:1] == ["check-update"]:
         u = check_update()
-        return print(update_text({"current": APP_VERSION, "latest": u["latest"]}) if u.get("latest") and vtuple(u["latest"]) > vtuple(APP_VERSION)
+        return print(update_text({"current": APP_VERSION, "latest": u["latest"]}) if APP_VERSION and u.get("latest") and vtuple(u["latest"]) > vtuple(APP_VERSION)
                      else f"project-plan {APP_VERSION or '(hand install)'} · latest {u.get('latest') or 'unknown'}{' · ' + u['error'] if u.get('error') else ''}")
     ev = None if args else json.load(sys.stdin)
     root = find_project(os.environ.get("CLAUDE_PROJECT_DIR") or (ev or {}).get("cwd") or os.getcwd())
