@@ -1,11 +1,12 @@
 # Changelog
 
-## Unreleased
+## 1.4.0 (2026-11-10)
 
 - **Security view:** a new view under Work for security-audit runs, replacing the audit box in the map's health check. It shows counts of confirmed findings, leads to check by hand, unreviewed areas and dismissed findings; an expandable card per finding (what it is, root cause, why it isn't confirmed, how to check it here and on a live site, the path through the code with links to the map, **Check/Fix with Claude**, **Not a problem**); and **Report**, **Coverage** and **Files** tabs that render every file the audit wrote (`REPORT.md`, `NEEDS-VALIDATION.md`, `findings.json` and the rest). A run picker switches between runs and marks findings that are new since the run before, or no longer reported. Unconfirmed leads (`needs_validation`) are shown too; before, only confirmed findings were.
 - **Map health check:** the *Security audit* box now sums up the last run and links to the Security view; audit findings no longer mix with the pattern-matching issues.
 - Fix: **Rescan** and **Not a problem** rebuild the map in a fresh process, so a board server started before an update no longer rebuilds it with old code (which dropped the security-audit summary).
 - Keys `1` to `9` switch views (Security is `8`, Savings `9`).
+- Internal: `hook.py` is split into `board_server.py` and `board_cli.py`, and `codemap.py` into extract, scan and health modules; no change in behaviour.
 
 ## 1.3.0 (2026-11-10)
 

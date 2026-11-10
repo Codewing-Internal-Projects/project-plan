@@ -4,7 +4,7 @@
 
 ### See what Claude Code is doing, answer it from your browser, and keep a record of everything it did.
 
-![Version 1.3.0](https://img.shields.io/badge/version-1.3.0-2f6fed) ![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-1c1c1a) ![Runs locally](https://img.shields.io/badge/runs-locally-1b8a4b) ![No dependencies](https://img.shields.io/badge/dependencies-none-7151d0)
+![Version 1.4.0](https://img.shields.io/badge/version-1.4.0-2f6fed) ![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-1c1c1a) ![Runs locally](https://img.shields.io/badge/runs-locally-1b8a4b) ![No dependencies](https://img.shields.io/badge/dependencies-none-7151d0)
 
 <img src="docs/images/live.png" alt="The project board: sessions on the left, the selected session's plan, progress and activity on the right" width="100%">
 
