@@ -35,12 +35,12 @@ When you ask Claude Code to do something, it works in your terminal. You can't e
 | 🙋 | **Never miss "Claude is waiting"** | A red banner, a soft chime, a desktop notification and a count in the browser tab tell you when Claude needs you. |
 | ✅ | **Approve from the browser** | Press **Allow** or **Deny** on the board instead of hunting for the right terminal. |
 | 💬 | **Decide with a form, not a chat** | For "what should we build?" questions, Claude posts a **proposal** with options, a mockup and a plan. You tick boxes and press **Approve**. |
-| 🧾 | **A record of everything** | Every request, with what was done, files changed, test results and cost. Searchable, with pins and your own notes. |
+| 🧾 | **A record of everything** | Every request, with what was done, files changed (with a before/after view of each), test results and cost. Searchable, with pins and your own notes. |
 | 📊 | **Standups and reports for free** | **Copy as standup** (Today) and **Copy as Markdown** (Week) produce a summary you can paste. |
 | 🧪 | **Catch "done" that isn't** | The board warns when tests passed *before* the last edit, and flags tests that pass and fail at random (*flaky*). |
-| 💸 | **Know the cost** | Estimated spend per session and per day, with an optional daily budget. |
-| 🗺️ | **A live map of your code** | Every project gets an interactive map: parts, screens, endpoints and how they connect, what each request changed, what's being edited right now, a health check, answers to questions, guided flows and blueprints for apps you haven't built yet. |
-| 🗂️ | **All projects in one tab** | A hub page lists every project with a board, and you can answer all of them from there. |
+| 💸 | **Know the cost** | Estimated spend per session and per day, with an optional daily budget. With [TokenEconomizer](#-works-with-other-tools-optional), **Savings** shows what it cut. |
+| 🗺️ | **A live map of your code** | Every project gets an interactive map: parts, screens, endpoints and how they connect, what each request changed, what's being edited right now, a health check (plus a full security audit, if you like), answers to questions, guided flows and blueprints for apps you haven't built yet. |
+| 🗂️ | **All projects in one tab** | A hub page lists every project with a board, and you can answer all of them from there. Each board's browser tab is named after its project. |
 | 🔒 | **Private by default** | It runs on your computer. Nothing is uploaded, and there's nothing to install from npm or pip. |
 
 ---
@@ -144,7 +144,7 @@ set up the progress board
 
 ## 🗺️ A tour of the board
 
-The tabs at the top switch between six views: **Live · Today · Week · Timeline · Proposals · History**. You can also press the keys `1` to `6`.
+The menu on the left switches between eight views: **Live · Today · Week · Timeline · Proposals · History · Map · Savings**. You can also press the keys `1` to `8`. The browser tab shows the project's name (*my-app | Project Board*), so boards for different projects are easy to tell apart.
 
 ### 1. Live: what's happening right now
 
@@ -201,7 +201,7 @@ Press **New request** to ask Claude to *brainstorm an idea*, *suggest features* 
 
 <img src="docs/images/diff.png" alt="A file's changes shown in green and red" width="100%">
 
-Click any file under **Files changed** to see what was added (green) and removed (red). Files not committed to git yet carry a small tag, and **Ask Claude to commit** sends Claude a request to commit them with a good message.
+Press **View changes** next to any file under **Files changed** (in Live and in History) to see **Before** and **After**: **Side by side** or **Unified**, just the changed lines or the **Whole file**. Every edit is recorded, including files changed by shell commands such as `sed -i` or a script, so History shows what each request changed, not only what's uncommitted now. Files not committed to git yet carry a small tag, and **Ask Claude to commit** sends Claude a request to commit them with a good message.
 
 ### 6. Today, Week and Timeline: your reports
 
@@ -224,7 +224,7 @@ Click any file under **Files changed** to see what was added (green) and removed
 
 <img src="docs/images/history.png" alt="History view" width="100%">
 
-Every request you gave Claude, grouped by day, with the tasks done, files changed, test result, cost and Claude's reply. Search it, **★ pin** the important ones, and **add your own notes**.
+Every request you gave Claude, grouped by day, with the tasks done, files changed (**View changes** shows what that request did to each), test result, cost and Claude's reply. Search it, **★ pin** the important ones, and **add your own notes**.
 
 ### 8. Map: how the project fits together
 
@@ -256,7 +256,7 @@ The **Map** tab shows your project as a handful of **parts** (screens, server co
 <td width="50%"><img src="docs/images/map-blueprint.png" alt="A blueprint with its design review"></td>
 </tr>
 <tr>
-<td><b>Health check:</b> flags common mistakes, such as keys in the code or sent to the browser, database tables without access rules, endpoints anyone can call, unverified payment webhooks, SQL built from raw input and unused files. <b>Show on map</b> highlights them; <b>Fix with Claude</b> hands the details to a Claude session; <b>Not a problem</b> hides a false alarm (with a reason, if you like).</td>
+<td><b>Health check:</b> flags common mistakes, such as keys in the code or sent to the browser, database tables without access rules, endpoints anyone can call, unverified payment webhooks, SQL built from raw input and unused files. <b>Show on map</b> highlights them; <b>Fix with Claude</b> hands the details to a Claude session; <b>Not a problem</b> hides a false alarm (with a reason, if you like).<br><br><b>Security audit:</b> the health check is a quick pattern match. For a real audit, press <b>Run a security audit</b> at the top of the panel: Claude uses Cloudflare's free <a href="https://github.com/cloudflare/security-audit-skill">security-audit</a> skill, where agents hunt for vulnerabilities and a fresh agent verifies each one. Confirmed findings appear in the same list with the same buttons, and the box shows when it ran, what still needs checking by hand and where the full report is. If the skill isn't installed, the box shows the commands to install it.</td>
 <td><b>Blueprints:</b> plan an app before it exists. Give Claude a PRD or spec (<i>"make a blueprint from docs/prd.md"</i>) and it draws the parts, files, endpoints and screens it would need. A <b>design review</b> lists open questions and risky decisions; <b>Change</b> reshapes the plan ("also plan out refunds") with <b>Undo</b>; every part has <b>Build this with Claude</b>.</td>
 </tr>
 </table>
@@ -275,13 +275,17 @@ The **Map** tab shows your project as a handful of **parts** (screens, server co
 - It's pattern matching, not a compiler: it finds most connections, not all. Ask Claude to add a missing one to the map.
 </details>
 
-### 9. All your projects in one tab
+### 9. Savings: what TokenEconomizer saved
+
+With the free [TokenEconomizer](#-works-with-other-tools-optional) plugin installed, **Savings** compares the average cost per request before and after it, and shows what it learned about the project (*facts* it adds at every session start), the tools it left out because they're never used (**apply** or **restore** them from here), its loop guard, and its settings. Without the plugin, the view shows how to install it.
+
+### 10. All your projects in one tab
 
 <img src="docs/images/hub.png" alt="The all-projects hub" width="100%">
 
 Open **http://localhost:4320**, or click **All projects ↗** on any board, to see every project that has a board. While this tab is open, it gives the alerts for all your projects, and you can approve requests from here too.
 
-### 10. Settings, search and more
+### 11. Settings, search and more
 
 <table>
 <tr>
@@ -359,6 +363,8 @@ Handy things to say to Claude:
 | **Flow** | A step-by-step walkthrough of one job through the code, like "buying something". |
 | **Blueprint** | A map of an app that isn't built yet, planned from a PRD or spec. |
 | **Health check** | Automatic checks on the map for common security and quality mistakes. |
+| **Security audit** | A deeper check by Cloudflare's security-audit skill; its confirmed findings join the health check. |
+| **Savings** | What the TokenEconomizer plugin learned in a project and how much it cut the cost per request. |
 | **Context %** | How full Claude's working memory is. When it's full, older details get summarised. |
 
 ---
