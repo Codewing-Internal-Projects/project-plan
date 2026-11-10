@@ -1,12 +1,10 @@
-"""The map's health check: unused files, secrets in the code, open endpoints, big files and the security-audit findings. Part of codemap (import codemap first)."""
-import glob
+"""The map's health check: unused files, secrets in the code, open endpoints, and big files. Part of codemap (import codemap first)."""
 import hashlib
 import os
 import re
-from datetime import date, datetime, timezone
+from datetime import date
 
-import codemap
-from codemap import CODE, ext, JS, rj, TEST, WRITE_METHODS
+from codemap import CODE, ext, JS, TEST, WRITE_METHODS
 from codemap_extract import _grep_chunk, lineno, pool_map
 
 
@@ -117,55 +115,6 @@ PUBLIC_OK = re.compile(r"PUBLISHABLE|ANON|SUPABASE_KEY$|PUBLIC_KEY$|SITE_KEY|SIT
 AUTH_FLOW = re.compile(r"(?:^|/)(?:log-?in|log-?out|sign-?in|sign-?out|sign-?up|register|session|refresh|token|callback|oauth|auth/[\w-]+|verify-email|forgot-password|reset-password)(?:/|$)", re.I)
 OPEN_ON_PURPOSE = re.compile(r"robots\.txt|llms(?:-full)?\.txt|rss|feed|atom|sitemap|health|healthz|ping|status|version|favicon|manifest|og(?:-image)?|"
                              r"\.well-known|opengraph|twitter-image|icon", re.I)
-
-
-AUDITS = os.path.expanduser("~/security-audit-skill")  # where the security-audit skill writes its runs by default
-AUDIT_SEV = {"critical": "high", "high": "high", "medium": "medium", "low": "low", "informational": "low"}
-AUDIT_SKILL = ["~/.claude/skills/security-audit/SKILL.md", "~/.agents/skills/security-audit/SKILL.md",  # by hand, or `npx skills add`
-               "~/.claude/plugins/cache/*/*/*/skills/security-audit/SKILL.md", "{root}/.claude/skills/security-audit/SKILL.md"]
-
-
-def audit_skill():
-    """Whether Claude Code can load Cloudflare's security-audit skill here (globally, from a plugin, or in this project)."""
-    root = glob.escape(os.path.abspath(codemap.ROOT))
-    return any(glob.glob(os.path.expanduser(p.format(root=root))) for p in AUDIT_SKILL)
-
-
-def audit():
-    """The newest finished security-audit run for this project: (its confirmed findings as health issues, a summary or None)."""
-    root, runs = os.path.abspath(codemap.ROOT), []
-    obj = lambda x: x if isinstance(x, dict) else {}  # noqa: E731
-    for meta in glob.glob(os.path.join(AUDITS, "*", "run-*", "run-metadata.json")):
-        m, run = rj(meta, {}), os.path.dirname(meta)
-        target = os.path.abspath(str(m.get("target") or "")) if isinstance(m, dict) else ""
-        found = os.path.join(run, "findings.json")
-        if (target == root or target.startswith(root + os.sep)) and m.get("run_status") != "in_progress" and os.path.isfile(found):
-            runs.append((os.path.getmtime(found), run, m, target))
-    if not runs:
-        return [], None
-    when, run, m, target = max(runs)
-    records = rj(os.path.join(run, "findings.json"), [])
-    records = [r for r in records if isinstance(r, dict)] if isinstance(records, list) else []
-    issues = []
-    for r in records:
-        if r.get("verdict") != "confirmed":
-            continue
-        locs = []
-        for t in r.get("trace") if isinstance(r.get("trace"), list) else []:
-            f = str(t.get("file") or "") if isinstance(t, dict) else ""
-            if f:
-                rel = os.path.relpath(f if os.path.isabs(f) else os.path.join(target, f), root)
-                if not rel.startswith(".."):
-                    locs.append({"file": rel, "line": t["line"] if isinstance(t.get("line"), int) else 0, "text": str(t.get("description") or "")[:160], "node": "file:" + rel})
-        sev = AUDIT_SEV.get(str(obj(r.get("severity")).get("overall_severity")), "medium")
-        issues.append({"id": "audit:" + str(r.get("fingerprint") or r.get("title"))[:120], "rule": "security-audit", "severity": sev,
-                       "title": str(r.get("title") or "Security finding"), "detail": str(r.get("description") or "")[:600],
-                       "fix": str(obj(r.get("remediation")).get("strategy") or ""), "locations": locs[:25]})
-    report = os.path.join(run, "REPORT.md")
-    return issues, {"run": run, "when": datetime.fromtimestamp(when, timezone.utc).isoformat(timespec="seconds"),
-                    "status": str(m.get("run_status") or ""), "profile": str(m.get("profile") or ""), "ref": str(m.get("source_ref") or "")[:80],
-                    "confirmed": len(issues), "needs": sum(1 for r in records if r.get("verdict") == "needs_validation"),
-                    "report": report if os.path.isfile(report) else ""}
 
 
 def health(sc, tracked_files):

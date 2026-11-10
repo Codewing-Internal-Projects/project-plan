@@ -9,7 +9,7 @@ from contextlib import redirect_stdout
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "plugins", "project-plan", "skills", "project-plan", "scripts"))
 import codemap  # noqa: E402
-import codemap_health  # noqa: E402
+import secaudit  # noqa: E402
 
 FILES = {
     "server/app.js": """const express = require('express');
@@ -374,7 +374,7 @@ def main():
 
 
 def audit_runs():
-    """The newest finished security-audit run for this project becomes health issues; other projects and running audits don't."""
+    """Security-audit runs for this project: a summary on the map, the details in the Security view; other projects and running audits are skipped."""
     root, audits = tempfile.mkdtemp(), tempfile.mkdtemp()
     write(root, {"api/app.js": "app.get('/x', (req, res) => res.send(req.query.q));\n"})
     git("init", "-q", root)
@@ -388,21 +388,31 @@ def audit_runs():
         d = os.path.join(audits, "proj", name)
         write(d, {"run-metadata.json": json.dumps({"target": target, "run_status": status, "profile": "quick"}), "findings.json": json.dumps(records)})
         os.utime(os.path.join(d, "findings.json"), (1000 + i, 1000 + i))
-    codemap_health.AUDITS = audits
+    secaudit.AUDITS = audits
     codemap.setup(root, os.path.join(root, ".progress"))
     g = codemap.build(quiet=True)
-    i = issue(g, "security-audit")
-    assert i and i["id"] == "audit:xss-x" and i["severity"] == "high" and i["fix"] == "Escape q.", i
-    assert i["locations"] == [{"file": "api/app.js", "line": 1, "text": "echoes q", "node": "file:api/app.js"}], i["locations"]
+    assert not issue(g, "security-audit"), "audit findings live in the Security view, not the map's health check"
     a = g["audit"]
-    assert a["run"].endswith("run-2") and a["confirmed"] == 1 and a["needs"] == 1 and a["profile"] == "quick", a
+    assert a["confirmed"] == 1 and a["needs"] == 1 and a["profile"] == "quick", a
+
+    # The Security view: newest run by default, compared with the one before it; unknown run ids fall back to the newest.
+    v = secaudit.view(root, os.path.join(root, ".progress", "map"))
+    assert [r["id"] for r in v["runs"]] == ["proj/run-2", "proj/run-1"], v["runs"]
+    assert v["run"]["prev"] == "proj/run-1", v["run"]
+    f = next(x for x in v["findings"] if x["key"] == "xss-x")
+    assert f["severity"] == "critical" and f["fix"] == "Escape q." and f["change"] == "new", f
+    assert f["trace"][0]["file"] == "api/app.js" and f["trace"][0]["line"] == 1, f["trace"]
+    assert v["gone"] == [{"title": "Reflected XSS in /x", "verdict": "confirmed"}], v["gone"]
+    assert [x["name"] for x in v["files"]] == ["findings.json"], v["files"]
+    assert secaudit.view(root, "/nowhere", "../../etc")["run"]["id"] == "proj/run-2"
+    old = secaudit.view(root, "/nowhere", "proj/run-1")
+    assert old["run"]["prev"] == "" and old["findings"][0]["change"] == "", old
 
     # The skill itself: missing, then installed in the project's own .claude/skills.
-    codemap_health.AUDIT_SKILL = [os.path.join(audits, "nowhere", "SKILL.md"), "{root}/.claude/skills/security-audit/SKILL.md"]
-    assert codemap.audit_skill() is False
+    secaudit.SKILL = [os.path.join(audits, "nowhere", "SKILL.md"), "{root}/.claude/skills/security-audit/SKILL.md"]
+    assert secaudit.skill_installed(root) is False
     write(root, {".claude/skills/security-audit/SKILL.md": "---\nname: security-audit\n---\n"})
-    assert codemap.audit_skill() is True
-
+    assert secaudit.skill_installed(root) is True
 
 def multi_repo():
     """A folder of repos: paths get the repo prefix, requests cross repos, a second worktree is skipped."""

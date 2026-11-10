@@ -356,14 +356,21 @@ def api_te(body):
 MAP_LOCK = threading.Lock()
 
 
+def rebuild_map():
+    """Rebuild the map in a fresh process, since this server may have loaded the map code before it was updated. An error line, or ""."""
+    r = subprocess.run([sys.executable, os.path.abspath(hook.__file__), "map", "update", "--quiet"], cwd=hook.ROOT,
+                       capture_output=True, text=True, timeout=600)
+    return (r.stderr.strip().splitlines() or ["The map rebuild failed."])[-1][:300] if r.returncode else ""
+
+
 def api_map(path, body):
     """The Map view: rescan, dismiss a health issue, notes, Ask, flows on request, and blueprint undo."""
     import codemap, mapapp
     codemap.setup(hook.ROOT, hook.DIR)
     if path == "/api/map/rescan":
         with MAP_LOCK:
-            mapapp.planned(quiet=True) if mapapp.blueprint_mode() else codemap.build(quiet=True)
-        return 200, {"ok": True}
+            err = rebuild_map()
+        return (500, {"error": err}) if err else (200, {"ok": True})
     if path == "/api/map/dismiss":
         f = os.path.join(hook.DIR, "map", "dismissed.json")
         with MAP_LOCK:
@@ -373,8 +380,8 @@ def api_map(path, body):
             else:
                 d.pop(str(body.get("id")), None)
             write_json(f, d)
-            mapapp.planned(quiet=True) if mapapp.blueprint_mode() else codemap.build(quiet=True)
-        return 200, {"ok": True}
+            err = rebuild_map()
+        return (500, {"error": err}) if err else (200, {"ok": True})
     if path == "/api/map/note":
         p = clip(body.get("path"), 500)
         if not p:
@@ -483,6 +490,9 @@ def serve():
                 self.send_header("Content-Length", str(len(data)))
                 self.end_headers()
                 return self.wfile.write(data)
+            if url.path == "/api/security":
+                import secaudit
+                return self.send(200, secaudit.view(hook.ROOT, os.path.join(hook.DIR, "map"), parse_qs(url.query).get("run", [""])[0]))
             if url.path == "/api/diff":
                 q = parse_qs(url.query)
                 return self.send(*api_diff(q.get("path", [""])[0], q.get("full", [""])[0] == "1"))

@@ -37,7 +37,7 @@ try:
 except (OSError, ValueError):
     IS_PLUGIN, APP_VERSION = False, ""
 REPO = "Codewing-Internal-Projects/project-plan"  # where updates come from
-VERSION = 13  # bump when the server changes, so running boards restart with the new code
+VERSION = 14  # bump when the server changes, so running boards restart with the new code
 
 # $ per million tokens: (model id fragment, input, output, cache read). Cache writes cost 1.25x input (5 min) or 2x (1 h).
 # ponytail: prices as of 2026-10-06 (claude-api skill); an unknown model counts as $0, add it here when prices change

@@ -144,7 +144,7 @@ set up the progress board
 
 ## 🗺️ A tour of the board
 
-The menu on the left switches between eight views: **Live · Today · Week · Timeline · Proposals · History · Map · Savings**. You can also press the keys `1` to `8`. The browser tab shows the project's name (*my-app | Project Board*), so boards for different projects are easy to tell apart.
+The menu on the left switches between nine views: **Live · Today · Week · Timeline · Proposals · History · Map · Security · Savings**. You can also press the keys `1` to `9`. The browser tab shows the project's name (*my-app | Project Board*), so boards for different projects are easy to tell apart.
 
 ### 1. Live: what's happening right now
 
@@ -256,7 +256,7 @@ The **Map** tab shows your project as a handful of **parts** (screens, server co
 <td width="50%"><img src="docs/images/map-blueprint.png" alt="A blueprint with its design review"></td>
 </tr>
 <tr>
-<td><b>Health check:</b> flags common mistakes, such as keys in the code or sent to the browser, database tables without access rules, endpoints anyone can call, unverified payment webhooks, SQL built from raw input and unused files. <b>Show on map</b> highlights them; <b>Fix with Claude</b> hands the details to a Claude session; <b>Not a problem</b> hides a false alarm (with a reason, if you like).<br><br><b>Security audit:</b> the health check is a quick pattern match. For a real audit, press <b>Run a security audit</b> at the top of the panel: Claude uses Cloudflare's free <a href="https://github.com/cloudflare/security-audit-skill">security-audit</a> skill, where agents hunt for vulnerabilities and a fresh agent verifies each one. Confirmed findings appear in the same list with the same buttons, and the box shows when it ran, what still needs checking by hand and where the full report is. If the skill isn't installed, the box shows the commands to install it.</td>
+<td><b>Health check:</b> flags common mistakes, such as keys in the code or sent to the browser, database tables without access rules, endpoints anyone can call, unverified payment webhooks, SQL built from raw input and unused files. <b>Show on map</b> highlights them; <b>Fix with Claude</b> hands the details to a Claude session; <b>Not a problem</b> hides a false alarm (with a reason, if you like).<br><br>The health check is a quick pattern match. For a real audit, see <a href="#9-security-what-the-audit-found">Security</a>; the panel's <i>Security audit</i> box sums up the last one and links there.</td>
 <td><b>Blueprints:</b> plan an app before it exists. Give Claude a PRD or spec (<i>"make a blueprint from docs/prd.md"</i>) and it draws the parts, files, endpoints and screens it would need. A <b>design review</b> lists open questions and risky decisions; <b>Change</b> reshapes the plan ("also plan out refunds") with <b>Undo</b>; every part has <b>Build this with Claude</b>.</td>
 </tr>
 </table>
@@ -275,17 +275,28 @@ The **Map** tab shows your project as a handful of **parts** (screens, server co
 - It's pattern matching, not a compiler: it finds most connections, not all. Ask Claude to add a missing one to the map.
 </details>
 
-### 9. Savings: what TokenEconomizer saved
+### 9. Security: what the audit found
+
+The health check is a quick pattern match. For a real audit, press **Run a quick audit** (or **Run a standard audit**, which covers more) in **Security**: Claude uses Cloudflare's free [security-audit](#-works-with-other-tools-optional) skill, where agents hunt for vulnerabilities and a fresh agent tries to prove each one. The view then shows the latest run for the project:
+
+- **At the top:** when it ran, the profile and commit, and counts of confirmed findings, leads to check by hand, areas it didn't review and findings you marked as not a problem. When nothing could be confirmed (for example, the audit couldn't run the code on your computer), a note says why.
+- **Findings:** one row per finding. Open it for what it is, the root cause, why it isn't confirmed, how to check it here and on your live site, and the path through the code, with links that open each file on the map. **Check with Claude** (or **Fix with Claude** for a confirmed finding) hands it to a session; **Not a problem** hides it, with a reason if you like.
+- **Report**, **Coverage** (each area and whether it was reviewed) and **Files** (every report and data file the audit wrote, readable in place).
+- **Earlier runs:** pick one from the list. Findings that are new since the run before are marked, and the ones no longer reported are listed.
+
+If the skill isn't installed, the view shows the commands to install it. Snapshots and map exports leave the audit out.
+
+### 10. Savings: what TokenEconomizer saved
 
 With the free [TokenEconomizer](#-works-with-other-tools-optional) plugin installed, **Savings** compares the average cost per request before and after it, and shows what it learned about the project (*facts* it adds at every session start), the tools it left out because they're never used (**apply** or **restore** them from here), its loop guard, and its settings. Without the plugin, the view shows how to install it.
 
-### 10. All your projects in one tab
+### 11. All your projects in one tab
 
 <img src="docs/images/hub.png" alt="The all-projects hub" width="100%">
 
 Open **http://localhost:4320**, or click **All projects ↗** on any board, to see every project that has a board. While this tab is open, it gives the alerts for all your projects, and you can approve requests from here too.
 
-### 11. Settings, search and more
+### 12. Settings, search and more
 
 <table>
 <tr>
@@ -317,7 +328,7 @@ project-plan works on its own. These free tools add more to the board once they'
 
 | Tool | What it adds | Where on the board | Install (in a terminal, once per computer) |
 |---|---|---|---|
-| **[security-audit](https://github.com/cloudflare/security-audit-skill)** (Cloudflare, a skill) | A real security audit: agents hunt for vulnerabilities and a fresh agent verifies each one. | **Map → Health**: the *Security audit* box, with **Run a security audit**; confirmed findings appear next to the health check issues. | `git clone --depth 1 https://github.com/cloudflare/security-audit-skill /tmp/security-audit-skill`<br>`mkdir -p ~/.claude/skills && cp -R /tmp/security-audit-skill/skills/security-audit ~/.claude/skills/` |
+| **[security-audit](https://github.com/cloudflare/security-audit-skill)** (Cloudflare, a skill) | A real security audit: agents hunt for vulnerabilities and a fresh agent verifies each one. | **Security**: the findings, report, coverage and files of each run, with **Run a quick audit**; a summary in **Map → Health**. | `git clone --depth 1 https://github.com/cloudflare/security-audit-skill /tmp/security-audit-skill`<br>`mkdir -p ~/.claude/skills && cp -R /tmp/security-audit-skill/skills/security-audit ~/.claude/skills/` |
 | **[TokenEconomizer](https://github.com/microsoft/TokenEconomizer)** (Microsoft, a plugin) | Cuts token spend: remembers repo facts between sessions, leaves out tools a repo never uses, stops failing loops. | **Savings**: what it learned and what it saved. | `git clone https://github.com/microsoft/TokenEconomizer.git ~/TokenEconomizer`<br>`claude plugin marketplace add ~/TokenEconomizer`<br>`claude plugin install tokeneconomizer@tokeneconomizer` |
 
 Restart Claude Code after installing either one.
@@ -363,7 +374,7 @@ Handy things to say to Claude:
 | **Flow** | A step-by-step walkthrough of one job through the code, like "buying something". |
 | **Blueprint** | A map of an app that isn't built yet, planned from a PRD or spec. |
 | **Health check** | Automatic checks on the map for common security and quality mistakes. |
-| **Security audit** | A deeper check by Cloudflare's security-audit skill; its confirmed findings join the health check. |
+| **Security audit** | A deeper check by Cloudflare's security-audit skill; its findings, report and files are in the **Security** view. |
 | **Savings** | What the TokenEconomizer plugin learned in a project and how much it cut the cost per request. |
 | **Context %** | How full Claude's working memory is. When it's full, older details get summarised. |
 

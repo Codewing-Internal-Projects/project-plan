@@ -1176,7 +1176,7 @@ function healthPanel() {
   const all = issues(), rank = { high: 0, medium: 1, low: 2 };
   const open = all.filter(i => !i.dismissed).sort((a, b) => rank[a.severity] - rank[b.severity]), off = all.filter(i => i.dismissed);
   return `<div class="ph"><h2>Health check</h2>${closeBtn("health")}</div>
-    <p class="n">Common mistakes found by pattern matching: secrets in code, endpoints anyone can call, SQL built from variables, unsafe input. A quick check, not an audit${G.audit ? ", plus the confirmed findings of the last security audit" : ""}.</p>
+    <p class="n">Common mistakes found by pattern matching: secrets in code, endpoints anyone can call, SQL built from variables, unsafe input. A quick check, not an audit.</p>
     ${auditBox()}
     ${open.length ? open.map(i => issueHtml(i)).join("") : `<div class="box ok">No open issues ✓</div>`}
     ${off.length ? `<h3>Not a problem <span class="c">${off.length}</span></h3>${off.map(i => issueHtml(i)).join("")}` : ""}`;
@@ -1193,8 +1193,9 @@ function auditBox() {
   const a = G.audit, run = RO ? "" : G.audit_skill === false ? auditInstall()
     : `<button class="btn sm" type="button" data-act="audit-run" ${sentMsg.audit ? "disabled" : ""}>${a ? "Run it again" : "Run a security audit"}</button><span class="msg">${esc(sentMsg.audit || "")}</span>`;
   if (!a) return `<div class="box"><b>Security audit</b><p class="n">A deeper check by the security-audit skill: agents hunt for real vulnerabilities and a fresh agent verifies each one. Takes a while and costs tokens.</p><div class="acts">${run}</div></div>`;
-  return `<div class="box"><b>Security audit</b> <span class="n">${esc(new Date(a.when).toLocaleString())}${a.profile ? " · " + esc(a.profile) : ""}${a.status && a.status !== "complete" ? " · " + esc(a.status) : ""}</span>
-    <p class="n">${a.confirmed} confirmed (listed below)${a.needs ? `, ${a.needs} need checking by hand` : ""}.${a.report ? ` Full report: <span class="mono">${esc(a.report)}</span>` : ""}</p><div class="acts">${run}</div></div>`;
+  return `<div class="box${a.confirmed ? " warn" : ""}"><b>Security audit</b> <span class="n">${esc(new Date(a.when).toLocaleString())}${a.profile ? " · " + esc(a.profile) : ""}</span>
+    <p class="n">${a.confirmed} confirmed${a.needs ? `, ${a.needs} to check by hand` : ""}. The findings, the report and every file the audit wrote are in the Security view.</p>
+    <div class="acts">${RO ? "" : `<a class="btn sm" href="./#security" target="_top" style="text-decoration:none;color:inherit">Open the Security view</a>`}</div></div>`;
 }
 function reviewPanel() {
   const rv = G.review || [];
@@ -1361,7 +1362,7 @@ async function sendReq(text, key, btn) {
   lastPanel = ""; renderPanel();
 }
 function fixPrompt(i) {
-  return `Fix this issue from ${i.rule === "security-audit" ? "the last security audit" : "the project map's health check"}: ${i.title}.\n${i.detail || ""}\n${i.fix || ""}\nWhere:\n${i.locations.map(l => `- ${l.file || l.node}${l.line ? ":" + l.line : ""} ${l.text || ""}`).join("\n")}\nIf any of these is a false alarm or intended, say so instead of changing it.`;
+  return `Fix this issue from the project map's health check: ${i.title}.\n${i.detail || ""}\n${i.fix || ""}\nWhere:\n${i.locations.map(l => `- ${l.file || l.node}${l.line ? ":" + l.line : ""} ${l.text || ""}`).join("\n")}\nIf any of these is a false alarm or intended, say so instead of changing it.`;
 }
 function buildPrompt(id) {
   const d = info(id), fs = filesIn(id), eps = epsIn(id), o = outside(id), q = G.plan?.questions || [];

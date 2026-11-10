@@ -139,7 +139,8 @@ def tracked(repos=()):
 
 # The scanner lives in sibling modules; they read ROOT/MAP from here at call time, so import codemap first.
 from codemap_scan import scan
-from codemap_health import audit, audit_skill, health
+import secaudit
+from codemap_health import health
 
 
 # ---------------------------------------------------------------- build
@@ -320,8 +321,7 @@ def build(sc=None, quiet=False):
                         "defs": (f.get("defs") or [])[:30], "uses": f.get("uses", []), "usedBy": sorted(used_by.get(p, [])),
                         "calls": [c["to"] for c in f.get("calls", [])], "pkgs": sorted(set(f.get("pkgs", [])))[:20],
                         "hosts": f.get("hosts", []), "unused": bool(f.get("unused")), "config": bool(f.get("config"))}
-    found, last_audit = audit()
-    issues = health(sc, tracked(sc.get("repos") or [])) + found
+    issues = health(sc, tracked(sc.get("repos") or []))
     for i in issues:
         d = dismissed.get(i["id"])
         i["dismissed"] = bool(d)
@@ -339,7 +339,7 @@ def build(sc=None, quiet=False):
              "flows": [], "tour": [], "unassigned": unassigned, "stale": stale,
              "health": {"issues": issues, "high": sum(1 for i in issues if i["severity"] == "high" and not i["dismissed"]),
                         "medium": sum(1 for i in issues if i["severity"] == "medium" and not i["dismissed"]),
-                        "low": sum(1 for i in issues if i["severity"] == "low" and not i["dismissed"])}, "audit": last_audit, "audit_skill": audit_skill()}
+                        "low": sum(1 for i in issues if i["severity"] == "low" and not i["dismissed"])}, "audit": secaudit.summary(ROOT), "audit_skill": secaudit.skill_installed(ROOT)}
     flows, dropped = clean_flows((arch or {}).get("flows"), graph)
     asked, dropped2 = clean_flows(rj(os.path.join(MAP, "flows.json"), []), graph, requested=True)
     ids = {fl["id"] for fl in flows}

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **Security view:** a new view under Work for security-audit runs, replacing the audit box in the map's health check. It shows counts of confirmed findings, leads to check by hand, unreviewed areas and dismissed findings; an expandable card per finding (what it is, root cause, why it isn't confirmed, how to check it here and on a live site, the path through the code with links to the map, **Check/Fix with Claude**, **Not a problem**); and **Report**, **Coverage** and **Files** tabs that render every file the audit wrote (`REPORT.md`, `NEEDS-VALIDATION.md`, `findings.json` and the rest). A run picker switches between runs and marks findings that are new since the run before, or no longer reported. Unconfirmed leads (`needs_validation`) are shown too; before, only confirmed findings were.
+- **Map health check:** the *Security audit* box now sums up the last run and links to the Security view; audit findings no longer mix with the pattern-matching issues.
+- Fix: **Rescan** and **Not a problem** rebuild the map in a fresh process, so a board server started before an update no longer rebuilds it with old code (which dropped the security-audit summary).
+- Keys `1` to `9` switch views (Security is `8`, Savings `9`).
+
 ## 1.3.0 (2026-11-10)
 
 - **Security audit on the map:** the Health panel has a *Security audit* box. **Run a security audit** sends the job to Claude, which uses Cloudflare's [security-audit](https://github.com/cloudflare/security-audit-skill) skill. The confirmed findings from the latest finished run then show up next to the health check issues, with **Show on map**, **Fix with Claude** and **Not a problem**. The box shows when the audit ran, how many findings still need checking by hand, and where `REPORT.md` is. Exports leave the audit summary out.
