@@ -72,11 +72,10 @@ Everything lives in the project's `.progress/map/`. The board server serves `.pr
       "title": "…", "detail": "…", "fix": "prompt text for Claude",
       "locations": [{"file": "path", "line": 3, "text": "short note (never a secret value)", "node": "file:… or ep:…"}],
       "parts": [part ids], "dismissed": false, "reason": ""
-    }]                                     // rule "security-audit", id "audit:<fingerprint>": a confirmed finding of the last audit
+    }]
   },
   "audit": null | {                        // newest finished security-audit skill run for this project (~/security-audit-skill/*/run-*/, matched on run-metadata.json target); dropped from exports
-    "run": "/abs/run dir", "when": "ISO time", "status": "complete|incomplete", "profile": "quick|standard|deep",
-    "ref": "source ref", "confirmed": 0, "needs": 0, "report": "/abs/REPORT.md or empty"
+    "when": "ISO time", "profile": "quick|standard|deep", "confirmed": 0, "needs": 0   // details: GET api/security
   },
   "audit_skill": true,                     // the security-audit skill is installed; false → Health shows install steps instead of Run
   "review": [ /* blueprint only: same shape as health issues, rule = design-review rule */ ],
@@ -100,6 +99,7 @@ Everything lives in the project's `.progress/map/`. The board server serves `.pr
 | `POST api/map/flow` | `{q}` → `{flow}` (saved to flows.json, appears in graph.flows) |
 | `POST api/map/undo` | `{}` → `{ok}` (blueprint: restore plan.prev.json) |
 | `POST api/request` | `{kind: "task", text}` → `{ok}`: hands work to a listening Claude session (Fix with Claude, Build this, Update the map) |
+| `GET api/security?run=<id>` | the board's Security view: `{skill, runs: [{id, when, profile}], run: {id, dir, when, profile, status, commit, dirty, sandbox, prev}, findings: [{id, key, verdict, severity, title, description, root_cause, trace, evidence, blockers, check_here, check_live, fix, dismissed, reason, change: ""\|"new"\|"changed"\|"same"}], gone: [{title, verdict}], coverage: [{surface, attack, status, paths, unresolved}], files: [{name, text, cut}]}`; the newest run unless `run` names another of this project's runs. Dismissals share `api/map/dismiss` (ids `audit:<fingerprint>`). |
 | `GET api/map/export?flows=1&notes=1&recent=0&health=0` | → one self-contained HTML file (attachment) |
 | Any POST failing | non-2xx with `{error: "message"}`: the page shows the message as is |
 | `GET api/ping` | `{app, v, …}`: present only when served (not in an exported file) |

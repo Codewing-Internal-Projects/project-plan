@@ -506,7 +506,8 @@ plugins/project-plan/
     codemap.py                           the project map: build, worksheet, lookups (find, show, path), CLI
     codemap_extract.py                   per-file extraction: imports, endpoints, requests, per language
     codemap_scan.py                      the free scan: reads tracked files, links imports, endpoints, screens
-    codemap_health.py                    the health check: unused files, secrets, open endpoints, big files, audit
+    codemap_health.py                    the health check: unused files, secrets, open endpoints, big files
+    secaudit.py                          security-audit runs for the Security view and the map's summary
     mapapp.py                            the map's AI and sharing side: Ask, flows, blueprints, export, notes
     map.html                             the interactive map page (shown in the board's Map tab)
 tests/test_codemap.py, test_mapapp.py   self-checks for the map (python3 tests/test_codemap.py && python3 tests/test_mapapp.py)
@@ -514,7 +515,7 @@ docs/map-format.md                       the map's data format and server API
 docs/images/                             README screenshots
 ```
 
-**Adding an integration with another plugin or skill:** detect whether it's installed (for example `audit_skill()` in `codemap_health.py`). Where its feature would appear, show the install commands with **Copy** buttons when it's missing, never a button that can't work. Then add a row to [Works with other tools](#-works-with-other-tools-optional).
+**Adding an integration with another plugin or skill:** detect whether it's installed (for example `skill_installed()` in `secaudit.py`). Where its feature would appear, show the install commands with **Copy** buttons when it's missing, never a button that can't work. Then add a row to [Works with other tools](#-works-with-other-tools-optional).
 
 **Try your changes** without installing them:
 
