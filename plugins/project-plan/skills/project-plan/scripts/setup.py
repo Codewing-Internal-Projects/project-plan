@@ -159,7 +159,8 @@ def install(root):
             open(gi, "a").write(("\n" if text and not text.endswith("\n") else "") + ".progress/\n")
 
     hook.use_project(root)
-    hook.ensure_server()
+    import board_server
+    board_server.ensure_server()
     for _ in range(30):
         if serving(port):
             break
@@ -174,7 +175,8 @@ def uninstall(root):
     set_rules(os.path.join(root, "CLAUDE.md"), "")
     import hook
     hook.use_project(root)
-    hook.register(False)  # off the all-projects hub
+    import board_server
+    board_server.register(False)  # off the all-projects hub
     print(f"Board hooks and CLAUDE.md rules removed from {root}. History kept in .progress/ (delete it if you don't need it).")
 
 

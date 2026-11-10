@@ -1,6 +1,6 @@
 # Project map: data format and API
 
-The contract between the scanner (`scripts/codemap.py`), the map page (`scripts/map.html`), the AI/sharing side (`scripts/mapapp.py`) and the board server (`scripts/hook.py`). Keep it in step with the code.
+The contract between the scanner (`scripts/codemap.py` and its `codemap_*.py` modules), the map page (`scripts/map.html`), the AI/sharing side (`scripts/mapapp.py`) and the board server (`scripts/board_server.py`). Keep it in step with the code.
 
 Everything lives in the project's `.progress/map/`. The board server serves `.progress/` as static files, so the page reads `map/graph.json` etc. directly.
 

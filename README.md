@@ -486,11 +486,16 @@ plugins/project-plan/
   hooks/hooks.json                       the hooks; they run hook.py, which does nothing outside board projects
   skills/project-plan/SKILL.md           instructions Claude follows
   skills/project-plan/scripts/
-    hook.py                              hooks, CLI, board server, hub server, update check
+    hook.py                              hooks, session tracking, CLI dispatch, update check
+    board_server.py                      starting the servers, the board server and its /api, the hub server
+    board_cli.py                         propose, listen, phone and snapshot commands
     setup.py                             set up or remove a board in a project; the rules text
     index.html                           the board page (copied into each project's .progress/)
     hub.html                             the all-projects hub page
-    codemap.py                           the project map: scanner, build, health check, lookups
+    codemap.py                           the project map: build, worksheet, lookups (find, show, path), CLI
+    codemap_extract.py                   per-file extraction: imports, endpoints, requests, per language
+    codemap_scan.py                      the free scan: reads tracked files, links imports, endpoints, screens
+    codemap_health.py                    the health check: unused files, secrets, open endpoints, big files, audit
     mapapp.py                            the map's AI and sharing side: Ask, flows, blueprints, export, notes
     map.html                             the interactive map page (shown in the board's Map tab)
 tests/test_codemap.py, test_mapapp.py   self-checks for the map (python3 tests/test_codemap.py && python3 tests/test_mapapp.py)
@@ -498,7 +503,7 @@ docs/map-format.md                       the map's data format and server API
 docs/images/                             README screenshots
 ```
 
-**Adding an integration with another plugin or skill:** detect whether it's installed (for example `audit_skill()` in `codemap.py`). Where its feature would appear, show the install commands with **Copy** buttons when it's missing, never a button that can't work. Then add a row to [Works with other tools](#-works-with-other-tools-optional).
+**Adding an integration with another plugin or skill:** detect whether it's installed (for example `audit_skill()` in `codemap_health.py`). Where its feature would appear, show the install commands with **Copy** buttons when it's missing, never a button that can't work. Then add a row to [Works with other tools](#-works-with-other-tools-optional).
 
 **Try your changes** without installing them:
 
