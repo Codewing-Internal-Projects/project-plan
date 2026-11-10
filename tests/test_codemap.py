@@ -368,7 +368,39 @@ def main():
         codemap.worksheet()
 
     multi_repo()
+    audit_runs()
     print("codemap ok")
+
+
+def audit_runs():
+    """The newest finished security-audit run for this project becomes health issues; other projects and running audits don't."""
+    root, audits = tempfile.mkdtemp(), tempfile.mkdtemp()
+    write(root, {"api/app.js": "app.get('/x', (req, res) => res.send(req.query.q));\n"})
+    git("init", "-q", root)
+    git("-C", root, "add", "-A")
+    finding = {"verdict": "confirmed", "fingerprint": "xss-x", "title": "Reflected XSS in /x", "description": "q is echoed.",
+               "trace": [{"kind": "sink", "file": "api/app.js", "line": 1, "scope": "x", "description": "echoes q"}],
+               "severity": {"overall_severity": "critical"}, "remediation": {"strategy": "Escape q."}}
+    runs = {"run-1": (root, "complete", [dict(finding, fingerprint="old")]), "run-2": (root, "complete", [finding, {"verdict": "needs_validation"}, "junk"]),
+            "run-3": (root, "in_progress", []), "run-9": ("/elsewhere", "complete", [])}
+    for i, (name, (target, status, records)) in enumerate(runs.items()):
+        d = os.path.join(audits, "proj", name)
+        write(d, {"run-metadata.json": json.dumps({"target": target, "run_status": status, "profile": "quick"}), "findings.json": json.dumps(records)})
+        os.utime(os.path.join(d, "findings.json"), (1000 + i, 1000 + i))
+    codemap.AUDITS = audits
+    codemap.setup(root, os.path.join(root, ".progress"))
+    g = codemap.build(quiet=True)
+    i = issue(g, "security-audit")
+    assert i and i["id"] == "audit:xss-x" and i["severity"] == "high" and i["fix"] == "Escape q.", i
+    assert i["locations"] == [{"file": "api/app.js", "line": 1, "text": "echoes q", "node": "file:api/app.js"}], i["locations"]
+    a = g["audit"]
+    assert a["run"].endswith("run-2") and a["confirmed"] == 1 and a["needs"] == 1 and a["profile"] == "quick", a
+
+    # The skill itself: missing, then installed in the project's own .claude/skills.
+    codemap.AUDIT_SKILL = [os.path.join(audits, "nowhere", "SKILL.md"), "{root}/.claude/skills/security-audit/SKILL.md"]
+    assert codemap.audit_skill() is False
+    write(root, {".claude/skills/security-audit/SKILL.md": "---\nname: security-audit\n---\n"})
+    assert codemap.audit_skill() is True
 
 
 def multi_repo():

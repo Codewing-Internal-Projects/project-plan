@@ -1055,7 +1055,7 @@ function drawMap() { if (SNAP) { $("v-map").innerHTML = `<div class="empty">The 
 function draw() {
   const all = sessions(), wait = awaiting().length;
   const needs = all.filter(s => state(s) === "needs").length + wait;
-  document.title = (needs ? `(${needs}) ` : "") + "Project board";
+  document.title = (needs ? `(${needs}) ` : "") + (all[0]?.project ? `${all[0].project} | ` : "") + "Project Board";
   $("meta").textContent = SNAP ? `${all[0]?.project || "Project"} · snapshot from ${new Date(SNAP.at).toLocaleString()}` : `${all[0]?.project || "Project"} · updated ${ago(data.updated)}`;
   $("pbadge").innerHTML = wait ? `<span class="badge">${wait}</span>` : "";
   VIEWS.forEach(v => $("v-" + v).hidden = v !== view);

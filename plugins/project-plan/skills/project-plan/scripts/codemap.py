@@ -1797,6 +1797,55 @@ OPEN_ON_PURPOSE = re.compile(r"robots\.txt|llms(?:-full)?\.txt|rss|feed|atom|sit
                              r"\.well-known|opengraph|twitter-image|icon", re.I)
 
 
+AUDITS = os.path.expanduser("~/security-audit-skill")  # where the security-audit skill writes its runs by default
+AUDIT_SEV = {"critical": "high", "high": "high", "medium": "medium", "low": "low", "informational": "low"}
+AUDIT_SKILL = ["~/.claude/skills/security-audit/SKILL.md", "~/.agents/skills/security-audit/SKILL.md",  # by hand, or `npx skills add`
+               "~/.claude/plugins/cache/*/*/*/skills/security-audit/SKILL.md", "{root}/.claude/skills/security-audit/SKILL.md"]
+
+
+def audit_skill():
+    """Whether Claude Code can load Cloudflare's security-audit skill here (globally, from a plugin, or in this project)."""
+    root = glob.escape(os.path.abspath(ROOT))
+    return any(glob.glob(os.path.expanduser(p.format(root=root))) for p in AUDIT_SKILL)
+
+
+def audit():
+    """The newest finished security-audit run for this project: (its confirmed findings as health issues, a summary or None)."""
+    root, runs = os.path.abspath(ROOT), []
+    obj = lambda x: x if isinstance(x, dict) else {}  # noqa: E731
+    for meta in glob.glob(os.path.join(AUDITS, "*", "run-*", "run-metadata.json")):
+        m, run = rj(meta, {}), os.path.dirname(meta)
+        target = os.path.abspath(str(m.get("target") or "")) if isinstance(m, dict) else ""
+        found = os.path.join(run, "findings.json")
+        if (target == root or target.startswith(root + os.sep)) and m.get("run_status") != "in_progress" and os.path.isfile(found):
+            runs.append((os.path.getmtime(found), run, m, target))
+    if not runs:
+        return [], None
+    when, run, m, target = max(runs)
+    records = rj(os.path.join(run, "findings.json"), [])
+    records = [r for r in records if isinstance(r, dict)] if isinstance(records, list) else []
+    issues = []
+    for r in records:
+        if r.get("verdict") != "confirmed":
+            continue
+        locs = []
+        for t in r.get("trace") if isinstance(r.get("trace"), list) else []:
+            f = str(t.get("file") or "") if isinstance(t, dict) else ""
+            if f:
+                rel = os.path.relpath(f if os.path.isabs(f) else os.path.join(target, f), root)
+                if not rel.startswith(".."):
+                    locs.append({"file": rel, "line": t["line"] if isinstance(t.get("line"), int) else 0, "text": str(t.get("description") or "")[:160], "node": "file:" + rel})
+        sev = AUDIT_SEV.get(str(obj(r.get("severity")).get("overall_severity")), "medium")
+        issues.append({"id": "audit:" + str(r.get("fingerprint") or r.get("title"))[:120], "rule": "security-audit", "severity": sev,
+                       "title": str(r.get("title") or "Security finding"), "detail": str(r.get("description") or "")[:600],
+                       "fix": str(obj(r.get("remediation")).get("strategy") or ""), "locations": locs[:25]})
+    report = os.path.join(run, "REPORT.md")
+    return issues, {"run": run, "when": datetime.fromtimestamp(when, timezone.utc).isoformat(timespec="seconds"),
+                    "status": str(m.get("run_status") or ""), "profile": str(m.get("profile") or ""), "ref": str(m.get("source_ref") or "")[:80],
+                    "confirmed": len(issues), "needs": sum(1 for r in records if r.get("verdict") == "needs_validation"),
+                    "report": report if os.path.isfile(report) else ""}
+
+
 def health(sc, tracked_files):
     texts, files, issues = sc["_texts"], sc["files"], []
 
@@ -2180,7 +2229,8 @@ def build(sc=None, quiet=False):
                         "defs": (f.get("defs") or [])[:30], "uses": f.get("uses", []), "usedBy": sorted(used_by.get(p, [])),
                         "calls": [c["to"] for c in f.get("calls", [])], "pkgs": sorted(set(f.get("pkgs", [])))[:20],
                         "hosts": f.get("hosts", []), "unused": bool(f.get("unused")), "config": bool(f.get("config"))}
-    issues = health(sc, tracked(sc.get("repos") or []))
+    found, last_audit = audit()
+    issues = health(sc, tracked(sc.get("repos") or [])) + found
     for i in issues:
         d = dismissed.get(i["id"])
         i["dismissed"] = bool(d)
@@ -2198,7 +2248,7 @@ def build(sc=None, quiet=False):
              "flows": [], "tour": [], "unassigned": unassigned, "stale": stale,
              "health": {"issues": issues, "high": sum(1 for i in issues if i["severity"] == "high" and not i["dismissed"]),
                         "medium": sum(1 for i in issues if i["severity"] == "medium" and not i["dismissed"]),
-                        "low": sum(1 for i in issues if i["severity"] == "low" and not i["dismissed"])}}
+                        "low": sum(1 for i in issues if i["severity"] == "low" and not i["dismissed"])}, "audit": last_audit, "audit_skill": audit_skill()}
     flows, dropped = clean_flows((arch or {}).get("flows"), graph)
     asked, dropped2 = clean_flows(rj(os.path.join(MAP, "flows.json"), []), graph, requested=True)
     ids = {fl["id"] for fl in flows}

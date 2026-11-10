@@ -72,8 +72,13 @@ Everything lives in the project's `.progress/map/`. The board server serves `.pr
       "title": "…", "detail": "…", "fix": "prompt text for Claude",
       "locations": [{"file": "path", "line": 3, "text": "short note (never a secret value)", "node": "file:… or ep:…"}],
       "parts": [part ids], "dismissed": false, "reason": ""
-    }]
+    }]                                     // rule "security-audit", id "audit:<fingerprint>": a confirmed finding of the last audit
   },
+  "audit": null | {                        // newest finished security-audit skill run for this project (~/security-audit-skill/*/run-*/, matched on run-metadata.json target); dropped from exports
+    "run": "/abs/run dir", "when": "ISO time", "status": "complete|incomplete", "profile": "quick|standard|deep",
+    "ref": "source ref", "confirmed": 0, "needs": 0, "report": "/abs/REPORT.md or empty"
+  },
+  "audit_skill": true,                     // the security-audit skill is installed; false → Health shows install steps instead of Run
   "review": [ /* blueprint only: same shape as health issues, rule = design-review rule */ ],
   "plan": { /* blueprint only: {"source": "PRD path", "stack": [...], "assumptions": [...], "questions": [...]} */ }
 }

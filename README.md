@@ -50,6 +50,7 @@ When you ask Claude Code to do something, it works in your terminal. You can't e
 - [How it works](#-how-it-works)
 - [Get started in 3 steps](#-get-started-in-3-steps)
 - [A tour of the board](#-a-tour-of-the-board)
+- [Works with other tools (optional)](#-works-with-other-tools-optional)
 - [Everyday guide for the team](#-everyday-guide-for-the-team)
 - [Words you'll see](#-words-youll-see)
 - [FAQ](#-faq)
@@ -306,6 +307,19 @@ Open **http://localhost:4320**, or click **All projects ↗** on any board, to s
 
 ---
 
+## 🧩 Works with other tools (optional)
+
+project-plan works on its own. These free tools add more to the board once they're installed. You don't need to remember this list: when one is missing, its place on the board says so and shows the commands to copy.
+
+| Tool | What it adds | Where on the board | Install (in a terminal, once per computer) |
+|---|---|---|---|
+| **[security-audit](https://github.com/cloudflare/security-audit-skill)** (Cloudflare, a skill) | A real security audit: agents hunt for vulnerabilities and a fresh agent verifies each one. | **Map → Health**: the *Security audit* box, with **Run a security audit**; confirmed findings appear next to the health check issues. | `git clone --depth 1 https://github.com/cloudflare/security-audit-skill /tmp/security-audit-skill`<br>`mkdir -p ~/.claude/skills && cp -R /tmp/security-audit-skill/skills/security-audit ~/.claude/skills/` |
+| **[TokenEconomizer](https://github.com/microsoft/TokenEconomizer)** (Microsoft, a plugin) | Cuts token spend: remembers repo facts between sessions, leaves out tools a repo never uses, stops failing loops. | **Savings**: what it learned and what it saved. | `git clone https://github.com/microsoft/TokenEconomizer.git ~/TokenEconomizer`<br>`claude plugin marketplace add ~/TokenEconomizer`<br>`claude plugin install tokeneconomizer@tokeneconomizer` |
+
+Restart Claude Code after installing either one.
+
+---
+
 ## 🤝 Everyday guide for the team
 
 Once the board is set up, you mostly just talk to Claude as usual. These habits get the most out of it:
@@ -477,6 +491,8 @@ tests/test_codemap.py, test_mapapp.py   self-checks for the map (python3 tests/t
 docs/map-format.md                       the map's data format and server API
 docs/images/                             README screenshots
 ```
+
+**Adding an integration with another plugin or skill:** detect whether it's installed (for example `audit_skill()` in `codemap.py`). Where its feature would appear, show the install commands with **Copy** buttons when it's missing, never a button that can't work. Then add a row to [Works with other tools](#-works-with-other-tools-optional).
 
 **Try your changes** without installing them:
 

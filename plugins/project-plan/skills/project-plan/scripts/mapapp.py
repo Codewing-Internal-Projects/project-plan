@@ -230,6 +230,7 @@ def export(flows=True, notes=True, recent=False, health=False, history_text=""):
     """The map as one HTML file: no Ask, no requests, no folder path, nothing about this computer."""
     g = json.loads(json.dumps(load()))
     g.pop("root", None)
+    g.pop("audit", None)  # holds folder paths on this computer
     if not health:
         g["health"] = {"issues": [], "high": 0, "medium": 0, "low": 0}
         g["review"] = []
