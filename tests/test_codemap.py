@@ -9,6 +9,7 @@ from contextlib import redirect_stdout
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "plugins", "project-plan", "skills", "project-plan", "scripts"))
 import codemap  # noqa: E402
+import codemap_health  # noqa: E402
 
 FILES = {
     "server/app.js": """const express = require('express');
@@ -387,7 +388,7 @@ def audit_runs():
         d = os.path.join(audits, "proj", name)
         write(d, {"run-metadata.json": json.dumps({"target": target, "run_status": status, "profile": "quick"}), "findings.json": json.dumps(records)})
         os.utime(os.path.join(d, "findings.json"), (1000 + i, 1000 + i))
-    codemap.AUDITS = audits
+    codemap_health.AUDITS = audits
     codemap.setup(root, os.path.join(root, ".progress"))
     g = codemap.build(quiet=True)
     i = issue(g, "security-audit")
@@ -397,7 +398,7 @@ def audit_runs():
     assert a["run"].endswith("run-2") and a["confirmed"] == 1 and a["needs"] == 1 and a["profile"] == "quick", a
 
     # The skill itself: missing, then installed in the project's own .claude/skills.
-    codemap.AUDIT_SKILL = [os.path.join(audits, "nowhere", "SKILL.md"), "{root}/.claude/skills/security-audit/SKILL.md"]
+    codemap_health.AUDIT_SKILL = [os.path.join(audits, "nowhere", "SKILL.md"), "{root}/.claude/skills/security-audit/SKILL.md"]
     assert codemap.audit_skill() is False
     write(root, {".claude/skills/security-audit/SKILL.md": "---\nname: security-audit\n---\n"})
     assert codemap.audit_skill() is True
