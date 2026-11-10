@@ -40,7 +40,7 @@ This takes the project off the hub and removes this skill's hooks and `CLAUDE.md
 
 ## Open the board
 
-Read the port from `.progress/port` and give the user `http://localhost:<port>`. Views: `#live`, `#today`, `#week`, `#timeline`, `#proposals`, `#history` (keys 1–6). If nothing is listening, run setup again: it restarts the server.
+Read the port from `.progress/port` and give the user `http://localhost:<port>`. Views: `#live`, `#today`, `#week`, `#timeline`, `#proposals`, `#history`, `#map`, `#savings` (keys 1–8). If nothing is listening, run setup again: it restarts the server.
 
 ## Rules for Claude in a project with the board
 

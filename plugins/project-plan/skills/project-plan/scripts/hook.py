@@ -21,6 +21,7 @@ Files in .progress/: progress.json (live sessions), board.json (proposals, reque
 listeners), history.jsonl (one line per finished request), previews/ (proposal mockups),
 lan.json (phone access key, never served). All writes happen under .progress/.lock.
 """
+import glob
 import contextlib, fcntl, hashlib, hmac, json, os, re, secrets, shutil, socket, subprocess, sys, threading, time
 from datetime import datetime, timezone
 
@@ -33,7 +34,7 @@ try:
 except (OSError, ValueError):
     IS_PLUGIN, APP_VERSION = False, ""
 REPO = "Codewing-Internal-Projects/project-plan"  # where updates come from
-VERSION = 9  # bump when the server changes, so running boards restart with the new code
+VERSION = 13  # bump when the server changes, so running boards restart with the new code
 
 # $ per million tokens: (model id fragment, input, output, cache read). Cache writes cost 1.25x input (5 min) or 2x (1 h).
 # ponytail: prices as of 2026-10-06 (claude-api skill); an unknown model counts as $0, add it here when prices change
@@ -547,7 +548,7 @@ def api_note(body):
     return 200, {"ok": True}
 
 
-def api_diff(path):
+def api_diff(path, whole=False):
     """git diff of one project file against HEAD (untracked files: the whole file as added)."""
     root = os.path.realpath(ROOT)
     full = os.path.realpath(os.path.join(root, path or ""))
@@ -558,12 +559,74 @@ def api_diff(path):
     try:
         if git("rev-parse", "--git-dir").returncode:
             return 200, {"diff": "", "note": "This project isn't a git repository, so there's nothing to diff against."}
-        out = git("diff", "--no-color", "--no-ext-diff", "HEAD", "--", full).stdout
+        out = git("diff", "--no-color", "--no-ext-diff", "-U100000" if whole else "-U3", "HEAD", "--", full).stdout
         if not out and git("ls-files", "--error-unmatch", "--", full).returncode and os.path.isfile(os.path.join(root, full)):
             out = git("diff", "--no-color", "--no-index", "--", "/dev/null", full).stdout  # new, untracked file
     except (OSError, subprocess.SubprocessError) as e:
         return 200, {"diff": "", "note": f"git failed: {e}"}
     return 200, {"diff": out[:300_000], "cut": len(out) > 300_000, "note": "" if out else "No uncommitted changes: it's identical to the last commit."}
+
+
+TE_BIN = next((p for p in (os.path.expanduser("~/.tokeneconomizer/bin/te"),  # made by the plugin's first hook
+                            *glob.glob(os.path.expanduser("~/.claude/plugins/cache/tokeneconomizer/*/*/scripts/te")),
+                            os.path.expanduser("~/TokenEconomizer/plugin/scripts/te")) if os.path.exists(p)),
+              os.path.expanduser("~/.tokeneconomizer/bin/te"))
+TE_CONFIG = {"microskills": ("on", "off", "envfacts"), "toolprune": ("propose", "auto", "off"), "loopguard": ("nudge", "off")}
+
+
+def te(*a, timeout=30):
+    """Run TokenEconomizer's `te` for this project (Claude Code host); (ok, stdout)."""
+    if not os.path.exists(TE_BIN):
+        return False, "TokenEconomizer isn't installed (no ~/.tokeneconomizer/bin/te yet)."
+    try:
+        r = subprocess.run([TE_BIN, "--host", "claude", "--cwd", ROOT, *a], capture_output=True, text=True, timeout=timeout)
+    except (OSError, subprocess.SubprocessError) as e:
+        return False, str(e)
+    return r.returncode == 0, (r.stdout or r.stderr).strip()
+
+
+def api_te_status():
+    """What TokenEconomizer knows and did here: `te status --json`, its facts and its per-session ledger."""
+    ok, out = te("status", "--json")
+    if not ok:
+        return 200, {"installed": os.path.exists(TE_BIN), "error": out}
+    try:
+        st = json.loads(out)
+    except ValueError:
+        return 200, {"installed": True, "error": "te status didn't return JSON: " + out[:300]}
+    base = st.get("state") or ""
+    inj = read_json(os.path.join(base, "injection.json"), {}) if base else {}
+    facts = [{"key": k, **{f: v.get(f) for f in ("state", "fire", "inject", "high", "drift")}}
+             for k, v in (inj.get("facts") or {}).items() if isinstance(v, dict) and "state" in v]
+    rows = []
+    try:
+        with open(os.path.join(base, "ledger.jsonl")) as f:
+            for line in f.readlines()[-400:]:
+                try:
+                    r = json.loads(line)
+                except ValueError:
+                    continue
+                rows.append({k: r.get(k) for k in ("kind", "session_id", "at", "imported", "turns", "nudges", "aborts",
+                                                   "injected_chars", "effective_tokens", "untool_applied", "overhead", "requests")})
+    except OSError:
+        pass
+    return 200, {"installed": True, "status": st, "facts": facts, "rendered": inj.get("rendered") or "", "ledger": rows}
+
+
+def api_te(body):
+    """Steer TokenEconomizer from the board: apply/restore pruned tools, or set its config."""
+    act = body.get("action")
+    if act in ("apply", "restore"):
+        tools = [t for t in body.get("tools") or [] if isinstance(t, str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_:.-]{0,79}", t)]
+        ok, out = te("toolprune", act, *tools, timeout=60)
+    elif act == "config":
+        pairs = [f"{k}={v}" for k, v in (body.get("set") or {}).items() if v in TE_CONFIG.get(k, ())]
+        if not pairs:
+            raise ValueError("Nothing valid to set.")
+        ok, out = te("config", "set", "--global", *pairs)
+    else:
+        raise ValueError("Unknown action.")
+    return (200 if ok else 400), ({"ok": True, "out": out} if ok else {"error": out})
 
 
 MAP_LOCK = threading.Lock()
@@ -714,6 +777,8 @@ def serve():
                                        "hub": fresh(".hub-open", 90), "update": update_info() if self.local() else None, "hub_url": f"http://localhost:{HUB_PORT}" if self.local() and port_open(HUB_PORT) else ""})
             if url.path == "/api/git":
                 return self.send(*api_git())
+            if url.path == "/api/te":
+                return self.send(*api_te_status())
             if url.path == "/progress.json" and time.time() - last_sweep[0] > 15:  # end sessions whose Claude exited
                 last_sweep[0] = time.time()
                 try:
@@ -738,7 +803,8 @@ def serve():
                 self.end_headers()
                 return self.wfile.write(data)
             if url.path == "/api/diff":
-                return self.send(*api_diff(parse_qs(url.query).get("path", [""])[0]))
+                q = parse_qs(url.query)
+                return self.send(*api_diff(q.get("path", [""])[0], q.get("full", [""])[0] == "1"))
             if url.path == "/progress.json" and "seen" in url.query:  # a visible board tab: permission requests wait for it
                 try:
                     open(os.path.join(DIR, ".seen"), "w").close()
@@ -759,7 +825,7 @@ def serve():
                 return self.send(413, {"error": "Too large"})
             route = {"/api/respond": api_respond, "/api/request": api_request, "/api/permit": api_permit,
                      "/api/settings": api_settings, "/api/note": api_note,
-                     "/api/rename": api_rename, "/api/pushtest": api_pushtest,
+                     "/api/rename": api_rename, "/api/pushtest": api_pushtest, "/api/te": api_te,
                      **{p: functools.partial(api_map, p) for p in ("/api/map/rescan", "/api/map/dismiss", "/api/map/ask", "/api/map/note",
                                                                     "/api/map/flow", "/api/map/undo")}}.get(self.path)
             if not route:
@@ -861,6 +927,126 @@ def line_counts(tool, inp, res):
     return sum(lines(e.get("new_string")) for e in edits), sum(lines(e.get("old_string")) for e in edits)
 
 
+def edit_hunks(tool, inp, res):
+    """The edit as unified-diff hunks [{old_start, new_start, lines: [" x", "-y", "+z"]}], for the before/after view."""
+    patch = res.get("structuredPatch") if isinstance(res, dict) else None
+    if patch:
+        return [{"old_start": h.get("oldStart", 0), "new_start": h.get("newStart", 0), "lines": h.get("lines", [])} for h in patch]
+    if tool == "Write":  # a new file: everything is added
+        return [{"old_start": 0, "new_start": 1, "lines": ["+" + l for l in str(inp.get("content") or "").split("\n")]}]
+    hunks = []
+    for e in inp.get("edits") or [inp]:
+        old, new = str(e.get("old_string") or ""), str(e.get("new_string") or "")
+        if old or new:
+            hunks.append({"old_start": 0, "new_start": 0, "lines": ["-" + l for l in old.split("\n") if old] + ["+" + l for l in new.split("\n") if new]})
+    return hunks
+
+
+def save_edit(rid, path, tool, inp, res, t, vs_head=False):
+    """Append one edit to .progress/edits/<round>.jsonl, so History can show what each request changed."""
+    hunks = edit_hunks(tool, inp, res)
+    if not hunks:
+        return
+    line = json.dumps({"path": path, "tool": tool, "at": t, "hunks": hunks, **({"vs_head": True} if vs_head else {})})
+    if len(line) > 400_000:  # ponytail: huge edits (a generated file) are skipped; the git diff still shows them
+        line = json.dumps({"path": path, "tool": tool, "at": t, "hunks": [], "cut": True})
+    try:
+        os.makedirs(os.path.join(DIR, "edits"), exist_ok=True)
+        with open(os.path.join(DIR, "edits", rid.replace(":", "-") + ".jsonl"), "a") as f:
+            f.write(line + "\n")
+    except OSError:
+        pass
+
+
+def note_file(s, path, add, rem, t):
+    """Add an edit to the session's changed-files list and the current request's."""
+    files = [f if isinstance(f, dict) else {"path": f, "add": 0, "del": 0} for f in s.get("files", [])]
+    old = next((f for f in files if f["path"] == path), {"add": 0, "del": 0})
+    files = [f for f in files if f["path"] != path] + [{"path": path, "add": old["add"] + add, "del": old["del"] + rem, "at": t}]
+    s["files"] = files[-MAX_FILES:]  # most recent last
+    r = s.get("round")
+    if r:
+        rf = r.setdefault("files", {}).setdefault(path, [0, 0])
+        rf[0], rf[1] = rf[0] + add, rf[1] + rem
+
+
+def git_snap():
+    """{path: [mtime, +lines, -lines]} for every uncommitted file in the project, or None outside git."""
+    git = lambda *a: subprocess.run(["git", "-C", ROOT, *a], capture_output=True, text=True, timeout=5)
+    try:
+        prefix = git("rev-parse", "--show-prefix")
+        if prefix.returncode:
+            return None
+        prefix = prefix.stdout.strip()
+        status = git("status", "--porcelain=v1", "-uall", "--", ".").stdout
+        numstat = git("diff", "--numstat", "HEAD", "--", ".").stdout
+    except (OSError, subprocess.SubprocessError):
+        return None
+    cut = lambda p: p[len(prefix):] if p.startswith(prefix) else p
+    ns = {}
+    for line in numstat.splitlines():
+        a, d, p = (line.split("\t", 2) + ["", ""])[:3]
+        ns[cut(p)] = [int(a) if a.isdigit() else 0, int(d) if d.isdigit() else 0]
+    snap = {}
+    for line in status.splitlines():
+        p = cut(line[3:].split(" -> ")[-1].strip('"'))
+        full = os.path.join(ROOT, p)
+        try:
+            m = os.path.getmtime(full)
+        except OSError:
+            m = 0  # deleted
+        if line.startswith("??"):
+            try:
+                n = sum(1 for _ in open(full, "rb")) if os.path.getsize(full) < 2_000_000 else 0
+            except OSError:
+                n = 0
+            ns[p] = [n, 0]
+        snap[p] = [m, *ns.get(p, [0, 0])]
+    return snap
+
+
+def shell_edits(s, t):
+    """Files a shell command changed (sed -i, a heredoc, a script): what moved since the last snapshot.
+
+    ponytail: mtime-based, so a file you save in your editor while Claude runs a command is credited to
+    that command; a per-command PreToolUse snapshot would fix it but needs the hook matcher widened."""
+    before, after = s.get("gitsnap"), git_snap()
+    s["gitsnap"] = after
+    if before is None or after is None:
+        return
+    r = s.get("round")
+    for p, (m, a, d) in after.items():
+        b = before.get(p)
+        if b and b[0] == m or p.startswith(".progress/"):
+            continue
+        add, rem = max(0, a - (b[1] if b else 0)), max(0, d - (b[2] if b else 0))
+        note_file(s, p, add, rem, t)
+        if r:
+            save_shell_edit(r["id"], p, t)
+
+
+def save_shell_edit(rid, path, t):
+    """The file's diff against the last commit, right after the shell command that changed it."""
+    try:
+        out = subprocess.run(["git", "-C", ROOT, "diff", "--no-color", "--no-ext-diff", "HEAD", "--", path],
+                             capture_output=True, text=True, timeout=5).stdout
+        if not out and os.path.isfile(os.path.join(ROOT, path)):  # untracked: the whole file is new
+            out = subprocess.run(["git", "-C", ROOT, "diff", "--no-color", "--no-index", "--", "/dev/null", path],
+                                 capture_output=True, text=True, timeout=5).stdout
+    except (OSError, subprocess.SubprocessError):
+        return
+    hunks, h = [], None
+    for line in out.splitlines():
+        mm = re.match(r"@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@", line)
+        if mm:
+            h = {"old_start": int(mm.group(1)), "new_start": int(mm.group(2)), "lines": []}
+            hunks.append(h)
+        elif h is not None and line[:1] in (" ", "+", "-"):
+            h["lines"].append(line)
+    if hunks:
+        save_edit(rid, path, "Bash", {}, {"structuredPatch": [{"oldStart": x["old_start"], "newStart": x["new_start"], "lines": x["lines"]} for x in hunks]}, t, vs_head=True)
+
+
 def track(s, tool, inp, res, t):
     """Counters, the changed-files list and the latest check result."""
     st, r = s.setdefault("stats", {}), s.get("round")
@@ -871,16 +1057,15 @@ def track(s, tool, inp, res, t):
         st["edits"] = st.get("edits", 0) + 1
         path = rel(inp.get("file_path") or inp.get("notebook_path"))
         add, rem = line_counts(tool, inp, res)
-        files = [f if isinstance(f, dict) else {"path": f, "add": 0, "del": 0} for f in s.get("files", [])]
-        old = next((f for f in files if f["path"] == path), {"add": 0, "del": 0})
-        files = [f for f in files if f["path"] != path] + [{"path": path, "add": old["add"] + add, "del": old["del"] + rem, "at": t}]
-        s["files"] = files[-MAX_FILES:]  # most recent last
+        note_file(s, path, add, rem, t)
         if r:
-            rf = r.setdefault("files", {}).setdefault(path, [0, 0])
-            rf[0], rf[1] = rf[0] + add, rf[1] + rem
+            save_edit(r["id"], path, tool, inp, res, t)
+        if s.get("gitsnap") is not None:
+            s["gitsnap"] = git_snap()  # so the next shell command isn't credited with this edit
     elif tool in STAT:
         st[STAT[tool]] = st.get(STAT[tool], 0) + 1
     if tool == "Bash":
+        shell_edits(s, t)
         m = CHECK_RE.search(inp.get("command", ""))
         if m:
             out = (res.get("stdout", "") + "\n" + res.get("stderr", "")) if isinstance(res, dict) else str(res)
@@ -1022,12 +1207,15 @@ def archive(s):
         "cost": r.get("cost", 0),
         "agents": [{k: a.get(k) for k in ("desc", "type", "status", "started", "finished")}
                    for a in s.get("agents", []) if (a.get("started") or "") >= t0],
+        # the whole task list as it stood (History shows it even when nothing finished in this round)
+        "tasks": [{k: x.get(k, "") for k in ("title", "summary", "status", "started", "finished", "added")} for x in s.get("tasks", [])],
+        "log": [x for x in s.get("log", []) if (x.get("at") or "") >= t0][-150:],
     }
     if s.get("check") and s["check"].get("at", "") >= t0:
         entry["check"] = s["check"]
     if (s.get("reply_at") or "") >= t0 and s.get("reply"):
         entry["reply"] = s["reply"]
-    sig = hashlib.md5(json.dumps({k: v for k, v in entry.items() if k != "ended"}, sort_keys=True).encode()).hexdigest()
+    sig = hashlib.md5(json.dumps({k: v for k, v in entry.items() if k not in ("ended", "log")}, sort_keys=True).encode()).hexdigest()
     if r.get("sig") == sig:
         return
     r["sig"] = sig
@@ -1133,6 +1321,7 @@ def apply(d, ev):
         s["pid"] = claude_pid() or s.get("pid")
         s["prompts"] = s.get("prompts", 0) + 1
         new_round(s, ev.get("prompt"), t)
+        s["gitsnap"] = git_snap()  # baseline for files shell commands change in this request
         say("You: " + short(ev.get("prompt"), 160), "you")
     elif name == "PostToolUse":
         s["status"] = "working"

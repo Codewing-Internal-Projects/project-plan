@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.0 (2026-11-10)
+
+- **Security audit on the map:** the Health panel has a *Security audit* box. **Run a security audit** sends the job to Claude, which uses Cloudflare's [security-audit](https://github.com/cloudflare/security-audit-skill) skill. The confirmed findings from the latest finished run then show up next to the health check issues, with **Show on map**, **Fix with Claude** and **Not a problem**. The box shows when the audit ran, how many findings still need checking by hand, and where `REPORT.md` is. Exports leave the audit summary out.
+- **Savings view (TokenEconomizer):** what the [TokenEconomizer](https://github.com/microsoft/TokenEconomizer) plugin learned and saved in this repository: cost per request before and after it, learned facts, tool pruning (apply or restore from the board), the loop guard and its settings.
+- **See what each request changed:** History records every edit, including files changed by shell commands (`sed -i`, heredocs, scripts). **View changes** shows a before/after diff, side by side or as the whole file.
+- **Install guides for integrations:** when a tool the board works with isn't installed, its place on the board shows the install commands with **Copy** instead of a button that can't work. The README has a new *Works with other tools* section.
+- **Tab titles:** browser tabs read *project-name | Project Board* (and *| Project Map*), so boards for different projects are easy to tell apart.
+- Fix: TokenEconomizer tool names starting with `-` are rejected, so they can't be passed to `te` as options.
+
 ## 1.2.1 (2026-11-10)
 
 - **Simpler install name:** the marketplace is now called `project-plan`, so it's `claude plugin install project-plan`, `claude plugin update project-plan` and `claude plugin marketplace update`, with no `@…` suffix. If you installed 1.2.0 or earlier, switch once (see Updating in the README).

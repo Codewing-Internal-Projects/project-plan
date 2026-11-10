@@ -18,13 +18,47 @@
   :root[data-theme="dark"] { color-scheme:dark; }
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 system-ui, -apple-system, sans-serif; -webkit-font-smoothing:antialiased; }
-  main { max-width:1440px; margin:0 auto; padding:0 16px 64px; }
+  /* SaaS shell: fixed sidebar on the left, content on the right */
+  .app { display:grid; grid-template-columns:248px minmax(0, 1fr); min-height:100vh; }
+  .sidebar { position:sticky; top:0; height:100vh; display:flex; flex-direction:column; gap:14px; padding:16px 12px; background:var(--card); border-right:1px solid var(--line); overflow-y:auto; z-index:20; }
+  .sidebar .brand { padding:2px 6px 0; }
+  .sidebar #newbtn { width:100%; padding:8px 12px; }
+  .sidenav { display:grid; gap:2px; }
+  .navgroup { font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); font-weight:600; padding:12px 10px 4px; }
+  .navgroup:first-child { padding-top:0; }
+  .sidenav button { display:flex; align-items:center; gap:10px; width:100%; border:0; background:none; color:var(--muted); font-size:14px; padding:7px 10px; border-radius:9px; cursor:pointer; text-align:left; }
+  .sidebar svg { width:17px; height:17px; flex:none; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  #hdetail .done .t { color:var(--fg); text-decoration:none; }
+  .sidenav button:hover { background:var(--sunk); color:var(--fg); }
+  .sidenav button[aria-pressed="true"] { background:var(--accent-bg); color:var(--accent); font-weight:600; }
+  .sidenav .navcount { margin-left:auto; font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; font-weight:400; }
+  .sidenav .badge { margin-left:auto; }
+  .kbd-hint { margin-left:auto; font:11px ui-monospace, monospace; color:var(--muted); opacity:.7; }
+  .sidefoot { margin-top:auto; display:grid; gap:4px; padding-top:12px; border-top:1px solid var(--line); }
+  .sidefoot .btn, .sidefoot a.btn { display:flex; align-items:center; gap:8px; border-color:transparent; background:none; color:var(--muted); justify-content:flex-start; font-size:13.5px; padding:7px 10px; }
+  .sidefoot .btn:not(:disabled):hover { background:var(--sunk); border-color:transparent; color:var(--fg); }
+  .sidefoot .theme { margin:6px 4px 0; justify-self:start; }
+  main { min-width:0; padding:0 28px 64px; }
+  .topbar { position:sticky; top:0; z-index:5; display:flex; align-items:center; gap:12px; padding:14px 0 12px; background:var(--head); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
+  .topbar h2 { margin:0; font-size:19px; letter-spacing:-.015em; line-height:1.25; }
+  .topbar .n { font-size:12.5px; }
+  .topbar .grow { flex:1; min-width:0; }
+  .navtoggle { display:none; }
+  .scrim { display:none; }
+  .palbtn { display:flex; align-items:center; gap:8px; color:var(--muted); min-width:220px; justify-content:space-between; }
+  @media (max-width:900px) {
+    .app { grid-template-columns:1fr; }
+    .sidebar { position:fixed; left:0; top:0; width:264px; transform:translateX(-100%); transition:transform .2s; box-shadow:0 0 40px rgb(0 0 0 / .2); }
+    .app.navopen .sidebar { transform:none; }
+    .app.navopen .scrim { display:block; position:fixed; inset:0; background:rgb(0 0 0 / .3); z-index:15; }
+    .navtoggle { display:inline-flex; }
+    main { padding:0 16px 64px; }
+    .palbtn { min-width:0; } .palbtn .ptext { display:none; }
+  }
   button, input, textarea, select { font:inherit; color:inherit; }
-  header { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; position:sticky; top:0; z-index:5; padding:14px 0 12px; margin-bottom:4px; background:var(--head); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
   .brand { display:flex; gap:10px; align-items:center; min-width:0; }
   .logo { width:30px; height:30px; border-radius:9px; background:var(--fg); color:var(--bg); display:grid; place-items:center; font-weight:700; font-size:15px; flex:none; }
   h1 { font-size:17px; margin:0; letter-spacing:-.01em; line-height:1.2; }
-  @media (max-width:700px) { header { position:static; backdrop-filter:none; } }
   .tools { min-width:0; max-width:100%; }
   .week { overflow-x:auto; }
   @media (max-width:700px) { .seg button { padding:6px 9px; } }
@@ -88,7 +122,7 @@
 
   /* session list: a narrow sidebar, the detail panel gets the room */
   .layout.sessions-layout { grid-template-columns:minmax(300px, 360px) minmax(0, 1fr); }
-  .slist { position:sticky; top:76px; max-height:calc(100vh - 92px); overflow:auto; }
+  .slist, .hlist { position:sticky; top:80px; max-height:calc(100vh - 96px); overflow:auto; }
   .srow { display:grid; gap:4px; padding:12px 14px; }
   .srow.flag { box-shadow:inset 3px 0 0 var(--bad); }
   .srow-top { display:flex; align-items:center; gap:8px; }
@@ -316,7 +350,7 @@
   #pallist li span:first-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   #pallist li[aria-selected="true"] { background:var(--accent-bg); }
   /* Map */
-  .mapframe { display:block; width:100%; height:calc(100vh - 92px); min-height:520px; border:1px solid var(--line); border-radius:18px; margin-top:10px; background:var(--card); }
+  .mapframe { display:block; width:100%; height:calc(100vh - 96px); min-height:520px; border:1px solid var(--line); border-radius:18px; margin-top:10px; background:var(--card); }
   .mapwrap { background:var(--card); border:1px solid var(--line); border-radius:18px; overflow:auto; box-shadow:var(--shadow); min-height:200px; }
   .mapgrid { position:relative; display:grid; grid-template-columns:repeat(var(--cols), minmax(150px, 236px)); gap:0 48px; justify-content:space-between; padding:16px 20px 20px; }
   .mapgrid.mmini { padding:12px; gap:0 40px; grid-template-columns:repeat(var(--cols), minmax(140px, 220px)); justify-content:start; }
@@ -353,23 +387,107 @@
   .ptags { display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:6px 0 0; font-size:12px; color:var(--muted); }
   .ptags .tag { cursor:pointer; border:0; font:inherit; font-size:11px; }
   @media (max-width:700px) { .mapgrid { grid-template-columns:1fr; gap:18px; } .mpart { max-width:none; } .medges { display:none; } }
+  /* history: list + detail */
+  .hlist .hrow { display:grid; gap:3px; padding:11px 14px; }
+  .hrow-top { display:flex; gap:8px; align-items:center; font-size:12px; color:var(--muted); }
+  .hrow-top time { font:12px ui-monospace, monospace; }
+  .hrow-top .star { color:var(--warn); }
+  .hrow-top .cost { margin-left:auto; font-variant-numeric:tabular-nums; }
+  .hrow-text { font-weight:600; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; }
+  .hrow-meta { display:flex; gap:10px; align-items:center; font-size:12px; color:var(--muted); flex-wrap:wrap; font-variant-numeric:tabular-nums; }
+  .hlist .daysep { padding:10px 14px 4px; font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); font-weight:600; background:var(--sunk); border-top:1px solid var(--line); }
+  .hlist .daysep:first-child { border-top:0; }
+  .kv { display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:8px; margin-top:14px; }
+  .kv div { background:var(--sunk); border-radius:10px; padding:8px 12px; }
+  .kv b { display:block; font-size:17px; font-variant-numeric:tabular-nums; letter-spacing:-.01em; }
+  .kv span { font-size:11.5px; color:var(--muted); }
+  .hprompt-big { margin:10px 0 0; font-size:15px; white-space:pre-wrap; overflow-wrap:anywhere; padding:12px 14px; border-radius:12px; background:var(--accent-bg); }
+  .hprompt-big small { display:block; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:2px; }
+  .task .here { margin-left:6px; }
+  .ftable { width:100%; border-collapse:collapse; font-size:13px; }
+  .ftable td { padding:7px 6px; border-top:1px solid var(--line); vertical-align:middle; }
+  .ftable tr:first-child td { border-top:0; }
+  .ftable .path { font:12px ui-monospace, monospace; overflow-wrap:anywhere; }
+  .ftable .c { white-space:nowrap; text-align:right; font:12px ui-monospace, monospace; }
+  .ftable .act { width:1%; white-space:nowrap; text-align:right; }
+  .reply.full { color:var(--fg); max-height:420px; overflow:auto; }
+  /* diff popup: before on the left, after on the right */
+  dialog.diffdlg { width:min(1500px, calc(100vw - 32px)); height:calc(100vh - 48px); max-height:none; padding:0; display:none; flex-direction:column; overflow:hidden; }
+  dialog.diffdlg[open] { display:flex; }
+  .dd-head { display:flex; gap:10px 14px; align-items:center; flex-wrap:wrap; padding:14px 18px; border-bottom:1px solid var(--line); }
+  .dd-head .path { font:600 13.5px ui-monospace, monospace; overflow-wrap:anywhere; flex:1 1 280px; min-width:0; }
+  .dd-head .path small { display:block; font:12px system-ui, sans-serif; color:var(--muted); margin-top:2px; }
+  .dd-bar { display:flex; gap:8px 12px; align-items:center; flex-wrap:wrap; padding:8px 18px; border-bottom:1px solid var(--line); background:var(--sunk); font-size:13px; }
+  .dd-bar .seg button[aria-pressed="true"] { background:var(--fg); color:var(--bg); }
+  .dd-bar label { display:inline-flex; gap:6px; align-items:center; color:var(--muted); cursor:pointer; }
+  .dd-bar .sp { flex:1; }
+  .dd-cols { display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid var(--line); font-size:12px; font-weight:600; }
+  .dd-cols div { padding:6px 14px; display:flex; gap:8px; align-items:center; }
+  .dd-cols div:first-child { border-right:1px solid var(--line); color:var(--bad); background:var(--bad-bg); }
+  .dd-cols div:last-child { color:var(--done); background:var(--done-bg); }
+  .dd-cols.uni { grid-template-columns:1fr; } .dd-cols.uni div:last-child { display:none; } .dd-cols.uni div:first-child { color:var(--muted); background:none; border:0; }
+  .dd-body { flex:1; overflow:auto; background:var(--card); }
+  .dd-body .empty { padding:60px 16px; }
+  table.sbs { width:100%; border-collapse:collapse; table-layout:fixed; font:12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  table.sbs col.ln { width:52px; }
+  table.sbs td { padding:0 10px; vertical-align:top; white-space:pre; overflow:hidden; text-overflow:clip; }
+  table.sbs.wrap td.code { white-space:pre-wrap; overflow-wrap:anywhere; }
+  table.sbs td.ln { color:var(--muted); text-align:right; user-select:none; opacity:.75; padding:0 8px 0 4px; }
+  table.sbs td.code.l { border-right:1px solid var(--line); }
+  table.sbs tr.hunk td { background:var(--accent-bg); color:var(--accent); padding:3px 10px; font-size:11.5px; white-space:pre-wrap; }
+  table.sbs tr.edit td { background:var(--sunk); color:var(--fg); padding:6px 10px; font:600 12px system-ui, sans-serif; border-top:1px solid var(--line); border-bottom:1px solid var(--line); white-space:normal; }
+  table.sbs tr.edit td small { font-weight:400; color:var(--muted); margin-left:8px; }
+  table.sbs td.del { background:var(--bad-bg); } table.sbs td.ins { background:var(--done-bg); }
+  table.sbs td.blank { background:repeating-linear-gradient(135deg, transparent, transparent 5px, var(--sunk) 5px, var(--sunk) 10px); }
+  table.sbs mark { background:color-mix(in srgb, var(--bad) 30%, transparent); color:inherit; border-radius:2px; }
+  table.sbs td.ins mark { background:color-mix(in srgb, var(--done) 32%, transparent); }
+  table.sbs td.ln.del { background:color-mix(in srgb, var(--bad-bg) 70%, var(--card)); } table.sbs td.ln.ins { background:color-mix(in srgb, var(--done-bg) 70%, var(--card)); }
+  table.sbs td.sign { width:16px; padding:0 2px; text-align:center; user-select:none; color:var(--muted); }
+  .dd-foot { display:flex; gap:10px; align-items:center; padding:10px 18px; border-top:1px solid var(--line); font-size:12.5px; color:var(--muted); flex-wrap:wrap; }
+  .dd-foot .sp { flex:1; }
+  @media (max-width:700px) { dialog.diffdlg { width:100vw; height:100vh; border-radius:0; max-width:none; margin:0; } table.sbs col.ln { width:36px; } }
+  /* savings */
+  .sv-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); gap:16px; margin-top:16px; align-items:start; }
+  .cmp { display:grid; grid-template-columns:1fr auto 1fr; gap:12px; align-items:center; margin-top:14px; }
+  .cmp > div { background:var(--sunk); border-radius:12px; padding:12px 16px; }
+  .cmp b { display:block; font-size:24px; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+  .cmp span { font-size:12px; color:var(--muted); }
+  .cmp .arrow { background:none; padding:0; font-size:20px; color:var(--muted); }
+  .delta { font-weight:700; font-size:15px; }
+  .delta.good { color:var(--done); } .delta.bad { color:var(--bad); }
+  .fact { display:grid; grid-template-columns:auto 1fr auto; gap:10px; padding:8px 0; border-top:1px solid var(--line); font-size:13px; align-items:start; }
+  .fact:first-child { border-top:0; }
+  .fact code { font:12px ui-monospace, monospace; overflow-wrap:anywhere; }
+  pre.block { background:var(--sunk); border-radius:10px; padding:10px 12px; font:12px/1.5 ui-monospace, monospace; white-space:pre-wrap; overflow-wrap:anywhere; margin:6px 0 0; }
+  .cmd { display:flex; gap:8px; align-items:center; margin-top:6px; }
+  .cmd code { flex:1; font:12px ui-monospace, monospace; background:var(--sunk); border-radius:8px; padding:7px 10px; overflow-wrap:anywhere; }
+  .setrow { display:flex; gap:10px; align-items:center; flex-wrap:wrap; padding:8px 0; border-top:1px solid var(--line); font-size:13px; }
+  .setrow:first-child { border-top:0; }
+  .setrow > span:first-child { flex:1; min-width:160px; }
   @keyframes spin { to { transform:rotate(360deg); } }
   @keyframes pulse { 50% { opacity:.25; } }
   @media (prefers-reduced-motion: reduce) { .in_progress .dot, .pill.working i { animation:none; } .in_progress .dot { border-top-color:var(--accent); } }
 </style>
 </head>
 <body>
+<div class="app" id="app">
+<aside class="sidebar" id="sidebar" aria-label="Board navigation">
+  <div class="brand"><span class="logo" aria-hidden="true">✓</span><div style="min-width:0"><h1 id="pname">Project board</h1><div class="n" id="meta">Loading…</div></div></div>
+  <button class="btn primary live-only" id="newbtn" type="button">+ New request</button>
+  <nav class="sidenav" aria-label="Views"><div class="navgroup">Monitor</div><button type="button" data-view="live"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7"/></svg><span>Live</span><span class="navcount" id="nc-live"></span></button><button type="button" data-view="today"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M3 9h18M8 2v4M16 2v4"/><path d="m9 15 2 2 4-4"/></svg><span>Today</span><span class="navcount" id="nc-today"></span></button><button type="button" data-view="week"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Week</span><span class="navcount" id="nc-week"></span></button><button type="button" data-view="timeline"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h10M7 12h12M5 18h8"/><circle cx="16" cy="6" r="2"/><circle cx="4" cy="12" r="1"/><circle cx="16" cy="18" r="2"/></svg><span>Timeline</span><span class="navcount" id="nc-timeline"></span></button><div class="navgroup">Work</div><button type="button" data-view="proposals"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v12H8l-4 4z"/><path d="M8 9h8M8 12h5"/></svg><span>Proposals</span><span id="pbadge"></span></button><button type="button" data-view="history"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg><span>History</span><span class="navcount" id="nc-history"></span></button><button type="button" data-view="map"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 4-6 3v13l6-3 6 3 6-3V4l-6 3z"/><path d="M9 4v13M15 7v13"/></svg><span>Map</span><span class="navcount" id="nc-map"></span></button><button type="button" data-view="savings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20M17 6.5c0-1.9-2.2-3.5-5-3.5s-5 1.6-5 3.5S9.2 10 12 10s5 1.6 5 3.5-2.2 3.5-5 3.5-5-1.6-5-3.5"/></svg><span>Savings</span><span class="navcount" id="nc-savings"></span></button></nav>
+  <div class="sidefoot">
+    <a class="btn live-only" id="hublink" href="#" target="_blank" rel="noopener" hidden title="Every project with a board, in one tab"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>All projects ↗</a>
+    <button class="btn live-only" id="setbtn" type="button" title="Alerts, sound, budget, phone access"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings</button>
+    <button class="btn" id="keysbtn" type="button" title="Keyboard shortcuts (?)"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg>Shortcuts</button>
+    <div class="seg theme" role="group" aria-label="Theme"><button type="button" data-theme-set="system" title="Match the system" aria-label="System theme">◐</button><button type="button" data-theme-set="light" title="Light" aria-label="Light theme">☀</button><button type="button" data-theme-set="dark" title="Dark" aria-label="Dark theme">☾</button></div>
+  </div>
+</aside>
+<div class="scrim" id="scrim"></div>
 <main>
-  <header>
-    <div class="brand"><span class="logo" aria-hidden="true">✓</span><div><h1>Project board</h1><div class="n" id="meta">Loading…</div></div></div>
-    <div class="tools">
-      <div class="seg" role="group" aria-label="View"><button type="button" data-view="live">Live</button><button type="button" data-view="today">Today</button><button type="button" data-view="week">Week</button><button type="button" data-view="timeline">Timeline</button><button type="button" data-view="proposals">Proposals<span id="pbadge"></span></button><button type="button" data-view="history">History</button><button type="button" data-view="map">Map</button></div>
-      <button class="btn primary live-only" id="newbtn" type="button">New request</button>
-      <a class="btn live-only" id="hublink" href="#" target="_blank" rel="noopener" hidden title="Every project with a board, in one tab">All projects ↗</a>
-      <button class="btn live-only" id="setbtn" type="button" title="Alerts, sound, budget, phone access">Settings</button>
-      <button class="btn ghost" id="keysbtn" type="button" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">?</button>
-      <div class="seg theme" role="group" aria-label="Theme"><button type="button" data-theme-set="system" title="Match the system" aria-label="System theme">◐</button><button type="button" data-theme-set="light" title="Light" aria-label="Light theme">☀</button><button type="button" data-theme-set="dark" title="Dark" aria-label="Dark theme">☾</button></div>
-    </div>
+  <header class="topbar">
+    <button class="btn navtoggle" id="navtoggle" type="button" aria-label="Open navigation" aria-controls="sidebar">☰</button>
+    <div class="grow"><h2 id="vtitle">Live</h2><div class="n" id="vsub"></div></div>
+    <button class="btn palbtn" id="palbtn" type="button" title="Go to anything (⌘K)"><span class="ptext">Search or jump to…</span><kbd>⌘K</kbd></button>
   </header>
   <div class="banner" id="snapbanner" hidden></div>
   <div class="banner live-only" id="updbanner" hidden></div>
@@ -414,12 +532,17 @@
 
   <div id="v-history" hidden>
     <div class="htools"><input type="search" id="hq" placeholder="Search requests, tasks and files" aria-label="Search history"><button class="btn" id="hpin" type="button" aria-pressed="false">★ Pinned only</button><span class="n" id="hcount"></span></div>
-    <div id="hlist"></div>
+    <div class="layout sessions-layout" style="margin-top:12px">
+      <nav class="list hlist" id="hlist" aria-label="Requests"></nav>
+      <section class="detail" id="hdetail" aria-live="polite"></section>
+    </div>
   </div>
+  <div id="v-savings" hidden><div id="sv"></div></div>
   <div id="v-map" hidden>
     <iframe id="mapframe" class="mapframe" title="Project map" loading="lazy"></iframe>
   </div>
 </main>
+</div>
 
 <dialog id="newreq" aria-labelledby="newreq-h">
   <form class="reqform" id="reqform" method="dialog">
@@ -468,6 +591,30 @@
   </form>
 </dialog>
 
+<dialog id="diffdlg" class="diffdlg" aria-labelledby="dd-path">
+  <div class="dd-head">
+    <div class="path" id="dd-path"></div>
+    <div class="actions">
+      <button class="btn" type="button" id="dd-prev" title="Previous file (←)">← Prev</button>
+      <span class="n" id="dd-pos"></span>
+      <button class="btn" type="button" id="dd-next" title="Next file (→)">Next →</button>
+      <button class="btn" type="button" id="dd-copy">Copy path</button>
+      <button class="btn" type="button" id="dd-close" aria-label="Close">✕</button>
+    </div>
+  </div>
+  <div class="dd-bar">
+    <div class="seg" role="group" aria-label="Compare" id="dd-src"><button type="button" data-src="edits">This request's edits</button><button type="button" data-src="git">Uncommitted vs last commit</button></div>
+    <div class="seg" role="group" aria-label="Layout" id="dd-mode"><button type="button" data-mode="split">Side by side</button><button type="button" data-mode="unified">Unified</button></div>
+    <label id="dd-fullwrap"><input type="checkbox" id="dd-full"> Whole file</label>
+    <label><input type="checkbox" id="dd-wrap"> Wrap lines</label>
+    <span class="sp"></span>
+    <span id="dd-stats"></span>
+  </div>
+  <div class="dd-cols" id="dd-cols"><div id="dd-lefth">Before</div><div id="dd-righth">After</div></div>
+  <div class="dd-body" id="dd-body"></div>
+  <div class="dd-foot"><span id="dd-note"></span><span class="sp"></span><span><kbd>←</kbd> <kbd>→</kbd> switch file · <kbd>Esc</kbd> close</span></div>
+</dialog>
+
 <dialog id="palette" aria-label="Go to anything">
   <input type="search" id="palq" placeholder="Jump to a session, proposal, request or file, or run an action…" aria-label="Search" autocomplete="off">
   <ul id="pallist" role="listbox"></ul>
@@ -476,7 +623,7 @@
 <dialog id="keys" aria-labelledby="keys-h">
   <h2 id="keys-h">Keyboard shortcuts</h2>
   <table class="keys"><tbody>
-    <tr><td><kbd>1</kbd>–<kbd>7</kbd></td><td>Live, Today, Week, Timeline, Proposals, History, Map</td></tr>
+    <tr><td><kbd>1</kbd>–<kbd>8</kbd></td><td>Live, Today, Week, Timeline, Proposals, History, Map, Savings</td></tr>
     <tr><td><kbd>m</kbd></td><td>Open the map (inside it, <kbd>?</kbd> lists its own shortcuts)</td></tr>
     <tr><td><kbd>j</kbd> <kbd>k</kbd></td><td>Next / previous session (or proposal)</td></tr>
     <tr><td><kbd>a</kbd> <kbd>x</kbd></td><td>Allow / deny the selected session's waiting request</td></tr>
@@ -512,7 +659,7 @@ const PSTATE = {awaiting:["needs","needs your input"], approved:["working","appr
 const KIND = {brainstorm:"Brainstorm", suggest:"Suggest features", task:"Task"};
 const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
 const SNAP = window.SNAPSHOT || null;  // a read-only copy made by `hook.py snapshot`
-const VIEWS = ["live", "today", "week", "timeline", "proposals", "history", "map"];
+const VIEWS = ["live", "today", "week", "timeline", "proposals", "history", "map", "savings"];
 
 let filter = store.get("filter") || "live", view = store.get("view") || "live", span = +(store.get("span") || 8);
 let selected = null, selProp = store.get("prop") || null;
@@ -668,7 +815,7 @@ function detail(s, clash, all) {
     </div>
     ${s.reply && s.status !== "working" ? `<h3>Last reply</h3><div class="reply">${esc(s.reply)}</div>` : ""}
     ${fl.length ? `<h3>Files changed · ${fl.length} <span class="add">+${added}</span> <span class="rem">−${removed}</span></h3>${partTags(fl.map(f => f.path))}${uncommittedBlock(s, fl)}
-      <ul class="files">${fl.map(f => `<li><span class="path">${clash[f.path] ? `<span class="tag warn" title="Also edited by ${esc(clash[f.path].filter(id => id !== s.id).map(title).join(", "))}">⚠ shared</span> ` : ""}${gitTag(f.path)}${SNAP || f.path.startsWith("…") ? esc(f.path) : `<button type="button" class="difbtn" data-diff="${esc(f.path)}" aria-expanded="${!!diffs[f.path]}" title="Show the uncommitted changes (git diff)">${esc(f.path)}</button>`}</span><span class="c"><span class="add">+${f.add || 0}</span> <span class="rem">−${f.del || 0}</span></span></li>${diffs[f.path] ? `<li class="diffrow">${diffHtml(diffs[f.path])}</li>` : ""}`).join("")}</ul>` : ""}
+      <table class="ftable"><tbody>${fl.map(f => `<tr><td class="path">${clash[f.path] ? `<span class="tag warn" title="Also edited by ${esc(clash[f.path].filter(id => id !== s.id).map(title).join(", "))}">⚠ shared</span> ` : ""}${gitTag(f.path)}${SNAP ? esc(f.path) : `<button type="button" class="difbtn" data-diff="${esc(f.path)}" title="Compare before and after">${esc(f.path)}</button>`}</td><td class="c"><span class="add">+${f.add || 0}</span> <span class="rem">−${f.del || 0}</span></td><td class="act">${SNAP ? "" : `<button type="button" class="btn" data-diff="${esc(f.path)}">View changes</button>`}</td></tr>`).join("")}</tbody></table>` : ""}
     ${earlier.length ? `<h3>Earlier in this session</h3><ul class="earlier">${earlier.map(e => `<li><span>${esc(e.prompt)}</span><span class="n">${(e.done || []).length} done · ${(e.files || []).length} files · ${hhmm(e.started)}</span></li>`).join("")}</ul>
       <button type="button" class="linkish" data-view="history" data-q="${esc(s.title || "")}">See all in History →</button>` : ""}
     ${chips ? `<div class="chips">${chips}</div>` : ""}`;
@@ -918,6 +1065,117 @@ document.addEventListener("submit", async e => {
   } catch (err) { msg.textContent = err.message; form.querySelectorAll("button").forEach(b => b.disabled = false); if (/changed/.test(err.message)) { propSig = ""; tick(true); } }
 });
 
+// ---------------------------------------------------------------- savings view (TokenEconomizer)
+
+let te = null, teAt = 0, teBusy = "";
+async function loadTe(force) {
+  if (SNAP || (!force && Date.now() - teAt < 30000)) return; teAt = Date.now();
+  try { const r = await fetch("api/te"); te = r.ok ? await r.json() : { error: "The board server is out of date: start a new Claude session here." }; }
+  catch (e) { te = { error: "Couldn't reach the board server." }; }
+  if (view === "savings") drawSavings(true);
+  histSig = ""; if (view === "history") drawHistory();
+}
+const teSessions = () => new Map((te?.ledger || []).filter(r => r.kind === "session").map(r => [r.session_id, r]));
+function costSplit() {  // requests from sessions TokenEconomizer folded (not imported) vs everything before its first one
+  const led = teSessions(), withTe = [...led.values()].filter(r => !r.imported);
+  const first = withTe.length ? Math.min(...withTe.map(r => (r.at || 0) * 1000).filter(Boolean)) : 0;
+  const after = hist.filter(e => led.has(e.session) && !led.get(e.session).imported);
+  const before = hist.filter(e => !after.includes(e) && (!first || new Date(e.started).getTime() < first));
+  const avg = l => l.length ? l.reduce((a, e) => a + (e.cost || 0), 0) / l.length : 0;
+  const med = l => { const c = l.map(e => e.cost || 0).sort((a, b) => a - b); return c.length ? (c.length % 2 ? c[(c.length - 1) / 2] : (c[c.length / 2 - 1] + c[c.length / 2]) / 2) : 0; };
+  return { before, after, avgB: avg(before), avgA: avg(after), medB: med(before), medA: med(after) };
+}
+const fmtTok = n => n == null ? "–" : n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? Math.round(n / 1e3) + "k" : String(Math.round(n));
+let svSig = "";
+function drawSavings(force) {
+  loadTe();
+  const sig = JSON.stringify(te) + lastH.length + teBusy; if (!force && sig === svSig) return; svSig = sig;
+  if (SNAP) { $("sv").innerHTML = `<div class="empty">Savings aren't part of a snapshot.</div>`; return; }
+  if (!te) { $("sv").innerHTML = `<div class="empty">Loading…</div>`; return; }
+  if (!te.installed || te.error && !te.status) {
+    $("sv").innerHTML = `<section class="detail" style="margin-top:16px"><div class="dh"><h2>Install TokenEconomizer</h2></div>
+      <p class="n" style="margin:6px 0 0">${te.installed ? esc(te.error) : "Microsoft's TokenEconomizer plugin cuts what Claude spends in a repository: it remembers facts about the repo between sessions (micro-skills), drops tools the repo never uses (tool pruning), and redirects Claude when it's stuck in a loop. Once it's installed, this page shows what it learned and what it saved."}</p>
+      <h3>1. Install the plugin (in a terminal)</h3><p class="n" style="margin:0">The plugin runs from the clone, so keep the folder where it is.</p>
+      ${["git clone https://github.com/microsoft/TokenEconomizer.git ~/TokenEconomizer", "claude plugin marketplace add ~/TokenEconomizer", "claude plugin install tokeneconomizer@tokeneconomizer"].map(c => `<div class="cmd"><code>${esc(c)}</code><button type="button" class="btn" data-copy="${esc(c)}">Copy</button></div>`).join("")}
+      <h3>2. Restart Claude Code</h3><p class="n" style="margin:0">Its <code>te</code> command appears after the first session with the plugin, then come back here.</p></section>`;
+    return;
+  }
+  const st = te.status, L = st.ledger || {}, ms = st.microskills || {}, tp = st.toolprune || {}, lg = st.loopguard || {}, cfg = st.config || {};
+  const c = costSplit(), pct = c.avgB && c.after.length ? (c.avgA - c.avgB) / c.avgB * 100 : null;
+  const facts = te.facts || [], active = facts.filter(f => f.inject), forming = facts.filter(f => !f.inject && f.state !== "retired");
+  const led = [...teSessions().values()].filter(r => !r.imported).sort((a, b) => (b.at || 0) - (a.at || 0));
+  const title = sid => (data.sessions || {})[sid]?.title || hist.find(e => e.session === sid)?.title || sid.slice(0, 8);
+  const sel = (k, opts) => `<select data-teset="${k}" ${teBusy ? "disabled" : ""}>${opts.map(o => `<option${(cfg[k] === "envfacts+distiller" ? "on" : cfg[k]) === o ? " selected" : ""}>${o}</option>`).join("")}</select>`;
+  $("nc-savings").textContent = pct == null ? "" : `${pct > 0 ? "+" : ""}${Math.round(pct)}%`;
+  $("sv").innerHTML = `
+    <section class="detail" style="margin-top:16px">
+      <div class="dh"><h2>Cost per request</h2><span class="n">${esc(st.repo || "")} · ${L.sessions || 0} session${L.sessions === 1 ? "" : "s"} with TokenEconomizer</span></div>
+      <div class="cmp">
+        <div><span>Before (${c.before.length} requests)</span><b>${money(c.avgB)}</b><span>average · median ${money(c.medB)}</span></div>
+        <div class="arrow">→</div>
+        <div><span>With TokenEconomizer (${c.after.length} requests)</span><b>${c.after.length ? money(c.avgA) : "–"}</b><span>${c.after.length ? `average · median ${money(c.medA)}` : "no finished request yet"}</span></div>
+      </div>
+      <p style="margin:10px 0 0">${pct == null ? `<span class="n">The comparison fills in as requests finish with the plugin on.</span>` : `<span class="delta ${pct <= 0 ? "good" : "bad"}">${pct <= 0 ? "▼" : "▲"} ${Math.abs(pct).toFixed(1)}%</span> <span class="n">average cost per request. A rough signal: no two requests are alike, so give it a couple of weeks of work.</span>`}</p>
+      <div class="kv">
+        <div><b>${fmtTok(L.effective_tokens)}</b><span>effective tokens (its ledger)</span></div>
+        <div><b>${fmtTok(L.overhead_tokens)}</b><span>its own overhead (${((L.overhead_frac || 0) * 100).toFixed(1)}%)</span></div>
+        <div><b>${L.nudges || 0}</b><span>loop redirects</span></div>
+        <div><b>${L.aborts || 0}</b><span>still-stuck notices</span></div>
+        <div><b>${ms.injected_lines || 0}</b><span>facts injected</span></div>
+        <div><b>${(tp.applied || []).length}</b><span>tools pruned</span></div>
+      </div>
+      ${(st.warnings || []).map(w => `<div class="banner">${esc(w)}</div>`).join("")}
+    </section>
+    <div class="sv-grid">
+      <section class="detail">
+        <div class="dh"><h2>Learned facts</h2><span class="tag ${cfg.microskills === "off" ? "warn" : "ok"}">micro-skills: ${esc(cfg.microskills === "envfacts+distiller" ? "on" : cfg.microskills || "?")}</span></div>
+        <p class="n" style="margin:4px 0 0">Learned from ${ms.sessions_folded || 0} finished session${ms.sessions_folded === 1 ? "" : "s"}${ms.imported_sessions ? ` (+${ms.imported_sessions} from earlier history)` : ""}. A fact is added at session start once it's confirmed in 3 sessions and the failure it prevents keeps coming up.</p>
+        <h3>Added at every session start</h3>
+        ${te.rendered.trim() ? `<pre class="block">${esc(te.rendered.trim())}</pre>` : `<p class="n">Nothing yet. Facts need a few sessions to confirm.</p>`}
+        ${forming.length ? `<h3>Still forming (${forming.length})</h3><div>${forming.slice(0, 30).map(f => `<div class="fact"><span class="tag">${esc(f.state || "")}</span><code>${esc(f.key)}</code><span class="n">${esc(String(f.fire ?? ""))}</span></div>`).join("")}</div>` : ""}
+      </section>
+      <section class="detail">
+        <div class="dh"><h2>Tool pruning</h2><span class="tag ${cfg.toolprune === "off" ? "warn" : "info"}">mode: ${esc(cfg.toolprune || "?")}</span></div>
+        <p class="n" style="margin:4px 0 0">${tp.sessions || 0} sessions (${tp.prompts || 0} prompts) watched. Tools that go unused for long enough are proposed here. Applying writes deny rules to <code>.claude/settings.local.json</code>, from the next session. Bash, Read, Edit, Write, Grep and Glob are never touched.</p>
+        <h3>Proposed</h3>
+        ${(tp.proposal || []).length ? `<div class="chips" style="border:0;padding:0;margin:6px 0 0">${tp.proposal.map(t => `<span class="chip">${esc(t)}</span>`).join("")}</div>
+          <div class="actions" style="margin-top:10px"><button type="button" class="btn primary" data-teact="apply" ${teBusy ? "disabled" : ""}>Apply all</button><span class="n">or one at a time below</span></div>
+          <table class="ftable" style="margin-top:6px"><tbody>${tp.proposal.map(t => `<tr><td class="path">${esc(t)}</td><td class="act"><button type="button" class="btn" data-teact="apply" data-tool="${esc(t)}" ${teBusy ? "disabled" : ""}>Apply</button></td></tr>`).join("")}</tbody></table>`
+          : `<p class="n">Nothing proposed yet. It needs enough sessions where a tool was loaded and never used.</p>`}
+        <h3>Applied</h3>
+        ${(tp.applied || []).length ? `<table class="ftable"><tbody>${tp.applied.map(t => `<tr><td class="path">${esc(t)}</td><td class="act"><button type="button" class="btn" data-teact="restore" data-tool="${esc(t)}" ${teBusy ? "disabled" : ""}>Give back</button></td></tr>`).join("")}</tbody></table>
+          <div class="actions" style="margin-top:8px"><button type="button" class="btn" data-teact="restore" ${teBusy ? "disabled" : ""}>Give all back</button></div>` : `<p class="n">None.</p>`}
+      </section>
+      <section class="detail">
+        <div class="dh"><h2>Loop guard</h2><span class="tag ${cfg.loopguard === "off" ? "warn" : "ok"}">${esc(cfg.loopguard || "?")}</span></div>
+        <p class="n" style="margin:4px 0 0">${lg.envelope ? `A normal turn here runs about <b>${Math.round(lg.envelope)}</b> tool calls (learned from ${lg.ended_green_turns} turns that ended well). Past that, a turn repeating the same failures is checked by a small Haiku judge and Claude gets a redirect. It never stops a turn.` : `Learning what a normal turn looks like: ${lg.ended_green_turns || 0} of 5 turns that ended well so far. Until then it stays quiet.`}</p>
+        <h3>Recent sessions</h3>
+        ${led.length ? `<table class="ftable"><tbody>${led.slice(0, 12).map(r => `<tr><td>${esc(title(r.session_id))}<div class="n">${r.at ? new Date(r.at * 1000).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""} · ${r.turns || 0} turn${r.turns === 1 ? "" : "s"}</div></td><td class="c">${r.nudges ? `<span class="tag warn">${r.nudges} redirect${r.nudges > 1 ? "s" : ""}</span> ` : ""}${r.aborts ? `<span class="tag bad">${r.aborts} stuck</span> ` : ""}${r.injected_chars ? `<span class="tag ok">facts</span>` : ""}</td></tr>`).join("")}</tbody></table>` : `<p class="n">No session folded yet. Sessions show up here when they end.</p>`}
+      </section>
+      <section class="detail">
+        <div class="dh"><h2>Settings</h2></div>
+        <div class="setrow"><span><b>Micro-skills</b><br><small class="n">on also lets a small model propose facts every few sessions; envfacts learns without model calls</small></span>${sel("microskills", ["on", "envfacts", "off"])}</div>
+        <div class="setrow"><span><b>Tool pruning</b><br><small class="n">propose waits for you to apply here; auto applies on its own</small></span>${sel("toolprune", ["propose", "auto", "off"])}</div>
+        <div class="setrow"><span><b>Loop guard</b></span>${sel("loopguard", ["nudge", "off"])}</div>
+        <p class="n" style="margin:8px 0 0">These are TokenEconomizer's global settings (<code>te config set --global</code>). <span id="temsg" role="status"></span></p>
+      </section>
+    </div>`;
+}
+async function teAction(body, btn) {
+  teBusy = "1"; drawSavings(true); let msg = "";
+  try { const j = await post("api/te", body); msg = j.out || "Done."; } catch (err) { msg = err.message; }
+  teBusy = ""; await loadTe(true); drawSavings(true); const m = $("temsg"); if (m) m.textContent = msg.split("\n")[0];
+  if (body.action !== "config") alert(msg);
+}
+document.addEventListener("click", e => {
+  const c = e.target.closest("[data-copy]"); if (c) return copyText(c.dataset.copy, c);
+  const a = e.target.closest("[data-teact]"); if (!a || a.disabled) return;
+  const tools = a.dataset.tool ? [a.dataset.tool] : [];
+  if (a.dataset.teact === "apply" && !confirm(`Remove ${tools.length ? tools[0] : "all proposed tools"} from Claude's tool list in this project, from the next session?`)) return;
+  teAction({ action: a.dataset.teact, tools }, a);
+});
+document.addEventListener("change", e => { const s = e.target.closest("[data-teset]"); if (s) teAction({ action: "config", set: { [s.dataset.teset]: s.value } }, s); });
+
 // ---------------------------------------------------------------- history view
 
 function parseHist(text) {
@@ -926,42 +1184,92 @@ function parseHist(text) {
   return [...by.values()].sort((a, b) => (b.ended || b.started) > (a.ended || a.started) ? 1 : -1);
 }
 
-function hcard(e) {
+let selHist = store.get("hist") || null;
+const hTasks = e => {  // the full task list; older records only kept titles, so rebuild what we can
+  if (e.tasks?.length) return e.tasks;
+  const done = (e.done || []).map(t => ({ ...t, status: "done" })), names = new Set(done.map(t => t.title));
+  const live = (data.sessions || {})[e.session]?.tasks || [];
+  const fromLive = live.filter(t => !names.has(t.title) && ((e.planned || []).includes(t.title) || (e.open || []).includes(t.title)));
+  fromLive.forEach(t => names.add(t.title));
+  return [...done, ...fromLive, ...[...(e.open || []), ...(e.planned || [])].filter(t => !names.has(t) && !(e.dropped || []).includes(t) && names.add(t)).map(title => ({ title, status: (e.open || []).includes(title) ? "pending" : "unknown" }))];
+};
+const hLog = e => e.log?.length ? e.log : ((data.sessions || {})[e.session]?.log || []).filter(x => x.at >= e.started && x.at <= (e.ended || e.started));
+
+function hrow(e) {
+  const fl = e.files || [], tk = hTasks(e), dn = tk.filter(t => t.status === "done").length, nt = (board.notes || {})[e.id] || {};
+  return `<button type="button" class="row hrow" data-hid="${esc(e.id)}" aria-current="${e.id === selHist}">
+    <div class="hrow-top"><time>${hhmm(e.started)}</time>${nt.pin ? `<span class="star" title="Pinned">★</span>` : ""}${e.source === "board" ? `<span class="tag info">board</span>` : ""}${checkTag(e.check)}${e.errors ? `<span class="tag bad">${e.errors} failed</span>` : ""}<span class="cost">${e.cost ? money(e.cost) : ""}</span></div>
+    <div class="hrow-text">${esc(e.prompt || e.title || "(no prompt)")}</div>
+    <div class="hrow-meta">${tk.length ? `<span>${dn}/${tk.length} tasks</span>` : ""}${fl.length ? `<span>${fl.length} file${fl.length > 1 ? "s" : ""}</span>` : ""}<span>${dur(secs(e.started, e.ended || e.started))}</span></div>
+  </button>`;
+}
+
+const TMARK = { done: "done", in_progress: "in_progress", blocked: "blocked" };
+function hdetail(e) {
+  if (!e) return `<div class="empty">Pick a request on the left to see its tasks, files and what Claude did.</div>`;
   const fl = e.files || [], add = fl.reduce((a, f) => a + f.add, 0), del = fl.reduce((a, f) => a + f.del, 0);
-  const done = e.done || [], addedLater = done.filter(t => t.added).length, dropped = e.dropped || [];
-  const nt = (board.notes || {})[e.id] || {};
+  const tk = hTasks(e), dn = tk.filter(t => t.status === "done").length, lg = hLog(e).slice().reverse(), nt = (board.notes || {})[e.id] || {};
+  const doneHere = t => t.status === "done" && (t.finished || "") >= e.started;
   const note = noteEdit === e.id ? `<form class="noteform" data-hid="${esc(e.id)}"><textarea name="note" rows="3" placeholder="Why this mattered, follow-ups, links…">${esc(nt.note || "")}</textarea><div class="actions"><button class="btn primary" value="save">Save note</button><button class="btn" value="cancel">Cancel</button></div></form>`
     : nt.note ? `<div class="hnote">${esc(nt.note)}</div>${SNAP ? "" : `<button type="button" class="linkish" data-hnote="${esc(e.id)}">Edit note</button>`}`
-    : SNAP ? "" : `<button type="button" class="linkish" data-hnote="${esc(e.id)}">Add note</button>`;
-  return `<article class="hcard${nt.pin ? " pinned" : ""}">
-    <div class="hhead">${SNAP ? "" : `<button type="button" class="hpin" data-hpin="${esc(e.id)}" aria-pressed="${!!nt.pin}" title="${nt.pin ? "Unpin" : "Pin"}" aria-label="${nt.pin ? "Unpin" : "Pin"} this request">★</button>`}<time>${hhmm(e.started)}–${hhmm(e.ended || e.started)}</time><span>${esc(e.title || "Session")}</span>${e.source === "board" ? `<span class="tag info">from the board</span>` : ""}${checkTag(e.check)}${e.errors ? `<span class="tag bad">${e.errors} failed</span>` : ""}${e.cost ? `<span class="tag">${money(e.cost)}</span>` : ""}${(e.agents || []).length ? `<span class="tag agent">${e.agents.length} agent${e.agents.length > 1 ? "s" : ""}</span>` : ""}</div>
-    <p class="hprompt">${esc(e.prompt || "(no prompt)")}</p>${partTags((e.files || []).map(f => f.path))}
-    ${done.length ? `<ol class="hdone">${done.map(t => `<li><span class="ok">✓</span><span><b>${esc(t.title)}</b>${t.added ? ` <span class="tag info">added later</span>` : ""}${t.summary ? ` <span class="n">${esc(t.summary)}</span>` : ""}</span><span class="dur">${t.started && t.finished ? dur(secs(t.started, t.finished)) : ""}</span></li>`).join("")}</ol>`
-      : `<p class="n" style="margin:0">${fl.length || e.tools ? "No tasks marked done." : "Answered without changes."}</p>`}
-    ${addedLater || dropped.length ? `<p class="n" style="margin:4px 0 0">Plan drift: ${(e.planned || []).length} planned${addedLater ? `, +${addedLater} added later` : ""}${dropped.length ? `, dropped: ${esc(dropped.join(" · "))}` : ""}</p>` : ""}
-    ${e.open?.length ? `<p class="n" style="margin:4px 0 0">Still open: ${esc(e.open.join(" · "))}</p>` : ""}
-    ${(e.proposals || []).map(id => board.proposals?.[id]).filter(Boolean).map(p => `<button type="button" class="linkish" data-pid="${esc(p.id)}">Proposal: ${esc(p.title)} (${PSTATE[p.status]?.[1] || esc(p.status)}) →</button>`).join(" ")}
-    ${fl.length ? `<details><summary>${fl.length} file${fl.length > 1 ? "s" : ""} changed <span class="add">+${add}</span> <span class="rem">−${del}</span></summary><ul class="files">${fl.map(f => `<li><span class="path">${esc(f.path)}</span><span class="c"><span class="add">+${f.add}</span> <span class="rem">−${f.del}</span></span></li>`).join("")}</ul></details>` : ""}
-    ${e.reply ? `<details><summary>Claude's reply</summary><div class="reply">${esc(e.reply)}</div></details>` : ""}
-    ${note}
-  </article>`;
+    : SNAP ? "" : `<button type="button" class="linkish" data-hnote="${esc(e.id)}">Add a note</button>`;
+  const ICL = { done: "✓", plan: "•", run: "›", stop: "■", error: "✕", needs: "!", you: "→", agent: "◆", session: "○" };
+  return `<div class="dh"><h2>${esc(e.title || "Session")}</h2>
+      ${SNAP ? "" : `<button type="button" class="btn" data-hpin="${esc(e.id)}" aria-pressed="${!!nt.pin}">${nt.pin ? "★ Pinned" : "☆ Pin"}</button>`}
+    </div>
+    <div class="row-meta" style="margin-top:4px"><span>${new Date(e.started).toLocaleString([], { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })} – ${hhmm(e.ended || e.started)}</span>${e.source === "board" ? `<span class="tag info">sent from the board</span>` : ""}${checkTag(e.check)}${(e.agents || []).length ? `<span class="tag agent">${e.agents.length} agent${e.agents.length > 1 ? "s" : ""}</span>` : ""}</div>
+    <div class="hprompt-big"><small>Your request</small>${esc(e.prompt || "(no prompt)")}</div>
+    <div class="kv">
+      <div><b>${dn}/${tk.length}</b><span>tasks done</span></div>
+      <div><b>${fl.length}</b><span>files changed</span></div>
+      <div><b><span class="add">+${add}</span> <span class="rem">−${del}</span></b><span>lines</span></div>
+      <div><b>${dur(secs(e.started, e.ended || e.started))}</b><span>duration</span></div>
+      <div><b>${e.tools || 0}</b><span>tool calls${e.errors ? `, <span class="rem">${e.errors} failed</span>` : ""}</span></div>
+      <div><b>${money(e.cost || 0)}</b><span>cost</span></div>
+    </div>
+    ${partTags(fl.map(f => f.path))}
+    <div class="cols">
+      <div>
+        <h3>Tasks</h3>
+        ${tk.length ? `<ol>${tk.map(t => `<li class="task ${TMARK[t.status] || ""}"><span class="dot"></span><div><div class="t">${esc(t.title)}${doneHere(t) && tk.some(x => !doneHere(x)) ? `<span class="tag ok here">this request</span>` : ""}${t.added ? ` <span class="tag info">added later</span>` : ""}${t.status === "unknown" ? ` <span class="tag">status not recorded</span>` : t.status === "pending" ? ` <span class="tag warn">left open</span>` : ""}</div>${t.summary ? `<div class="sum">${esc(t.summary)}</div>` : ""}</div><span class="dur">${t.started && t.finished ? dur(secs(t.started, t.finished)) : t.finished ? hhmm(t.finished) : ""}</span></li>`).join("")}</ol>`
+          : `<p class="n">${fl.length || e.tools ? "No task list for this request." : "Answered without changes."}</p>`}
+        ${(e.dropped || []).length ? `<p class="drift n">Dropped from the plan: ${esc(e.dropped.join(" · "))}</p>` : ""}
+        ${(e.proposals || []).map(id => board.proposals?.[id]).filter(Boolean).map(p => `<p style="margin:8px 0 0"><button type="button" class="linkish" data-pid="${esc(p.id)}">Proposal: ${esc(p.title)} (${PSTATE[p.status]?.[1] || esc(p.status)}) →</button></p>`).join("")}
+        ${fl.length ? `<h3>Files changed</h3><table class="ftable"><tbody>${fl.map(f => `<tr><td class="path">${gitTag(f.path)}${esc(f.path)}</td><td class="c"><span class="add">+${f.add}</span> <span class="rem">−${f.del}</span></td><td class="act">${SNAP ? "" : `<button type="button" class="btn" data-hdiff="${esc(f.path)}">View changes</button>`}</td></tr>`).join("")}</tbody></table>` : ""}
+        ${e.reply ? `<h3>Claude's reply</h3><div class="reply full">${esc(e.reply)}</div>` : ""}
+        <h3>Note</h3>${note}
+      </div>
+      <div>
+        ${(e.agents || []).length ? `<h3>Helper agents</h3><ol class="agents">${e.agents.map(a => `<li class="task ${TMARK[a.status] || ""}"><span class="dot"></span><div><div class="t">${esc(a.desc || a.type || "Agent")}</div><div class="sum">${esc(a.type || "")}</div></div><span class="dur">${a.started && a.finished ? dur(secs(a.started, a.finished)) : ""}</span></li>`).join("")}</ol>` : ""}
+        ${(() => { const r = teSessions().get(e.session); return r && !r.imported ? `<h3>TokenEconomizer</h3><p class="n" style="margin:0">Session total: ${r.nudges ? `<span class="tag warn">${r.nudges} loop redirect${r.nudges > 1 ? "s" : ""}</span> ` : "no redirects "}${r.aborts ? `<span class="tag bad">${r.aborts} still-stuck notice${r.aborts > 1 ? "s" : ""}</span> ` : ""}${r.injected_chars ? `· learned facts added (${r.injected_chars} chars)` : ""}${(r.untool_applied || []).length ? ` · ${r.untool_applied.length} tools pruned` : ""}</p>` : ""; })()}
+        <h3>Activity</h3>
+        ${lg.length ? `<ul class="log">${lg.slice(0, 150).map(x => `<li class="${esc(x.kind || "")}"><span class="ic">${ICL[x.kind] || "·"}</span><span>${esc(x.text)}</span><time>${hhmm(x.at)}</time></li>`).join("")}</ul>` : `<p class="n">The step-by-step log wasn't kept for this request (it's recorded for new requests from now on).</p>`}
+      </div>
+    </div>`;
 }
 
 function drawHistory() {
   const q = $("hq").value.trim().toLowerCase();
-  const sig = lastH + "|" + q + JSON.stringify(board.notes || {}) + noteEdit + pinOnly; if (sig === histSig) return; histSig = sig;
-  $("hpin").setAttribute("aria-pressed", pinOnly);  // keeps open <details> open between polls
-  const hay = e => [e.prompt, e.title, e.reply, board.notes?.[e.id]?.note, ...(e.done || []).map(t => t.title + " " + t.summary), ...(e.files || []).map(f => f.path)].join(" ").toLowerCase();
+  const sig = lastH + "|" + q + JSON.stringify(board.notes || {}) + noteEdit + pinOnly + selHist + Object.keys(git.files || {}).join(); if (sig === histSig) return; histSig = sig;
+  $("hpin").setAttribute("aria-pressed", pinOnly);
+  const hay = e => [e.prompt, e.title, e.reply, board.notes?.[e.id]?.note, ...hTasks(e).map(t => t.title + " " + (t.summary || "")), ...(e.files || []).map(f => f.path)].join(" ").toLowerCase();
   const list = hist.filter(e => (!q || hay(e).includes(q)) && (!pinOnly || board.notes?.[e.id]?.pin));
-  $("hcount").textContent = `${list.length} request${list.length === 1 ? "" : "s"} · ${list.reduce((a, e) => a + (e.done || []).length, 0)} tasks done · ${money(list.reduce((a, e) => a + (e.cost || 0), 0))}`;
-  let day = "";
-  $("hlist").innerHTML = list.slice(0, 200).map(e => {
+  $("hcount").textContent = `${list.length} request${list.length === 1 ? "" : "s"} · ${list.reduce((a, e) => a + hTasks(e).filter(t => t.status === "done").length, 0)} tasks done · ${money(list.reduce((a, e) => a + (e.cost || 0), 0))}`;
+  if (!list.find(e => e.id === selHist)) selHist = list[0]?.id || null;
+  let day = ""; const keep = $("hlist").scrollTop;
+  $("hlist").innerHTML = list.slice(0, 300).map(e => {
     const d = new Date(e.started).toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" });
-    const head = d !== day ? `<div class="day">${esc(d)}</div>` : ""; day = d;
-    return head + hcard(e);
-  }).join("") || `<div class="empty">${pinOnly ? "Nothing pinned yet. Use ★ on a request to keep it here." : q ? "Nothing matches." : "No history yet. Each request you give Claude lands here once it finishes, with the tasks done and files changed."}</div>`;
+    const head = d !== day ? `<div class="daysep">${esc(d)}</div>` : ""; day = d;
+    return head + hrow(e);
+  }).join("") || `<div class="empty">${pinOnly ? "Nothing pinned yet. Use ★ Pin on a request to keep it here." : q ? "Nothing matches." : "No history yet. Each request you give Claude lands here once it finishes."}</div>`;
+  $("hlist").scrollTop = keep;
+  $("hdetail").innerHTML = hdetail(list.find(e => e.id === selHist));
 }
 $("hq").addEventListener("input", drawHistory);
+setTimeout(() => loadTe(true), 1500);
+$("navtoggle").onclick = () => $("app").classList.toggle("navopen");
+$("scrim").onclick = () => $("app").classList.remove("navopen");
+$("palbtn").onclick = () => palOpen();
 
 // ---------------------------------------------------------------- map view
 
@@ -1056,11 +1364,16 @@ function draw() {
   const all = sessions(), wait = awaiting().length;
   const needs = all.filter(s => state(s) === "needs").length + wait;
   document.title = (needs ? `(${needs}) ` : "") + (all[0]?.project ? `${all[0].project} | ` : "") + "Project Board";
-  $("meta").textContent = SNAP ? `${all[0]?.project || "Project"} · snapshot from ${new Date(SNAP.at).toLocaleString()}` : `${all[0]?.project || "Project"} · updated ${ago(data.updated)}`;
+  $("meta").textContent = SNAP ? `Snapshot from ${new Date(SNAP.at).toLocaleString()}` : `Updated ${ago(data.updated)}`;
   $("pbadge").innerHTML = wait ? `<span class="badge">${wait}</span>` : "";
   VIEWS.forEach(v => $("v-" + v).hidden = v !== view);
-  document.querySelectorAll("[data-view]").forEach(b => b.closest(".seg") && b.setAttribute("aria-pressed", b.dataset.view === view));
-  ({ live: () => drawLive(all), today: drawToday, week: drawWeek, timeline: drawTimeline, proposals: drawProposals, history: drawHistory, map: drawMap })[view]();
+  document.querySelectorAll("[data-view]").forEach(b => b.closest(".sidenav") && b.setAttribute("aria-pressed", b.dataset.view === view));
+  const VT = { live: ["Live", "What every session is doing right now"], today: ["Today", "What shipped and what's still open today"], week: ["Week", "The last seven days at a glance"],
+    timeline: ["Timeline", "Sessions, tasks and agents over time"], proposals: ["Proposals", "Ideas and plans waiting for your answer"], history: ["History", "Every request and what was done for it"], map: ["Map", "How the project fits together"], savings: ["Savings", "What TokenEconomizer learned here and what it saved"] }[view];
+  $("vtitle").textContent = VT[0]; $("vsub").textContent = VT[1];
+  $("pname").textContent = all[0]?.project || "Project board";
+  $("nc-live").textContent = all.filter(live).length || ""; $("nc-history").textContent = hist.length || "";
+  ({ live: () => drawLive(all), today: drawToday, week: drawWeek, timeline: drawTimeline, proposals: drawProposals, history: drawHistory, map: drawMap, savings: drawSavings })[view]();
   notify(all);
   countdown();
   requestAnimationFrame(drawEdges);
@@ -1091,7 +1404,7 @@ addEventListener("hashchange", () => {  // links, back/forward, and edited URLs
   else if (h && decodeURIComponent(h) !== selected) select(decodeURIComponent(h));
 });
 
-function setView(v) { view = v; store.set("view", v); history.replaceState(null, "", v === "live" ? (selected ? "#" + encodeURIComponent(selected) : "#") : "#" + v); propSig = histSig = ""; draw(); window.scrollTo({ top: 0 }); }
+function setView(v) { $("app").classList.remove("navopen"); view = v; store.set("view", v); history.replaceState(null, "", v === "live" ? (selected ? "#" + encodeURIComponent(selected) : "#") : "#" + v); propSig = histSig = ""; draw(); window.scrollTo({ top: 0 }); }
 
 function select(id) {
   selected = id; view = "live"; store.set("view", view); history.replaceState(null, "", "#" + encodeURIComponent(id)); draw();
@@ -1099,7 +1412,7 @@ function select(id) {
 }
 
 document.addEventListener("click", e => {
-  const t = e.target.closest("[data-rename],[data-commit],[data-permit],[data-diff],[data-hpin],[data-hnote],[data-view],[data-pid],[data-ver],[data-id],[data-f],[data-span],[data-mpart]");
+  const t = e.target.closest("[data-hid]:not(form),[data-hdiff],[data-rename],[data-commit],[data-permit],[data-diff],[data-hpin],[data-hnote],[data-view],[data-pid],[data-ver],[data-id],[data-f],[data-span],[data-mpart]");
   if (!t || t.closest("form")) return;
   if (t.dataset.mpart !== undefined) {
     if (!t.dataset.mpart || !partById(t.dataset.mpart)) return;  // a blueprint's new part: nothing to open yet
@@ -1109,7 +1422,9 @@ document.addEventListener("click", e => {
   else if (t.dataset.rename) { const cur = (data.sessions || {})[t.dataset.rename]; const name = prompt("Rename this session (leave empty for the automatic title)", cur?.name || cur?.title || ""); if (name !== null) post("api/rename", { session: t.dataset.rename, name }).then(() => tick(true)).catch(err => alert(err.message)); }
   else if (t.dataset.commit) askCommit(t.dataset.commit, t);
   else if (t.dataset.permit) permit(t.dataset.sid, t.dataset.nid, t.dataset.permit, t);
-  else if (t.dataset.diff !== undefined) toggleDiff(t.dataset.diff);
+  else if (t.dataset.diff !== undefined) { const s = (data.sessions || {})[selected]; openDiff(t.dataset.diff, { files: s ? files(s).slice().reverse().map(f => f.path) : [t.dataset.diff], rid: sessRids(s), live: true }); }
+  else if (t.dataset.hdiff !== undefined) { const h = hist.find(x => x.id === selHist); openDiff(t.dataset.hdiff, { files: (h?.files || []).map(f => f.path), rid: selHist, stats: h?.files }); }
+  else if (t.dataset.hid) { selHist = t.dataset.hid; store.set("hist", selHist); noteEdit = null; drawHistory(); if (matchMedia("(max-width:1100px)").matches) $("hdetail").scrollIntoView({ block: "start" }); }
   else if (t.dataset.hpin) post("api/note", { id: t.dataset.hpin, pin: t.getAttribute("aria-pressed") !== "true" }).then(() => tick(true)).catch(err => alert(err.message));
   else if (t.dataset.hnote) { noteEdit = t.dataset.hnote; drawHistory(); document.querySelector(".noteform textarea")?.focus(); }
   else if (t.dataset.view) { if (t.dataset.q !== undefined) $("hq").value = t.dataset.q; setView(t.dataset.view); }
@@ -1178,8 +1493,8 @@ const GIT = { M: "modified", A: "added", D: "deleted", R: "renamed", "??": "new"
 const gitTag = path => git.files?.[path] ? `<span class="gtag" title="Not committed yet (${GIT[git.files[path]] || git.files[path]})">${esc(git.files[path] === "??" ? "new" : git.files[path])}</span>` : "";
 function uncommittedBlock(s, fl) {
   if (SNAP || !git.repo) return "";
-  const open = fl.filter(f => git.files[f.path]);
-  if (!open.length) return `<div class="uncommitted n">All committed.</div>`;
+  const open = fl.filter(f => git.files[f.path]), outside = fl.filter(f => f.path.startsWith("…")).length;
+  if (!open.length) return outside === fl.length ? `<div class="uncommitted n">Outside this project's git repository.</div>` : `<div class="uncommitted n">All committed${outside ? ` (${outside} file${outside > 1 ? "s" : ""} outside the project)` : ""}.</div>`;
   return `<div class="uncommitted"><span class="tag warn">${open.length} not committed</span>${live(s) ? `<button type="button" class="btn" data-commit="${esc(s.id)}">Ask Claude to commit</button>` : ""}</div>`;
 }
 async function askCommit(sid, btn) {
@@ -1224,7 +1539,7 @@ function palSource() {
     ...hist.slice(0, 150).map(e => go(e.prompt || "(no prompt)", `request · ${new Date(e.started).toLocaleDateString([], { day: "numeric", month: "short" })}`, () => { $("hq").value = (e.prompt || "").slice(0, 60); setView("history"); })),
   ];
   const fset = new Map(); sessions().forEach(s => files(s).forEach(f => fset.set(f.path, s.id)));
-  fset.forEach((sid, path) => out.push(go(path, "file", () => { select(sid); if (!path.startsWith("…") && !diffs[path]) toggleDiff(path); })));
+  fset.forEach((sid, path) => out.push(go(path, "file", () => { select(sid); const ss = (data.sessions || {})[sid]; openDiff(path, { files: files(ss).slice().reverse().map(f => f.path), rid: sessRids(ss) }); })));
   return out;
 }
 function palDraw() {
@@ -1270,17 +1585,117 @@ const countdown = () => document.querySelectorAll("[data-until]").forEach(el => 
 });
 setInterval(countdown, 1000);
 
-let diffs = {};
-const diffHtml = d => d.loading ? `<p class="n">Loading diff…</p>` : d.error ? `<p class="formmsg">${esc(d.error)}</p>`
-  : !d.diff ? `<p class="n">${esc(d.note)}</p>`
-  : `<pre class="diff">${d.diff.split("\n").map(l => `<span class="${/^(\+\+\+|---|diff |index |new file|deleted file|similarity|rename)/.test(l) ? "m" : l.startsWith("@@") ? "h" : l[0] === "+" ? "a" : l[0] === "-" ? "r" : ""}">${esc(l) || " "}</span>`).join("")}</pre>${d.cut ? `<p class="n">Cut off: the diff is very long.</p>` : ""}`;
-async function toggleDiff(path) {
-  if (diffs[path]) { delete diffs[path]; return draw(); }
-  diffs[path] = { loading: true }; draw();
-  try { const r = await fetch("api/diff?path=" + encodeURIComponent(path)); const j = await r.json(); diffs[path] = r.ok ? j : { error: j.error || "Couldn't load the diff." }; }
-  catch (e) { diffs[path] = { error: "The board server is out of date. Start a new Claude session in this project, or rerun /project-plan." }; }
-  if (diffs[path]) draw();
+// Diff popup: before on the left, after on the right.
+// Sources: the edits Claude made in one request (.progress/edits/<round>.jsonl), or git's uncommitted diff against HEAD.
+const dd = { path: "", files: [], rid: "", src: "edits", mode: store.get("ddmode") || "split", full: false, wrap: store.get("ddwrap") === "1", cache: {}, stats: null };
+function parseUnified(text) {
+  const hunks = []; let h = null;
+  text.split("\n").forEach(l => {
+    const m = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@(.*)/.exec(l);
+    if (m) { h = { old_start: +m[1], new_start: +m[2], ctx: m[3].trim(), lines: [] }; hunks.push(h); }
+    else if (h && (l[0] === " " || l[0] === "+" || l[0] === "-")) h.lines.push(l);
+    else if (h && l === "") h.lines.push(" ");
+  });
+  hunks.forEach(x => { while (x.lines.length && x.lines[x.lines.length - 1] === " ") x.lines.pop(); });
+  return hunks;
 }
+function wordMark(a, b) {  // highlight what changed inside a pair of lines: common prefix and suffix stay plain
+  let i = 0; while (i < a.length && i < b.length && a[i] === b[i]) i++;
+  let j = 0; while (j < a.length - i && j < b.length - i && a[a.length - 1 - j] === b[b.length - 1 - j]) j++;
+  const m = (s, k) => k > s.length - i - j ? esc(s) : esc(s.slice(0, i)) + (s.length - i - j > 0 ? `<mark>${esc(s.slice(i, s.length - j))}</mark>` : "") + esc(s.slice(s.length - j));
+  const tiny = Math.min(a.length, b.length) && (i + j) / Math.max(a.length, b.length) < .3;  // mostly different: don't bother
+  return tiny ? [esc(a), esc(b)] : [m(a), m(b)];
+}
+function hunkRows(h, split) {
+  let o = h.old_start || 0, n = h.new_start || 0; const known = !!(h.old_start || h.new_start), rows = [], L = h.lines;
+  const ln = (x, on) => known && on ? x : "";
+  rows.push(split ? `<tr class="hunk"><td colspan="4">${known ? `@@ −${h.old_start} +${h.new_start} @@` : "Edit"} ${esc(h.ctx || "")}</td></tr>` : `<tr class="hunk"><td colspan="4">${known ? `@@ −${h.old_start} +${h.new_start} @@` : "Edit"} ${esc(h.ctx || "")}</td></tr>`);
+  for (let k = 0; k < L.length;) {
+    const c = L[k][0];
+    if (c !== "-" && c !== "+") {
+      const t = esc(L[k].slice(1));
+      rows.push(split ? `<tr><td class="ln">${ln(o, 1)}</td><td class="code l">${t || " "}</td><td class="ln">${ln(n, 1)}</td><td class="code">${t || " "}</td></tr>`
+        : `<tr><td class="ln">${ln(o, 1)}</td><td class="ln">${ln(n, 1)}</td><td class="sign"></td><td class="code">${t || " "}</td></tr>`);
+      o++; n++; k++; continue;
+    }
+    const del = [], ins = [];
+    while (k < L.length && L[k][0] === "-") del.push(L[k++].slice(1));
+    while (k < L.length && L[k][0] === "+") ins.push(L[k++].slice(1));
+    if (split) {
+      for (let r = 0; r < Math.max(del.length, ins.length); r++) {
+        const a = del[r], b = ins[r], [ma, mb] = a !== undefined && b !== undefined ? wordMark(a, b) : [esc(a ?? ""), esc(b ?? "")];
+        rows.push(`<tr>${a !== undefined ? `<td class="ln del">${ln(o++, 1)}</td><td class="code l del">${ma || " "}</td>` : `<td class="ln blank"></td><td class="code l blank"></td>`}${b !== undefined ? `<td class="ln ins">${ln(n++, 1)}</td><td class="code ins">${mb || " "}</td>` : `<td class="ln blank"></td><td class="code blank"></td>`}</tr>`);
+      }
+    } else {
+      del.forEach(a => rows.push(`<tr><td class="ln del">${ln(o++, 1)}</td><td class="ln del"></td><td class="sign del">−</td><td class="code del">${esc(a) || " "}</td></tr>`));
+      ins.forEach(b => rows.push(`<tr><td class="ln ins"></td><td class="ln ins">${ln(n++, 1)}</td><td class="sign ins">+</td><td class="code ins">${esc(b) || " "}</td></tr>`));
+    }
+  }
+  return rows.join("");
+}
+function sbsTable(groups) {  // groups: [{label, hunks}]
+  const split = dd.mode === "split";
+  const cols = split ? `<colgroup><col class="ln"><col><col class="ln"><col></colgroup>` : `<colgroup><col class="ln"><col class="ln"><col style="width:18px"><col></colgroup>`;
+  return `<table class="sbs${dd.wrap ? " wrap" : ""}">${cols}<tbody>${groups.map(g => (g.label ? `<tr class="edit"><td colspan="4">${g.label}</td></tr>` : "") + g.hunks.map(h => hunkRows(h, split)).join("")).join("")}</tbody></table>`;
+}
+async function ddLoad() {
+  const key = dd.src + "|" + (dd.src === "edits" ? dd.rid : dd.full ? "full" : "3") + "|" + dd.path;
+  if (dd.cache[key]) return dd.cache[key];
+  let out;
+  try {
+    if (dd.src === "edits") {
+      const texts = await Promise.all(dd.rid.split(",").map(id => fetch("edits/" + encodeURIComponent(id.replace(/:/g, "-")) + ".jsonl", { cache: "no-store" }).then(r => r.ok ? r.text() : "").catch(() => "")));
+      const edits = texts.join("\n").split("\n").filter(Boolean).map(l => { try { return JSON.parse(l); } catch (e) { return null; } }).filter(e => e && e.path === dd.path).sort((a, b) => a.at > b.at ? 1 : -1);
+      {
+        out = edits.length ? { edits } : { note: (dd.live ? "No edit to this file was recorded in this session" : "No edit to this file was recorded for this request") + (dd.path.startsWith("…") ? "." : " (edits are recorded from 10 Nov on). Try “Uncommitted vs last commit”.") };
+      }
+    } else {
+      const r = await fetch("api/diff?path=" + encodeURIComponent(dd.path) + (dd.full ? "&full=1" : "")), j = await r.json();
+      out = !r.ok ? { note: j.error || "Couldn't load the diff." } : j.diff ? { hunks: parseUnified(j.diff), cut: j.cut } : { note: j.note };
+    }
+  } catch (e) { out = { note: "Couldn't reach the board server. Start a Claude session in this project, or rerun /project-plan." }; }
+  return dd.cache[key] = out;
+}
+async function ddDraw() {
+  const i = dd.files.indexOf(dd.path);
+  $("dd-path").innerHTML = `${gitTag(dd.path)}${esc(dd.path)}<small>${dd.src === "edits" ? (dd.live ? "What Claude changed in this session, edit by edit" : "What Claude changed in this request, edit by edit") + (dd.path.startsWith("…") ? " · outside this project" : "") : "Working copy compared with the last commit (HEAD)"}</small>`;
+  $("dd-pos").textContent = dd.files.length > 1 ? `${i + 1} of ${dd.files.length}` : "";
+  $("dd-prev").disabled = $("dd-next").disabled = dd.files.length < 2;
+  $("dd-src").querySelectorAll("button").forEach(b => { b.setAttribute("aria-pressed", b.dataset.src === dd.src); b.disabled = b.dataset.src === "edits" ? !dd.rid : dd.path.startsWith("…"); b.title = b.disabled && b.dataset.src === "git" ? "This file is outside the project's git repository" : ""; });
+  $("dd-mode").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === dd.mode));
+  $("dd-fullwrap").hidden = dd.src !== "git"; $("dd-full").checked = dd.full; $("dd-wrap").checked = dd.wrap;
+  $("dd-cols").className = "dd-cols" + (dd.mode === "split" ? "" : " uni");
+  $("dd-lefth").textContent = dd.mode === "split" ? (dd.src === "edits" ? "Before the edit" : "Last commit (HEAD)") : "Changes";
+  $("dd-righth").textContent = dd.src === "edits" ? "After the edit" : "Working copy";
+  $("dd-body").innerHTML = `<div class="empty">Loading…</div>`; $("dd-stats").innerHTML = ""; $("dd-note").textContent = "";
+  const want = dd.path + dd.src + dd.full, d = await ddLoad();
+  if (want !== dd.path + dd.src + dd.full) return;  // switched file while loading
+  if (d.note) { $("dd-body").innerHTML = `<div class="empty">${esc(d.note)}</div>`; return; }
+  const groups = d.edits ? d.edits.map((e, k) => ({ label: `Edit ${k + 1} of ${d.edits.length}<small>${esc(e.tool === "Bash" ? "shell command" : e.tool)} · ${hhmm(e.at)}${e.vs_head ? " · the file right after it, compared with the last commit" : ""}${e.cut ? " · too large to keep, see the git view" : ""}</small>`, hunks: e.hunks })) : [{ hunks: d.hunks }];
+  const lines = groups.flatMap(g => g.hunks.flatMap(h => h.lines)), add = lines.filter(l => l[0] === "+").length, del = lines.filter(l => l[0] === "-").length;
+  $("dd-stats").innerHTML = `<span class="add">+${add}</span> <span class="rem">−${del}</span> · ${groups.reduce((a, g) => a + g.hunks.length, 0)} hunk${groups.reduce((a, g) => a + g.hunks.length, 0) === 1 ? "" : "s"}`;
+  $("dd-body").innerHTML = sbsTable(groups);
+  $("dd-body").scrollTop = 0;
+  $("dd-note").textContent = d.cut ? "Cut off: the diff is very long." : d.edits ? "Line numbers are the file's lines at the time of each edit." : "";
+}
+const sessRids = s => s?.id && s.rounds ? Array.from({ length: s.rounds }, (_, i) => `${s.id}:${i + 1}`).join(",") : (s?.round?.id || "");
+function openDiff(path, o = {}) {
+  Object.assign(dd, { path, files: o.files?.length ? o.files : [path], rid: o.rid || "", live: !!o.live });
+  if (!dd.files.includes(path)) dd.files.unshift(path);
+  dd.src = dd.rid ? "edits" : "git";
+  if (!$("diffdlg").open) $("diffdlg").showModal();
+  ddDraw();
+}
+const ddStep = k => { if (dd.files.length < 2) return; dd.path = dd.files[(dd.files.indexOf(dd.path) + k + dd.files.length) % dd.files.length]; if (dd.path.startsWith("…") && dd.rid) dd.src = "edits"; ddDraw(); };
+$("dd-prev").onclick = () => ddStep(-1); $("dd-next").onclick = () => ddStep(1);
+$("dd-close").onclick = () => $("diffdlg").close();
+$("dd-copy").onclick = e => copyText(dd.path, e.currentTarget);
+$("dd-src").onclick = e => { const b = e.target.closest("[data-src]"); if (b && !b.disabled) { dd.src = b.dataset.src; ddDraw(); } };
+$("dd-mode").onclick = e => { const b = e.target.closest("[data-mode]"); if (b) { dd.mode = b.dataset.mode; store.set("ddmode", dd.mode); ddDraw(); } };
+$("dd-full").onchange = e => { dd.full = e.target.checked; ddDraw(); };
+$("dd-wrap").onchange = e => { dd.wrap = e.target.checked; store.set("ddwrap", dd.wrap ? "1" : "0"); ddDraw(); };
+$("diffdlg").addEventListener("keydown", e => { if (e.target.matches("input")) return; if (e.key === "ArrowLeft") { ddStep(-1); e.preventDefault(); } else if (e.key === "ArrowRight") { ddStep(1); e.preventDefault(); } });
+$("diffdlg").addEventListener("close", () => { dd.cache = {}; });
 
 function weekData() {
   const days = [...Array(7)].map((_, i) => dayKey(Date.now() - (6 - i) * 864e5)), inWeek = iso => iso && days.includes(dayKey(iso));
@@ -1370,7 +1785,7 @@ $("keysbtn").onclick = () => $("keys").showModal();
 document.addEventListener("keydown", e => {
   if (e.metaKey || e.ctrlKey || e.altKey || e.target.closest("input, textarea, select, [contenteditable]") || document.querySelector("dialog[open]")) return;
   const k = e.key;
-  if (k >= "1" && k <= "7") setView(VIEWS[+k - 1]);
+  if (k >= "1" && k <= "8") setView(VIEWS[+k - 1]);
   else if (k === "j" || k === "k") {
     const step = k === "j" ? 1 : -1;
     if (view === "proposals") { const ids = [...document.querySelectorAll("#plist [data-pid]")].map(b => b.dataset.pid); if (ids.length) { selProp = ids[(Math.max(0, ids.indexOf(selProp)) + step + ids.length) % ids.length]; store.set("prop", selProp); propSig = ""; draw(); } }
