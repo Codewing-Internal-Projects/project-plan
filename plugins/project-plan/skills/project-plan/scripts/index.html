@@ -503,6 +503,7 @@
   .setrow { display:flex; gap:10px; align-items:center; flex-wrap:wrap; padding:8px 0; border-top:1px solid var(--line); font-size:13px; }
   .setrow:first-child { border-top:0; }
   .setrow > span:first-child { flex:1; min-width:160px; }
+  .paused .in_progress .dot { animation:none; border-top-color:var(--accent); opacity:.6; } /* marked in progress, but the session isn't working */
   @keyframes spin { to { transform:rotate(360deg); } }
   @keyframes pulse { 50% { opacity:.25; } }
   @media (prefers-reduced-motion: reduce) { .in_progress .dot, .pill.working i { animation:none; } .in_progress .dot { border-top-color:var(--accent); } }
@@ -781,7 +782,7 @@ function row(s, clash) {
     live(s) && listening(s.id) ? `<span class="tag info" title="Answers you send from the board reach it straight away">listening</span>` : "",
     clashes ? `<span class="tag warn">⚠ ${clashes} shared</span>` : "", s.errors ? `<span class="tag bad">${s.errors} failed</span>` : ""].join("");
   return `<button type="button" class="row srow${st === "needs" ? " flag" : ""}" data-id="${esc(s.id)}" aria-current="${s.id === selected}">
-    <div class="srow-top"><span class="pill ${st}"><i></i>${LABEL[st] || st}</span><span class="n">${ago(s.updated)}</span>${s.usage?.cost ? `<span class="cost">${money(s.usage.cost)}</span>` : ""}</div>
+    <div class="srow-top"><span class="pill ${st}"><i></i>${LABEL[st] || st}</span><span class="n">${ago(s.updated)}</span>${s.usage?.model || s.model ? `<span class="n" title="${esc(s.usage?.model || s.model)}">${esc(modelName(s.usage?.model || s.model))}</span>` : ""}${s.usage?.cost ? `<span class="cost">${money(s.usage.cost)}</span>` : ""}</div>
     <div class="srow-title">${esc(s.title || "New session")}</div>
     <div class="row-now">${esc(nowText(s))}</div>
     <div class="srow-meta">${tasks.length ? `<span title="Plan: ${c.done} of ${tasks.length} done"><span class="mini"><i class="d" style="width:${c.done / n * 100}%"></i><i class="p" style="width:${c.in_progress / n * 100}%"></i></span> ${c.done}/${tasks.length}</span>` : `<span>no plan</span>`}
@@ -809,12 +810,15 @@ function driftBlock(plan0, tasks) {
     <div><h4>What actually happened</h4><ol>${tasks.map(t => `<li class="${esc(t.status)}"><span class="mk">${MARK[t.status] || "○"}</span>${esc(t.title)}${t.added ? ` <span class="tag info">added</span>` : ""}</li>`).join("")}</ol></div></div></details>`;
 }
 
+// "claude-opus-5-5" -> "Opus 5.5", "claude-sonnet-4-20250514" -> "Sonnet 4"; anything else as it is
+const modelName = m => (m || "").replace(/^claude-/, "").replace(/\[.*\]$/, "").replace(/-\d{8}$/, "")
+  .replace(/-(\d+)(?:-(\d+))?$/, (_, a, b) => " " + a + (b ? "." + b : "")).replace(/^[a-z]/, c => c.toUpperCase());
 function agentsBlock(s) {
   const as = s.agents || []; if (!as.length) return "";
   const cls = { running: "in_progress", done: "done", failed: "blocked" };
   const isTop = a => !a.parent || !as.some(b => b.agent_id && b.agent_id === a.parent);
   const item = (a, depth) => `<li class="task ${cls[a.status] || ""}" style="--d:${depth}"><span class="dot"></span>
-      <div><div class="t">${esc(a.desc)} <span class="tag agent">${esc(a.type)}${a.bg ? " · background" : ""}</span></div>
+      <div><div class="t">${esc(a.desc)} <span class="tag agent">${esc(a.type)}${a.model ? " · " + esc(modelName(a.model)) : ""}${a.bg ? " · background" : ""}</span></div>
       <div class="sum">${a.status === "running" ? (a.last ? `<b>Now:</b> ${esc(a.last)}` : "Starting…") : a.status === "failed" ? "Failed" : esc(a.reply || "")}</div></div>
       <span class="dur">${dur(secs(a.started, a.finished || Date.now()))}${a.tools ? ` · ${a.tools} tools` : ""}${a.cost ? ` · ${money(a.cost)}` : ""}</span></li>`
     + (a.agent_id ? as.filter(k => k.parent === a.agent_id).map(k => item(k, depth + 1)).join("") : "");
@@ -829,9 +833,10 @@ function detail(s, clash, all) {
   const nowCls = st === "needs" ? "needs" : st === "idle" || st === "ended" ? "wait" : "";
   const nowLabel = { needs: canPermit(s) ? "Needs your approval" : "Needs your approval in the terminal", idle: "Waiting for you", quiet: "No activity for " + dur(secs(s.updated)), ended: "Ended" }[st] || "Now";
 
-  const plan = tasks.length ? `<ol>${tasks.map((t, i) => {
+  const busy = st === "working" || st === "needs";
+  const plan = tasks.length ? `<ol class="${busy ? "" : "paused"}">${tasks.map((t, i) => {
     const time = t.status === "done" && t.started && t.finished ? dur(secs(t.started, t.finished))
-               : t.status === "in_progress" && t.started ? dur(secs(t.started)) + " so far" : "";
+               : t.status === "in_progress" && t.started ? (busy ? dur(secs(t.started)) + " so far" : "paused · " + dur(secs(t.started, s.updated))) : "";
     const sub = t.status === "in_progress" && t.active && t.active !== t.title ? `<b>${esc(t.active)}</b>${t.summary ? " · " : ""}` : "";
     return `<li class="task ${esc(t.status)}"><span class="dot"></span><div><div class="t">${i + 1}. ${esc(t.title)}${t.added ? ` <span class="tag info" title="Added after work on the plan had started">added later</span>` : ""}</div>${sub || t.summary ? `<div class="sum">${sub}${esc(t.summary || "")}</div>` : ""}</div><span class="dur">${time}</span></li>`;
   }).join("")}</ol>${driftBlock(s.plan0, tasks)}` : `<p class="n">No plan yet. It appears here once the session writes its task list.</p>`;
@@ -845,7 +850,7 @@ function detail(s, clash, all) {
   const myProps = props().filter(p => p.session === s.id && p.status !== "done" && p.status !== "dismissed");
 
   return `<div class="dh"><h2>${esc(s.title || "New session")}${SNAP ? "" : ` <button type="button" class="linkish rename" data-rename="${esc(s.id)}" title="Rename this session" aria-label="Rename this session">✎</button>`}</h2><span class="pill ${st}"><i></i>${LABEL[st] || st}</span></div>
-    <div class="n">${s.project ? esc(s.project) + " · " : ""}ran ${dur(secs(s.started, live(s) ? Date.now() : s.updated))} · updated ${ago(s.updated)}${s.model ? ` · ${esc(s.model)}` : ""}${live(s) && !SNAP ? (listening(s.id) ? " · listening to the board" : " · not listening to the board") : ""}</div>
+    <div class="n">${s.project ? esc(s.project) + " · " : ""}ran ${dur(secs(s.started, live(s) ? Date.now() : s.updated))} · updated ${ago(s.updated)}${s.usage?.model || s.model ? ` · ${esc(modelName(s.usage?.model || s.model))}` : ""}${live(s) && !SNAP ? (listening(s.id) ? " · listening to the board" : " · not listening to the board") : ""}</div>
     <div class="now ${nowCls}"><div><small>${nowLabel}</small><p>${esc(nowText(s))}</p>${st === "needs" ? permitBlock(s) : ""}</div></div>
     ${usageBlock(s)}
     ${myProps.map(p => `<button type="button" class="att input" style="margin-top:10px" data-pid="${esc(p.id)}"><span class="ic">?</span><span><b>${esc(p.title)}</b>Proposal · ${PSTATE[p.status]?.[1] || esc(p.status)}</span><span class="n">${ago(p.updated)}</span></button>`).join("")}
@@ -1387,7 +1392,7 @@ function hdetail(e) {
         <h3>Note</h3>${note}
       </div>
       <div>
-        ${(e.agents || []).length ? `<h3>Helper agents</h3><ol class="agents">${e.agents.map(a => `<li class="task ${TMARK[a.status] || ""}"><span class="dot"></span><div><div class="t">${esc(a.desc || a.type || "Agent")}</div><div class="sum">${esc(a.type || "")}</div></div><span class="dur">${a.started && a.finished ? dur(secs(a.started, a.finished)) : ""}</span></li>`).join("")}</ol>` : ""}
+        ${(e.agents || []).length ? `<h3>Helper agents</h3><ol class="agents">${e.agents.map(a => `<li class="task ${TMARK[a.status] || ""}"><span class="dot"></span><div><div class="t">${esc(a.desc || a.type || "Agent")}</div><div class="sum">${esc(a.type || "")}${a.model ? " · " + esc(modelName(a.model)) : ""}</div></div><span class="dur">${a.started && a.finished ? dur(secs(a.started, a.finished)) : ""}</span></li>`).join("")}</ol>` : ""}
         ${(() => { const r = teSessions().get(e.session); return r && !r.imported ? `<h3>TokenEconomizer</h3><p class="n" style="margin:0">Session total: ${r.nudges ? `<span class="tag warn">${r.nudges} loop redirect${r.nudges > 1 ? "s" : ""}</span> ` : "no redirects "}${r.aborts ? `<span class="tag bad">${r.aborts} still-stuck notice${r.aborts > 1 ? "s" : ""}</span> ` : ""}${r.injected_chars ? `· learned facts added (${r.injected_chars} chars)` : ""}${(r.untool_applied || []).length ? ` · ${r.untool_applied.length} tools pruned` : ""}</p>` : ""; })()}
         <h3>Activity</h3>
         ${lg.length ? `<ul class="log">${lg.slice(0, 150).map(x => `<li class="${esc(x.kind || "")}"><span class="ic">${ICL[x.kind] || "·"}</span><span>${esc(x.text)}</span><time>${hhmm(x.at)}</time></li>`).join("")}</ul>` : `<p class="n">The step-by-step log wasn't kept for this request (it's recorded for new requests from now on).</p>`}

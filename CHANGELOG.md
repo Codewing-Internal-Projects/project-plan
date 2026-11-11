@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.0 (2026-11-11)
+
+- **Models:** session cards show the model the session runs on (e.g. *Opus 5.5*), following `/model` switches. Helper agents show theirs too: the requested model as soon as one starts, then the model it really runs on, read from its own transcript on its first tool call. History lists each agent's model.
+- Fix: tasks marked in progress no longer spin when their session isn't working (waiting for you, quiet or ended); they show as *paused* with the time they ran.
+
 ## 1.4.0 (2026-11-10)
 
 - **Security view:** a new view under Work for security-audit runs, replacing the audit box in the map's health check. It shows counts of confirmed findings, leads to check by hand, unreviewed areas and dismissed findings; an expandable card per finding (what it is, root cause, why it isn't confirmed, how to check it here and on a live site, the path through the code with links to the map, **Check/Fix with Claude**, **Not a problem**); and **Report**, **Coverage** and **Files** tabs that render every file the audit wrote (`REPORT.md`, `NEEDS-VALIDATION.md`, `findings.json` and the rest). A run picker switches between runs and marks findings that are new since the run before, or no longer reported. Unconfirmed leads (`needs_validation`) are shown too; before, only confirmed findings were.

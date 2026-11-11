@@ -189,6 +189,8 @@ def add_usage(s, msgs, sub=None):
         if s.get("round"):
             s["round"]["cost"] = round(s["round"].get("cost", 0) + c, 4)
         if sub is not None:
+            if model and not model.startswith("<"):
+                sub["model"] = model
             sub["cost"] = round(sub.get("cost", 0) + c, 4)
             sub["tokens"] = sub.get("tokens", 0) + sum(x.get(k) or 0 for k in ("input_tokens", "output_tokens", "cache_read_input_tokens", "cache_creation_input_tokens"))
         elif model and not model.startswith("<"):  # "<synthetic>" messages aren't real model calls
@@ -706,7 +708,7 @@ def archive(s):
         "files": [{"path": p, "add": a, "del": rm} for p, (a, rm) in r.get("files", {}).items()],
         "tools": r.get("tools", 0), "errors": r.get("errors", 0), "proposals": r.get("proposals", []),
         "cost": r.get("cost", 0),
-        "agents": [{k: a.get(k) for k in ("desc", "type", "status", "started", "finished")}
+        "agents": [{k: a.get(k) for k in ("desc", "type", "model", "status", "started", "finished")}
                    for a in s.get("agents", []) if (a.get("started") or "") >= t0],
         # the whole task list as it stood (History shows it even when nothing finished in this round)
         "tasks": [{k: x.get(k, "") for k in ("title", "summary", "status", "started", "finished", "added")} for x in s.get("tasks", [])],
@@ -756,6 +758,10 @@ def apply(d, ev):
         # A subagent's tool call: count it under that agent, keep its edits in the files list, keep it out of the main feed.
         a = agent_for(s, ev, t)
         a["tools"], a["last"], a["at"] = a.get("tools", 0) + 1, label(tool, inp)[0], t
+        if tp and not a.get("seen_model"):  # the model it really runs on, from its own transcript (first tool call only)
+            a["seen_model"] = True
+            sp = os.path.join(os.path.splitext(tp)[0], "subagents", f"agent-{sub}.jsonl")
+            a["model"] = next((m for m, _ in read_usage(sp)[2] if m and not m.startswith("<")), a.get("model"))
         if name == "PostToolUse":
             track(s, tool, inp, ev.get("tool_response"), t)
         else:
@@ -766,7 +772,7 @@ def apply(d, ev):
             s.setdefault("agents", []).append({
                 "id": ev.get("tool_use_id", ""), "desc": short(inp.get("description") or inp.get("subagent_type"), 80),
                 "type": inp.get("subagent_type") or "general-purpose", "status": "running", "started": t,
-                "bg": bool(inp.get("run_in_background")), "parent": ev.get("agent_id"), "tools": 0})
+                "bg": bool(inp.get("run_in_background")), "model": inp.get("model"), "parent": ev.get("agent_id"), "tools": 0})
             s["agents"] = s["agents"][-30:]
             say("Started agent: " + short(inp.get("description")), "agent")
     elif name == "SubagentStart":
